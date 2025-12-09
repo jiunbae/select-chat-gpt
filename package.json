@@ -1,0 +1,22 @@
+{
+  "name": "select-chatgpt-monorepo",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "dev:ext": "pnpm --filter extension dev",
+    "dev:server": "pnpm --filter select-chatgpt-server dev",
+    "dev:web": "pnpm --filter select-chatgpt-web dev",
+    "build": "pnpm -r run build",
+    "install:all": "pnpm install",
+    "docker:db": "docker compose -f docker-compose.dev.yml up -d",
+    "docker:db:stop": "docker compose -f docker-compose.dev.yml down",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:build": "docker compose build",
+    "docker:logs": "docker compose logs -f"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
