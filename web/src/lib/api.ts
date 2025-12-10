@@ -131,13 +131,6 @@ export async function parseUrl(url: string): Promise<ApiResult<ParseResult>> {
       };
     }
 
-    if (!data.success) {
-      return {
-        success: false,
-        error: new NetworkError('unknown', data.error || 'Failed to parse URL')
-      };
-    }
-
     return {
       success: true,
       data: {

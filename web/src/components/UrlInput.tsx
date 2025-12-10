@@ -19,9 +19,8 @@ export function UrlInput() {
       return;
     }
 
-    // Basic URL validation
-    const urlPattern = /^https:\/\/(chatgpt\.com|chat\.openai\.com)\/share\/[a-zA-Z0-9-]+$/;
-    if (!urlPattern.test(trimmedUrl)) {
+    // Basic URL validation - detailed validation is done by the backend
+    if (!trimmedUrl.startsWith("https://")) {
       setError("올바른 ChatGPT Share URL을 입력해주세요 (예: https://chatgpt.com/share/...)");
       return;
     }

@@ -14,6 +14,32 @@ export interface ParseResult {
   messages: ParsedMessage[]
 }
 
+// Custom error types for better error handling
+export class ConversationNotFoundError extends Error {
+  constructor(message = 'ChatGPT conversation not found') {
+    super(message)
+    this.name = 'ConversationNotFoundError'
+  }
+}
+
+export class NoMessagesFoundError extends Error {
+  constructor(message = 'No messages found in the conversation') {
+    super(message)
+    this.name = 'NoMessagesFoundError'
+  }
+}
+
+export class InvalidUrlError extends Error {
+  constructor(message = 'Invalid ChatGPT share URL') {
+    super(message)
+    this.name = 'InvalidUrlError'
+  }
+}
+
+// Constants for magic numbers
+const MIN_REACT_ROUTER_DATA_LENGTH = 1000
+const ROLE_LOOKBEHIND_WINDOW = 30
+
 const CHATGPT_URL_PATTERNS = [
   /^https:\/\/chatgpt\.com\/share\/[a-zA-Z0-9-]+$/,
   /^https:\/\/chat\.openai\.com\/share\/[a-zA-Z0-9-]+$/
@@ -33,13 +59,33 @@ function escapeHtml(text: string): string {
 }
 
 function formatMessageHtml(content: string): string {
-  let html = escapeHtml(content)
+  // Extract code blocks first and replace with placeholders to protect them from escaping
+  const codeBlocks: Array<{ placeholder: string; html: string }> = []
+  let processed = content
 
-  // Convert code blocks
-  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+  // Extract fenced code blocks (```lang\ncode```)
+  processed = processed.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`
+    const langClass = lang ? ` class="language-${lang}"` : ''
+    codeBlocks.push({
+      placeholder,
+      html: `<pre><code${langClass}>${escapeHtml(code)}</code></pre>`
+    })
+    return placeholder
+  })
 
-  // Convert inline code
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>')
+  // Extract inline code (`code`)
+  processed = processed.replace(/`([^`]+)`/g, (_, code) => {
+    const placeholder = `__INLINE_CODE_${codeBlocks.length}__`
+    codeBlocks.push({
+      placeholder,
+      html: `<code>${escapeHtml(code)}</code>`
+    })
+    return placeholder
+  })
+
+  // Now escape the remaining content
+  let html = escapeHtml(processed)
 
   // Convert bold
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
@@ -47,9 +93,14 @@ function formatMessageHtml(content: string): string {
   // Convert italic (but not already bolded)
   html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
 
-  // Convert newlines to paragraphs/breaks
-  html = html.split('\n\n').map(p => `<p>${p}</p>`).join('')
+  // Convert newlines to paragraphs/breaks (filter empty paragraphs)
+  html = html.split('\n\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('')
   html = html.replace(/\n/g, '<br/>')
+
+  // Restore code blocks
+  for (const block of codeBlocks) {
+    html = html.replace(block.placeholder, block.html)
+  }
 
   return html
 }
@@ -130,11 +181,13 @@ function extractFromReactRouterData(html: string): ParseResult | null {
       }
     }
 
-    if (!biggestData || biggestLen < 1000) {
+    if (!biggestData || biggestLen < MIN_REACT_ROUTER_DATA_LENGTH) {
       return null
     }
 
-    // Properly unescape the JSON string using JSON.parse
+    // The data is a JSON-stringified string (double-encoded).
+    // First parse: unescape the outer string (handles \", \\, \u003c, \n, etc.)
+    // Second parse: parse the inner JSON array
     const unescaped = JSON.parse('"' + biggestData + '"')
     const arr = JSON.parse(unescaped)
 
@@ -156,9 +209,9 @@ function extractFromReactRouterData(html: string): ParseResult | null {
       if (Array.isArray(arr[i]) && arr[i].length === 1) {
         const next = arr[i + 1]
         if (isValidMessageContent(next)) {
-          // Look backwards for role
+          // Look backwards for role within a window
           let role: 'user' | 'assistant' | null = null
-          for (let j = i - 1; j >= Math.max(0, i - 30); j--) {
+          for (let j = i - 1; j >= Math.max(0, i - ROLE_LOOKBEHIND_WINDOW); j--) {
             if (arr[j] === 'user') { role = 'user'; break }
             if (arr[j] === 'assistant') { role = 'assistant'; break }
           }
@@ -202,7 +255,7 @@ function extractFromReactRouterData(html: string): ParseResult | null {
 
 export async function fetchAndParseChatGPT(url: string): Promise<ParseResult> {
   if (!isValidChatGPTShareUrl(url)) {
-    throw new Error('Invalid ChatGPT share URL')
+    throw new InvalidUrlError()
   }
 
   // Fetch HTML
@@ -216,7 +269,7 @@ export async function fetchAndParseChatGPT(url: string): Promise<ParseResult> {
 
   if (!response.ok) {
     if (response.status === 404) {
-      throw new Error('ChatGPT conversation not found')
+      throw new ConversationNotFoundError()
     }
     throw new Error(`Failed to fetch URL: ${response.status}`)
   }
@@ -238,7 +291,7 @@ export async function fetchAndParseChatGPT(url: string): Promise<ParseResult> {
   const ogTitle = document.querySelector('meta[property="og:title"]')
   const pageTitle = ogTitle?.getAttribute('content') || 'the conversation'
 
-  throw new Error(`No messages found in ${pageTitle}. The page format may have changed.`)
+  throw new NoMessagesFoundError(`No messages found in ${pageTitle}. The page format may have changed.`)
 }
 
 export async function parseAndCreateShare(url: string): Promise<ShareOutput> {

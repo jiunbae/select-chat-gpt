@@ -1,6 +1,12 @@
 import { Router, Request, Response } from 'express'
 import type { Router as RouterType } from 'express'
-import { parseAndCreateShare, isValidChatGPTShareUrl } from '../services/parse.service.js'
+import {
+  parseAndCreateShare,
+  isValidChatGPTShareUrl,
+  ConversationNotFoundError,
+  NoMessagesFoundError,
+  InvalidUrlError
+} from '../services/parse.service.js'
 
 const router: RouterType = Router()
 
@@ -36,28 +42,34 @@ router.post('/', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Parse error:', error)
 
-    if (error instanceof Error) {
-      const message = error.message
+    if (error instanceof ConversationNotFoundError) {
+      res.status(404).json({
+        success: false,
+        error: 'ChatGPT conversation not found. Please check the URL.'
+      })
+      return
+    }
 
-      if (message.includes('not found') || message.includes('404')) {
-        res.status(404).json({
-          success: false,
-          error: 'ChatGPT conversation not found. Please check the URL.'
-        })
-        return
-      }
-
-      if (message.includes('No messages')) {
-        res.status(400).json({
-          success: false,
-          error: 'No messages found in the conversation.'
-        })
-        return
-      }
-
+    if (error instanceof NoMessagesFoundError) {
       res.status(400).json({
         success: false,
-        error: message
+        error: error.message
+      })
+      return
+    }
+
+    if (error instanceof InvalidUrlError) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid ChatGPT share URL. Please use a URL like https://chatgpt.com/share/...'
+      })
+      return
+    }
+
+    if (error instanceof Error) {
+      res.status(400).json({
+        success: false,
+        error: error.message
       })
       return
     }
