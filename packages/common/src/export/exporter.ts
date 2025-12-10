@@ -283,6 +283,12 @@ function generatePrintStyles(options?: ExportOptions, styleType?: ExportStyleTyp
       padding: ${messageGap} 0;
       border-bottom: 1px solid ${borderColor};
     }
+    .message-wrapper.user {
+      background-color: ${isClean ? '#ffffff' : '#212121'};
+    }
+    .message-wrapper.assistant {
+      background-color: ${isClean ? '#f9fafb' : '#1a1a1a'};
+    }
     .message-wrapper:last-child {
       border-bottom: none;
     }
@@ -387,8 +393,9 @@ function generatePrintHTML(
 
     content = temp.innerHTML;
 
+    const roleClass = msg.role === 'user' ? 'user' : 'assistant';
     return `
-      <div class="message-wrapper">
+      <div class="message-wrapper ${roleClass}">
         <div class="role-label">${msg.role === 'user' ? 'You' : 'ChatGPT'}</div>
         <div class="message-content">${content}</div>
       </div>

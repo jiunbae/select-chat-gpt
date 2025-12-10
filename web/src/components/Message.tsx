@@ -107,7 +107,7 @@ export function Message({
     paddingBottom: getMessageGapValue(messageGap),
     backgroundColor: isCleanStyle
       ? (isUser ? '#ffffff' : '#f9fafb')
-      : undefined, // Let className handle dark mode for chatgpt style
+      : (isUser ? '#212121' : '#1a1a1a'), // ChatGPT dark style
   }), [messageGap, isCleanStyle, isUser]);
 
   // Dynamic inner padding styles
@@ -125,32 +125,21 @@ export function Message({
     return html;
   }, [message.html, message.content, hideCodeBlocks]);
 
-  // Style-specific classes
-  const containerClass = isCleanStyle
-    ? '' // Clean style uses inline backgroundColor
-    : (isUser ? "bg-white dark:bg-chatgpt-dark" : "bg-gray-50 dark:bg-gray-900");
-
-  const textColorClass = isCleanStyle
-    ? 'text-gray-900'
-    : 'text-gray-900 dark:text-white';
-
-  const contentColorClass = isCleanStyle
-    ? 'text-gray-800'
-    : 'text-gray-800 dark:text-gray-200';
+  // Style-specific text colors (using inline styles instead of dark: classes)
+  const textColor = isCleanStyle ? '#1f2937' : '#ffffff';
+  const contentColor = isCleanStyle ? '#374151' : '#e5e7eb';
 
   return (
-    <div
-      className={containerClass}
-      style={containerStyle}
-    >
+    <div style={containerStyle}>
       <div className="max-w-3xl mx-auto px-4" style={innerStyle}>
         <div className="flex gap-4">
           <div
-            className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-              isCleanStyle
-                ? (isUser ? "bg-gray-600 text-white" : "bg-gray-800 text-white")
-                : (isUser ? "bg-primary text-white" : "bg-[#19c37d] text-white")
-            }`}
+            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white"
+            style={{
+              backgroundColor: isCleanStyle
+                ? (isUser ? '#4b5563' : '#1f2937')
+                : (isUser ? '#10a37f' : '#19c37d'),
+            }}
           >
             {isUser ? (
               <svg
@@ -177,14 +166,15 @@ export function Message({
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className={`font-semibold mb-2 ${textColorClass}`}>
+            <div
+              className="font-semibold mb-2"
+              style={{ color: textColor }}
+            >
               {isUser ? "You" : "ChatGPT"}
             </div>
             <div
-              className={`markdown-content prose prose-sm max-w-none ${
-                isCleanStyle ? '' : 'dark:prose-invert'
-              } ${contentColorClass}`}
-              style={contentStyle}
+              className="markdown-content prose prose-sm max-w-none"
+              style={{ ...contentStyle, color: contentColor }}
               dangerouslySetInnerHTML={{ __html: processedHtml }}
             />
           </div>
