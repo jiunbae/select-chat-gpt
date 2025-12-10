@@ -74,6 +74,9 @@ pnpm docker:down
 | `pnpm docker:db` | MongoDB만 Docker로 실행 |
 | `pnpm docker:up` | 전체 서비스 Docker로 실행 |
 | `pnpm docker:down` | Docker 서비스 중지 |
+| `pnpm docker:build:registry` | Private Registry용 이미지 빌드 |
+| `pnpm docker:push` | Private Registry에 이미지 Push |
+| `pnpm docker:release` | 빌드 + Push 한 번에 실행 |
 | `pnpm build` | 전체 빌드 |
 
 ### 환경 변수
@@ -123,6 +126,103 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 - React 19
 - Tailwind CSS
 - React Markdown
+
+## K3s 배포
+
+### 아키텍처
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Tailscale Network                                      │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  NAS (Synology)              VMM K3s Cluster           │
+│  ├── registry.jiun.dev       ├── selectchatgpt.jiun.dev│
+│  └── Docker Registry         ├── api.selectchatgpt...  │
+│                              ├── MongoDB                │
+│                              ├── Server                 │
+│                              └── Web                    │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### K8s 매니페스트 구조
+
+```
+k8s/
+├── namespace.yaml
+├── ingress.yaml
+├── cert-manager/
+│   ├── clusterissuer.yaml
+│   └── certificate.yaml
+├── mongodb/
+│   ├── pvc.yaml
+│   ├── deployment.yaml
+│   └── service.yaml
+├── server/
+│   ├── configmap.yaml
+│   ├── deployment.yaml
+│   └── service.yaml
+└── web/
+    ├── configmap.yaml
+    ├── deployment.yaml
+    └── service.yaml
+```
+
+### 최초 배포
+
+```bash
+# 1. Private Registry에 이미지 Push
+pnpm docker:release
+
+# 2. K3s에서 매니페스트 적용
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/mongodb/
+kubectl apply -f k8s/server/
+kubectl apply -f k8s/web/
+kubectl apply -f k8s/cert-manager/
+kubectl apply -f k8s/ingress.yaml
+
+# 3. 상태 확인
+kubectl get pods -n selectchatgpt
+```
+
+### 업데이트 배포
+
+코드 변경 후 업데이트:
+
+```bash
+# 1. 이미지 빌드 & Push
+pnpm docker:release
+
+# 2. K3s에서 재배포
+kubectl rollout restart deployment/server -n selectchatgpt
+kubectl rollout restart deployment/web -n selectchatgpt
+
+# 3. 상태 확인
+kubectl get pods -n selectchatgpt -w
+```
+
+### 로그 확인
+
+```bash
+# 전체 로그
+kubectl logs -n selectchatgpt -l app=server -f
+kubectl logs -n selectchatgpt -l app=web -f
+
+# 특정 Pod 로그
+kubectl logs -n selectchatgpt <pod-name>
+```
+
+### 유용한 명령어
+
+| 명령어 | 설명 |
+|--------|------|
+| `kubectl get pods -n selectchatgpt` | Pod 상태 확인 |
+| `kubectl get svc -n selectchatgpt` | 서비스 확인 |
+| `kubectl get ingress -n selectchatgpt` | Ingress 확인 |
+| `kubectl describe pod <name> -n selectchatgpt` | Pod 상세 정보 |
+| `kubectl exec -it <pod> -n selectchatgpt -- sh` | Pod 접속 |
 
 ## 라이선스
 
