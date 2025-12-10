@@ -8,6 +8,7 @@ build/
 .next/
 out/
 .plasmo/
+*.tsbuildinfo
 
 # Environment files
 .env
