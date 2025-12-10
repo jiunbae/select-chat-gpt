@@ -1,5 +1,12 @@
 import { JSDOM } from 'jsdom'
+import { marked } from 'marked'
 import { createShare, CreateShareInput, ShareOutput } from './share.service.js'
+
+// Configure marked for safe HTML output
+marked.setOptions({
+  gfm: true,        // GitHub Flavored Markdown
+  breaks: true,     // Convert \n to <br>
+})
 
 export interface ParsedMessage {
   id: string
@@ -49,60 +56,12 @@ export function isValidChatGPTShareUrl(url: string): boolean {
   return CHATGPT_URL_PATTERNS.some(pattern => pattern.test(url))
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-}
-
 function formatMessageHtml(content: string): string {
-  // Extract code blocks first and replace with placeholders to protect them from escaping
-  const codeBlocks: Array<{ placeholder: string; html: string }> = []
-  let processed = content
-
-  // Extract fenced code blocks (```lang\ncode```)
-  processed = processed.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
-    const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`
-    const langClass = lang ? ` class="language-${lang}"` : ''
-    codeBlocks.push({
-      placeholder,
-      html: `<pre><code${langClass}>${escapeHtml(code)}</code></pre>`
-    })
-    return placeholder
-  })
-
-  // Extract inline code (`code`)
-  processed = processed.replace(/`([^`]+)`/g, (_, code) => {
-    const placeholder = `__INLINE_CODE_${codeBlocks.length}__`
-    codeBlocks.push({
-      placeholder,
-      html: `<code>${escapeHtml(code)}</code>`
-    })
-    return placeholder
-  })
-
-  // Now escape the remaining content
-  let html = escapeHtml(processed)
-
-  // Convert bold
-  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-
-  // Convert italic (but not already bolded)
-  html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
-
-  // Convert newlines to paragraphs/breaks (filter empty paragraphs)
-  html = html.split('\n\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('')
-  html = html.replace(/\n/g, '<br/>')
-
-  // Restore code blocks
-  for (const block of codeBlocks) {
-    html = html.replace(block.placeholder, block.html)
-  }
-
-  return html
+  // Use marked library for robust markdown parsing
+  // marked handles code blocks, bold, italic, lists, links, etc.
+  const html = marked.parse(content)
+  // marked.parse returns string | Promise<string>, but with sync options it's always string
+  return typeof html === 'string' ? html : ''
 }
 
 // Keywords and patterns that indicate metadata, not user content

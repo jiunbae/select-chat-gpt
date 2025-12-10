@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { parseUrl } from "@/lib/api";
+import { parseUrl, getErrorMessage } from "@/lib/api";
 
 export function UrlInput() {
   const [url, setUrl] = useState("");
@@ -19,8 +19,8 @@ export function UrlInput() {
       return;
     }
 
-    // Basic URL validation - detailed validation is done by the backend
-    if (!trimmedUrl.startsWith("https://")) {
+    // Validate ChatGPT share URL pattern
+    if (!trimmedUrl.startsWith("https://chatgpt.com/share/") && !trimmedUrl.startsWith("https://chat.openai.com/share/")) {
       setError("올바른 ChatGPT Share URL을 입력해주세요 (예: https://chatgpt.com/share/...)");
       return;
     }
@@ -35,7 +35,7 @@ export function UrlInput() {
     if (result.success) {
       router.push(result.data.shareUrl);
     } else {
-      setError(result.error.message);
+      setError(getErrorMessage(result.error));
     }
   };
 

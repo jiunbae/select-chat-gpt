@@ -66,14 +66,7 @@ router.post('/', async (req: Request, res: Response) => {
       return
     }
 
-    if (error instanceof Error) {
-      res.status(400).json({
-        success: false,
-        error: error.message
-      })
-      return
-    }
-
+    // All other errors (including generic Error) are treated as server errors
     res.status(500).json({
       success: false,
       error: 'Failed to parse the conversation. Please try again.'
