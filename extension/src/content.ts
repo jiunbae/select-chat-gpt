@@ -2,7 +2,7 @@
 console.log("[SelectChatGPT] Content script loaded!")
 
 // API URL 설정
-const API_BASE_URL = process.env.PLASMO_PUBLIC_API_URL || 'http://localhost:3001'
+const API_BASE_URL = process.env.PLASMO_PUBLIC_API_URL || 'https://api.selectchatgpt.jiun.dev'
 
 // 전역 상태
 let messageElements: Element[] = []

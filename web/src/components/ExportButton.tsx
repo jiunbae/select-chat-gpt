@@ -33,6 +33,29 @@ const STAGE_MESSAGES: Record<ExportProgress['stage'], string> = {
   downloading: 'Downloading...',
 };
 
+interface ExportActionConfig {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+}
+
+const ImageIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </svg>
+);
+
+const PdfIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+  </svg>
+);
+
 export function ExportButton({ messages, title, sourceUrl }: ExportButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<ExportMode>('markdown');
@@ -58,18 +81,21 @@ export function ExportButton({ messages, title, sourceUrl }: ExportButtonProps) 
     downloadMarkdown(markdown, title);
   };
 
-  const handleExportImage = async () => {
+  const createExportHandler = (
+    exportFn: typeof exportToImage,
+    errorMessage: string
+  ) => async () => {
     setIsLoading(true);
     setError(null);
     setExportProgress(null);
 
     try {
-      await exportToImage(messages, title, styleType, setExportProgress);
+      await exportFn(messages, title, styleType, setExportProgress);
     } catch (e) {
       if (e instanceof ExportError) {
         setError(e.message);
       } else {
-        setError('Failed to export image');
+        setError(errorMessage);
       }
     } finally {
       setIsLoading(false);
@@ -77,23 +103,22 @@ export function ExportButton({ messages, title, sourceUrl }: ExportButtonProps) 
     }
   };
 
-  const handleExportPDF = async () => {
-    setIsLoading(true);
-    setError(null);
-    setExportProgress(null);
+  const handleExportImage = createExportHandler(exportToImage, 'Failed to export image');
+  const handleExportPDF = createExportHandler(exportToPDF, 'Failed to export PDF');
 
-    try {
-      await exportToPDF(messages, title, styleType, setExportProgress);
-    } catch (e) {
-      if (e instanceof ExportError) {
-        setError(e.message);
-      } else {
-        setError('Failed to export PDF');
-      }
-    } finally {
-      setIsLoading(false);
-      setExportProgress(null);
-    }
+  const EXPORT_ACTIONS: Record<'image' | 'pdf', ExportActionConfig & { handler: () => void }> = {
+    image: {
+      icon: ImageIcon,
+      label: 'Download as PNG',
+      description: 'High-quality image export for sharing',
+      handler: handleExportImage,
+    },
+    pdf: {
+      icon: PdfIcon,
+      label: 'Download as PDF',
+      description: 'Multi-page PDF for printing and archiving',
+      handler: handleExportPDF,
+    },
   };
 
   const showStyleSelector = mode === 'image' || mode === 'pdf';
@@ -240,11 +265,11 @@ export function ExportButton({ messages, title, sourceUrl }: ExportButtonProps) 
                 </div>
               )}
 
-              {/* Image Export */}
-              {mode === 'image' && (
+              {/* Image/PDF Export */}
+              {(mode === 'image' || mode === 'pdf') && (
                 <div className="space-y-3">
                   <button
-                    onClick={handleExportImage}
+                    onClick={EXPORT_ACTIONS[mode].handler}
                     disabled={isLoading}
                     className="w-full py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
@@ -270,77 +295,13 @@ export function ExportButton({ messages, title, sourceUrl }: ExportButtonProps) 
                       </>
                     ) : (
                       <>
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                          <circle cx="8.5" cy="8.5" r="1.5" />
-                          <polyline points="21 15 16 10 5 21" />
-                        </svg>
-                        Download as PNG
+                        {EXPORT_ACTIONS[mode].icon}
+                        {EXPORT_ACTIONS[mode].label}
                       </>
                     )}
                   </button>
                   <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                    High-quality image export for sharing
-                  </p>
-                </div>
-              )}
-
-              {/* PDF Export */}
-              {mode === 'pdf' && (
-                <div className="space-y-3">
-                  <button
-                    onClick={handleExportPDF}
-                    disabled={isLoading}
-                    className="w-full py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isLoading ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="none"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                          />
-                        </svg>
-                        {exportProgress ? STAGE_MESSAGES[exportProgress.stage] : 'Exporting...'}
-                      </>
-                    ) : (
-                      <>
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                          <polyline points="14 2 14 8 20 8" />
-                          <line x1="16" y1="13" x2="8" y2="13" />
-                          <line x1="16" y1="17" x2="8" y2="17" />
-                        </svg>
-                        Download as PDF
-                      </>
-                    )}
-                  </button>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                    Multi-page PDF for printing and archiving
+                    {EXPORT_ACTIONS[mode].description}
                   </p>
                 </div>
               )}

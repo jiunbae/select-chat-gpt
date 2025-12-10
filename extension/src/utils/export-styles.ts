@@ -154,7 +154,7 @@ function sanitizeHTML(html: string): string {
   temp.innerHTML = html
 
   // Remove buttons, copy icons, interactive elements
-  temp.querySelectorAll('button, [role="button"], .copy-button, .absolute, svg.icon')
+  temp.querySelectorAll('button, [role="button"], .copy-button, svg.icon')
     .forEach(el => el.remove())
 
   return temp.innerHTML

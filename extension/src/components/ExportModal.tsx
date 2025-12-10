@@ -26,6 +26,31 @@ const STAGE_MESSAGES: Record<ExportProgress['stage'], string> = {
   downloading: 'Downloading...'
 }
 
+interface ExportActionConfig {
+  icon: React.ReactNode
+  label: string
+  description: string
+  handler: () => void
+}
+
+const ImageIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </svg>
+)
+
+const PdfIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <polyline points="10 9 9 9 8 9" />
+  </svg>
+)
+
 export function ExportModal({ messages, onClose }: ExportModalProps) {
   const [mode, setMode] = useState<ExportMode>('link')
   const [styleType, setStyleType] = useState<ExportStyleType>('chatgpt')
@@ -96,23 +121,21 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
     URL.revokeObjectURL(url)
   }
 
-  const handleExportImage = async () => {
+  const createExportHandler = (
+    exportFn: typeof exportToImage,
+    errorMessage: string
+  ) => async () => {
     setIsLoading(true)
     setError(null)
     setExportProgress(null)
 
     try {
-      await exportToImage(
-        messages,
-        getPageTitle(),
-        styleType,
-        setExportProgress
-      )
+      await exportFn(messages, getPageTitle(), styleType, setExportProgress)
     } catch (e) {
       if (e instanceof ExportError) {
         setError(e.message)
       } else {
-        setError('Failed to export image')
+        setError(errorMessage)
       }
     } finally {
       setIsLoading(false)
@@ -120,28 +143,22 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
     }
   }
 
-  const handleExportPDF = async () => {
-    setIsLoading(true)
-    setError(null)
-    setExportProgress(null)
+  const handleExportImage = createExportHandler(exportToImage, 'Failed to export image')
+  const handleExportPDF = createExportHandler(exportToPDF, 'Failed to export PDF')
 
-    try {
-      await exportToPDF(
-        messages,
-        getPageTitle(),
-        styleType,
-        setExportProgress
-      )
-    } catch (e) {
-      if (e instanceof ExportError) {
-        setError(e.message)
-      } else {
-        setError('Failed to export PDF')
-      }
-    } finally {
-      setIsLoading(false)
-      setExportProgress(null)
-    }
+  const EXPORT_ACTIONS: Record<'image' | 'pdf', ExportActionConfig> = {
+    image: {
+      icon: ImageIcon,
+      label: 'Download as PNG',
+      description: 'High-quality image export for sharing on social media',
+      handler: handleExportImage,
+    },
+    pdf: {
+      icon: PdfIcon,
+      label: 'Download as PDF',
+      description: 'Multi-page PDF document for printing and archiving',
+      handler: handleExportPDF,
+    },
   }
 
   const showStyleSelector = mode === 'image' || mode === 'pdf'
@@ -311,10 +328,10 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
             </div>
           )}
 
-          {mode === 'image' && (
+          {(mode === 'image' || mode === 'pdf') && (
             <div className="scgpt-space-y-3">
               <button
-                onClick={handleExportImage}
+                onClick={EXPORT_ACTIONS[mode].handler}
                 disabled={isLoading}
                 className="scgpt-w-full scgpt-py-3 scgpt-bg-primary scgpt-text-white scgpt-rounded-lg scgpt-font-medium scgpt-hover:bg-primary-hover scgpt-transition-colors scgpt-disabled:opacity-50 scgpt-disabled:cursor-not-allowed scgpt-flex scgpt-items-center scgpt-justify-center scgpt-gap-2"
               >
@@ -328,51 +345,13 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                   </>
                 ) : (
                   <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                    Download as PNG
+                    {EXPORT_ACTIONS[mode].icon}
+                    {EXPORT_ACTIONS[mode].label}
                   </>
                 )}
               </button>
               <p className="scgpt-text-xs scgpt-text-gray-500 scgpt-text-center">
-                High-quality image export for sharing on social media
-              </p>
-            </div>
-          )}
-
-          {mode === 'pdf' && (
-            <div className="scgpt-space-y-3">
-              <button
-                onClick={handleExportPDF}
-                disabled={isLoading}
-                className="scgpt-w-full scgpt-py-3 scgpt-bg-primary scgpt-text-white scgpt-rounded-lg scgpt-font-medium scgpt-hover:bg-primary-hover scgpt-transition-colors scgpt-disabled:opacity-50 scgpt-disabled:cursor-not-allowed scgpt-flex scgpt-items-center scgpt-justify-center scgpt-gap-2"
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="scgpt-animate-spin scgpt-h-5 scgpt-w-5" viewBox="0 0 24 24">
-                      <circle className="scgpt-opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="scgpt-opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    {exportProgress ? STAGE_MESSAGES[exportProgress.stage] : 'Exporting...'}
-                  </>
-                ) : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                      <line x1="16" y1="13" x2="8" y2="13" />
-                      <line x1="16" y1="17" x2="8" y2="17" />
-                      <polyline points="10 9 9 9 8 9" />
-                    </svg>
-                    Download as PDF
-                  </>
-                )}
-              </button>
-              <p className="scgpt-text-xs scgpt-text-gray-500 scgpt-text-center">
-                Multi-page PDF document for printing and archiving
+                {EXPORT_ACTIONS[mode].description}
               </p>
             </div>
           )}
