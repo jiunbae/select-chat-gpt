@@ -1,13 +1,77 @@
 "use client";
 
+import { useMemo } from "react";
 import type { Message as MessageType } from "@/lib/api";
+import type { FontSize, LineHeight, LetterSpacing } from "@/lib/export";
 
 interface MessageProps {
   message: MessageType;
+  fontSize?: FontSize;
+  lineHeight?: LineHeight;
+  letterSpacing?: LetterSpacing;
+  hideCodeBlocks?: boolean;
 }
 
-export function Message({ message }: MessageProps) {
+// Helper functions to convert option values to CSS
+function getFontSizeValue(size: FontSize): string {
+  const values: Record<FontSize, string> = {
+    small: '14px',
+    medium: '16px',
+    large: '18px',
+  };
+  return values[size];
+}
+
+function getLineHeightValue(height: LineHeight): string {
+  const values: Record<LineHeight, string> = {
+    compact: '1.4',
+    normal: '1.75',
+    relaxed: '2.0',
+  };
+  return values[height];
+}
+
+function getLetterSpacingValue(spacing: LetterSpacing): string {
+  const values: Record<LetterSpacing, string> = {
+    tight: '-0.5px',
+    normal: '0',
+    wide: '1px',
+  };
+  return values[spacing];
+}
+
+// Remove code blocks from HTML
+function removeCodeBlocks(html: string): string {
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+  temp.querySelectorAll('pre').forEach(el => el.remove());
+  return temp.innerHTML;
+}
+
+export function Message({
+  message,
+  fontSize = 'medium',
+  lineHeight = 'normal',
+  letterSpacing = 'normal',
+  hideCodeBlocks = false,
+}: MessageProps) {
   const isUser = message.role === "user";
+
+  // Dynamic content styles
+  const contentStyle = useMemo(() => ({
+    fontSize: getFontSizeValue(fontSize),
+    lineHeight: getLineHeightValue(lineHeight),
+    letterSpacing: getLetterSpacingValue(letterSpacing),
+  }), [fontSize, lineHeight, letterSpacing]);
+
+  // Process HTML content
+  const processedHtml = useMemo(() => {
+    const html = message.html || message.content;
+    if (hideCodeBlocks && typeof window !== 'undefined') {
+      return removeCodeBlocks(html);
+    }
+    return html;
+  }, [message.html, message.content, hideCodeBlocks]);
 
   return (
     <div
@@ -54,7 +118,8 @@ export function Message({ message }: MessageProps) {
             </div>
             <div
               className="markdown-content text-gray-800 dark:text-gray-200 prose prose-sm dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: message.html || message.content }}
+              style={contentStyle}
+              dangerouslySetInnerHTML={{ __html: processedHtml }}
             />
           </div>
         </div>

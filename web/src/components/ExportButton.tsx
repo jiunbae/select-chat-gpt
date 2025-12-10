@@ -22,6 +22,9 @@ interface ExportButtonProps {
   messages: Message[];
   title: string;
   sourceUrl: string;
+  // External style control (optional - for SharePage integration)
+  styleType?: ExportStyleType;
+  exportOptions?: ExportOptions;
 }
 
 type ExportMode = 'markdown' | 'image' | 'pdf';
@@ -148,16 +151,22 @@ const PdfIcon = (
   </svg>
 );
 
-export function ExportButton({ messages, title, sourceUrl }: ExportButtonProps) {
+export function ExportButton({
+  messages,
+  title,
+  sourceUrl,
+  styleType: externalStyleType,
+  exportOptions: externalExportOptions,
+}: ExportButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<ExportMode>('markdown');
-  const [styleType, setStyleType] = useState<ExportStyleType>('chatgpt');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Styling options state
+  // Internal state (used when external props are not provided)
+  const [internalStyleType, setInternalStyleType] = useState<ExportStyleType>('chatgpt');
   const [letterSpacing, setLetterSpacing] = useState<LetterSpacing>('normal');
   const [lineHeight, setLineHeight] = useState<LineHeight>('normal');
   const [fontSize, setFontSize] = useState<FontSize>('medium');
@@ -171,16 +180,26 @@ export function ExportButton({ messages, title, sourceUrl }: ExportButtonProps) 
   const [contentOpen, setContentOpen] = useState(false);
   const [layoutOpen, setLayoutOpen] = useState(false);
 
+  // Use external values if provided, otherwise use internal state
+  const hasExternalControl = externalStyleType !== undefined && externalExportOptions !== undefined;
+  const styleType = externalStyleType ?? internalStyleType;
+  const setStyleType = hasExternalControl ? () => {} : setInternalStyleType;
+
   // Build export options
-  const getExportOptions = (): ExportOptions => ({
-    letterSpacing,
-    lineHeight,
-    fontSize,
-    hideUserMessages,
-    hideCodeBlocks,
-    pageSize,
-    margin,
-  });
+  const getExportOptions = (): ExportOptions => {
+    if (externalExportOptions) {
+      return externalExportOptions;
+    }
+    return {
+      letterSpacing,
+      lineHeight,
+      fontSize,
+      hideUserMessages,
+      hideCodeBlocks,
+      pageSize,
+      margin,
+    };
+  };
 
   const handleCopyMarkdown = async () => {
     try {
@@ -241,7 +260,10 @@ export function ExportButton({ messages, title, sourceUrl }: ExportButtonProps) 
     },
   };
 
-  const showStyleSelector = mode === 'image' || mode === 'pdf';
+  // Only show style controls if no external control
+  const showStyleSelector = !hasExternalControl && (mode === 'image' || mode === 'pdf');
+  const showContentOptions = !hasExternalControl;
+  const showLayoutOptions = !hasExternalControl && mode === 'pdf';
 
   return (
     <div className="relative">
@@ -378,26 +400,28 @@ export function ExportButton({ messages, title, sourceUrl }: ExportButtonProps) 
                 </CollapsibleSection>
               )}
 
-              {/* Content Filtering Options (all modes) */}
-              <CollapsibleSection
-                title="Content"
-                isOpen={contentOpen}
-                onToggle={() => setContentOpen(!contentOpen)}
-              >
-                <CheckboxField
-                  label="Hide user questions"
-                  checked={hideUserMessages}
-                  onChange={setHideUserMessages}
-                />
-                <CheckboxField
-                  label="Hide code blocks"
-                  checked={hideCodeBlocks}
-                  onChange={setHideCodeBlocks}
-                />
-              </CollapsibleSection>
+              {/* Content Filtering Options (all modes, only when no external control) */}
+              {showContentOptions && (
+                <CollapsibleSection
+                  title="Content"
+                  isOpen={contentOpen}
+                  onToggle={() => setContentOpen(!contentOpen)}
+                >
+                  <CheckboxField
+                    label="Hide user questions"
+                    checked={hideUserMessages}
+                    onChange={setHideUserMessages}
+                  />
+                  <CheckboxField
+                    label="Hide code blocks"
+                    checked={hideCodeBlocks}
+                    onChange={setHideCodeBlocks}
+                  />
+                </CollapsibleSection>
+              )}
 
-              {/* Layout Options (pdf only) */}
-              {mode === 'pdf' && (
+              {/* Layout Options (pdf only, only when no external control) */}
+              {showLayoutOptions && (
                 <CollapsibleSection
                   title="Layout"
                   isOpen={layoutOpen}
