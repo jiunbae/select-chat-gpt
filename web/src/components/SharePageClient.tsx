@@ -43,13 +43,28 @@ function SharePageContent({ share }: SharePageClientProps) {
     ? share.messages.filter((m) => m.role !== 'user')
     : share.messages;
 
+  const isCleanStyle = styleType === 'clean';
+
   return (
-    <main className="min-h-screen bg-white dark:bg-chatgpt-dark">
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-chatgpt-dark/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+    <main
+      className="min-h-screen transition-colors duration-200"
+      style={{
+        backgroundColor: isCleanStyle ? '#ffffff' : '#212121',
+        color: isCleanStyle ? '#1f2937' : '#ececec',
+      }}
+    >
+      <header
+        className="sticky top-0 z-50 backdrop-blur-sm border-b transition-colors duration-200"
+        style={{
+          backgroundColor: isCleanStyle ? 'rgba(255,255,255,0.8)' : 'rgba(33,33,33,0.8)',
+          borderColor: isCleanStyle ? '#e5e7eb' : '#444444',
+        }}
+      >
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-2 text-gray-900 dark:text-white hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            style={{ color: isCleanStyle ? '#1f2937' : '#ffffff' }}
           >
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <svg
@@ -101,10 +116,16 @@ function SharePageContent({ share }: SharePageClientProps) {
       </header>
 
       <div className="max-w-3xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1
+          className="text-2xl font-bold mb-2"
+          style={{ color: isCleanStyle ? '#1f2937' : '#ffffff' }}
+        >
           {share.title}
         </h1>
-        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-4">
+        <div
+          className="text-sm flex items-center gap-4"
+          style={{ color: isCleanStyle ? '#6b7280' : '#9ca3af' }}
+        >
           <span>{formattedDate}</span>
           <span>•</span>
           <span>{share.messages.length} messages</span>
@@ -122,9 +143,15 @@ function SharePageContent({ share }: SharePageClientProps) {
       </div>
 
       {/* Messages */}
-      <div className="border-t border-gray-200 dark:border-gray-700">
+      <div
+        className="border-t"
+        style={{ borderColor: isCleanStyle ? '#e5e7eb' : '#444444' }}
+      >
         {filteredMessages.length === 0 ? (
-          <div className="max-w-3xl mx-auto px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+          <div
+            className="max-w-3xl mx-auto px-4 py-12 text-center"
+            style={{ color: isCleanStyle ? '#6b7280' : '#9ca3af' }}
+          >
             No messages to display with current filters.
           </div>
         ) : (
@@ -149,9 +176,15 @@ function SharePageContent({ share }: SharePageClientProps) {
         <AdUnit slot="BOTTOM_AD_SLOT" format="horizontal" className="w-full" />
       </div>
 
-      <footer className="border-t border-gray-200 dark:border-gray-700 py-8">
+      <footer
+        className="border-t py-8"
+        style={{ borderColor: isCleanStyle ? '#e5e7eb' : '#444444' }}
+      >
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <p
+            className="text-sm mb-4"
+            style={{ color: isCleanStyle ? '#6b7280' : '#9ca3af' }}
+          >
             This conversation was shared using SelectChatGPT
           </p>
           <a

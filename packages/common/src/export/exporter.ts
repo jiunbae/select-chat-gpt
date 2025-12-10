@@ -237,22 +237,30 @@ function generatePrintStyles(options?: ExportOptions, styleType?: ExportStyleTyp
         size: ${options?.pageSize || 'A4'};
         margin: ${marginValue};
       }
-      body {
+      * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        color-adjust: exact !important;
       }
     }
     * {
       box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: ${bgColor} !important;
     }
     body {
-      margin: 0;
       padding: 20px;
       font-family: ${fontFamily};
       font-size: ${fontSize};
       line-height: ${lineHeight};
       letter-spacing: ${letterSpacing};
-      background-color: ${bgColor};
+      background-color: ${bgColor} !important;
       color: ${textColor};
     }
     .export-container {
