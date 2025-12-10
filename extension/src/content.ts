@@ -2,11 +2,11 @@
 console.log("[SelectChatGPT] Content script loaded!")
 
 // API URL 설정
-const API_BASE_URL = process.env.PLASMO_PUBLIC_API_URL || 'https://api.selectchatgpt.jiun.dev'
+const API_BASE_URL = process.env.PLASMO_PUBLIC_API_URL || 'http://localhost:3001'
 
 // 전역 상태
-let checkboxOverlay: HTMLDivElement | null = null
 let messageElements: Element[] = []
+let selectedCount = 0
 
 // ChatGPT 공유 페이지인지 확인
 function isChatGPTSharePage(): boolean {
@@ -15,83 +15,202 @@ function isChatGPTSharePage(): boolean {
 }
 
 function init() {
-  // ChatGPT 공유 페이지가 아니면 실행하지 않음
   if (!isChatGPTSharePage()) {
     console.log("[SelectChatGPT] Not a ChatGPT share page, skipping initialization")
     return
   }
 
-  // 페이지 로드 확인
   console.log("[SelectChatGPT] Initializing on:", window.location.href)
-
-  // 이미 초기화된 경우 정리
   cleanup()
 
-  // React 하이드레이션이 완료될 때까지 대기
   setTimeout(() => {
     createUI()
   }, 2000)
 }
 
 function cleanup() {
-  document.getElementById("selectchatgpt-floating")?.remove()
-  document.getElementById("selectchatgpt-overlay")?.remove()
-  // 기존 체크박스들 제거
+  document.getElementById("selectchatgpt-actionbar")?.remove()
   document.querySelectorAll('.selectchatgpt-checkbox-wrapper').forEach(el => el.remove())
-  checkboxOverlay = null
   messageElements = []
+  selectedCount = 0
+}
+
+function updateSelectedCount() {
+  const checkboxes = document.querySelectorAll('.selectchatgpt-checkbox-wrapper input:checked')
+  selectedCount = checkboxes.length
+  updateActionBar()
+}
+
+function updateActionBar() {
+  const countEl = document.getElementById('selectchatgpt-count')
+  const shareBtn = document.getElementById('selectchatgpt-share-btn') as HTMLButtonElement
+
+  if (countEl) {
+    countEl.textContent = `${selectedCount} / ${messageElements.length} selected`
+  }
+  if (shareBtn) {
+    shareBtn.disabled = selectedCount === 0
+    shareBtn.style.opacity = selectedCount === 0 ? '0.5' : '1'
+    shareBtn.style.cursor = selectedCount === 0 ? 'not-allowed' : 'pointer'
+  }
 }
 
 function createUI() {
-  // 플로팅 버튼 생성
-  const floatingButton = document.createElement("div")
-  floatingButton.id = "selectchatgpt-floating"
-  floatingButton.innerHTML = `
-    <button style="
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: #10a37f;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-family: system-ui, sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    ">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M9 11l3 3L22 4"/>
-        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-      </svg>
-      SelectChatGPT
-    </button>
-  `
-  document.body.appendChild(floatingButton)
-
-  // 메시지 찾기 및 체크박스 직접 삽입 (오버레이 대신)
+  // 메시지 찾기 및 체크박스 삽입
   createCheckboxes()
 
-  // 버튼 클릭 이벤트
-  floatingButton.querySelector("button")?.addEventListener("click", () => {
+  // 플로팅 액션 바 생성
+  const actionBar = document.createElement("div")
+  actionBar.id = "selectchatgpt-actionbar"
+  actionBar.innerHTML = `
+    <div style="
+      position: fixed;
+      bottom: 140px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border-radius: 9999px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15), 0 2px 10px rgba(0,0,0,0.1);
+      border: 1px solid #e5e7eb;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 10000;
+      font-family: system-ui, -apple-system, sans-serif;
+    ">
+      <span id="selectchatgpt-count" style="
+        font-size: 14px;
+        color: #4b5563;
+        font-weight: 500;
+        min-width: 110px;
+      ">${selectedCount} / ${messageElements.length} selected</span>
+
+      <div style="width: 1px; height: 24px; background: #e5e7eb;"></div>
+
+      <button id="selectchatgpt-selectall-btn" style="
+        padding: 6px 12px;
+        font-size: 14px;
+        color: #374151;
+        background: transparent;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+      ">Select All</button>
+
+      <button id="selectchatgpt-clear-btn" style="
+        padding: 6px 12px;
+        font-size: 14px;
+        color: #374151;
+        background: transparent;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+      ">Clear</button>
+
+      <div style="width: 1px; height: 24px; background: #e5e7eb;"></div>
+
+      <button id="selectchatgpt-share-btn" style="
+        padding: 10px 20px;
+        font-size: 14px;
+        color: white;
+        background: #10a37f;
+        border: none;
+        border-radius: 9999px;
+        cursor: pointer;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        opacity: 0.5;
+      " disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+          <polyline points="16 6 12 2 8 6"/>
+          <line x1="12" y1="2" x2="12" y2="15"/>
+        </svg>
+        Share
+      </button>
+    </div>
+  `
+  document.body.appendChild(actionBar)
+
+  // 버튼 호버 효과
+  const selectAllBtn = document.getElementById('selectchatgpt-selectall-btn')!
+  const clearBtn = document.getElementById('selectchatgpt-clear-btn')!
+  const shareBtn = document.getElementById('selectchatgpt-share-btn')!
+
+  ;[selectAllBtn, clearBtn].forEach(btn => {
+    btn.addEventListener('mouseenter', () => { btn.style.background = '#f3f4f6' })
+    btn.addEventListener('mouseleave', () => { btn.style.background = 'transparent' })
+  })
+
+  shareBtn.addEventListener('mouseenter', () => {
+    if (!shareBtn.disabled) shareBtn.style.background = '#0d8a6a'
+  })
+  shareBtn.addEventListener('mouseleave', () => {
+    shareBtn.style.background = '#10a37f'
+  })
+
+  // Select All 버튼
+  selectAllBtn.addEventListener('click', () => {
+    const checkboxes = document.querySelectorAll('.selectchatgpt-checkbox-wrapper input') as NodeListOf<HTMLInputElement>
+    const allSelected = selectedCount === messageElements.length
+    checkboxes.forEach(cb => { cb.checked = !allSelected })
+    selectAllBtn.textContent = allSelected ? 'Select All' : 'Deselect All'
+    updateSelectedCount()
+  })
+
+  // Clear 버튼
+  clearBtn.addEventListener('click', () => {
+    const checkboxes = document.querySelectorAll('.selectchatgpt-checkbox-wrapper input') as NodeListOf<HTMLInputElement>
+    checkboxes.forEach(cb => { cb.checked = false })
+    selectAllBtn.textContent = 'Select All'
+    updateSelectedCount()
+  })
+
+  // Share 버튼
+  shareBtn.addEventListener('click', async () => {
+    if (selectedCount === 0) return
+
     const selected = getSelectedMessages()
-    if (selected.length === 0) {
-      alert("선택된 메시지가 없습니다. 메시지 옆의 체크박스를 클릭하세요.")
-      return
+    if (selected.length === 0) return
+
+    shareBtn.disabled = true
+    shareBtn.innerHTML = `
+      <svg style="animation: spin 1s linear infinite;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" opacity="0.25"/>
+        <path d="M4 12a8 8 0 018-8" opacity="0.75"/>
+      </svg>
+      Creating...
+    `
+
+    // 스피너 애니메이션 추가
+    if (!document.getElementById('selectchatgpt-spinner-style')) {
+      const style = document.createElement('style')
+      style.id = 'selectchatgpt-spinner-style'
+      style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }'
+      document.head.appendChild(style)
     }
-    console.log("[SelectChatGPT] Selected messages:", selected)
-    createShareLink(selected)
+
+    await createShareLink(selected)
+
+    shareBtn.disabled = selectedCount === 0
+    shareBtn.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+        <polyline points="16 6 12 2 8 6"/>
+        <line x1="12" y1="2" x2="12" y2="15"/>
+      </svg>
+      Share
+    `
+    updateActionBar()
   })
 }
 
 function findMessageContainers(): NodeListOf<Element> | Element[] {
-  // 여러 가능한 선택자를 시도
   const selectors = [
     '[data-message-author-role]',
     '[data-message-id]',
@@ -99,7 +218,6 @@ function findMessageContainers(): NodeListOf<Element> | Element[] {
     '[class*="agent-turn"]',
     '[class*="user-turn"]',
     '.text-base[class*="group"]',
-    'div[data-testid="conversation-turn-2"]',
   ]
 
   for (const selector of selectors) {
@@ -114,10 +232,8 @@ function findMessageContainers(): NodeListOf<Element> | Element[] {
     }
   }
 
-  // 최후의 방법: 대화 구조 패턴 탐지
   const conversationContainer = document.querySelector('[class*="conversation"], main, [role="main"]')
   if (conversationContainer) {
-    // 직접 자식 중 반복되는 구조 찾기
     const children = Array.from(conversationContainer.children)
     const potentialMessages = children.filter(el => {
       const hasText = el.textContent && el.textContent.trim().length > 10
@@ -125,7 +241,6 @@ function findMessageContainers(): NodeListOf<Element> | Element[] {
       return hasText && hasAvatar
     })
     if (potentialMessages.length > 0) {
-      console.log(`[SelectChatGPT] Found messages via pattern matching: ${potentialMessages.length}`)
       return potentialMessages
     }
   }
@@ -134,25 +249,20 @@ function findMessageContainers(): NodeListOf<Element> | Element[] {
 }
 
 function detectMessageRole(container: Element): string {
-  // 역할 감지 시도
   const role = container.getAttribute('data-message-author-role')
   if (role) return role
 
-  // 클래스명에서 힌트 찾기
   const className = container.className || ''
   if (className.includes('user') || className.includes('human')) return 'user'
   if (className.includes('assistant') || className.includes('agent') || className.includes('gpt')) return 'assistant'
 
-  // data-testid에서 힌트 찾기
   const testId = container.getAttribute('data-testid') || ''
   if (testId.includes('user')) return 'user'
   if (testId.includes('assistant')) return 'assistant'
 
-  // 아바타/아이콘으로 추측
   const hasGPTIcon = container.querySelector('[class*="gpt"], [class*="openai"]')
   if (hasGPTIcon) return 'assistant'
 
-  // 위치 기반 추측 (홀수=user, 짝수=assistant)
   const parent = container.parentElement
   if (parent) {
     const siblings = Array.from(parent.children)
@@ -164,20 +274,17 @@ function detectMessageRole(container: Element): string {
 }
 
 function createCheckboxes() {
-  // ChatGPT 공유 페이지의 메시지 컨테이너 찾기
   const containers = findMessageContainers()
   messageElements = Array.from(containers)
 
   console.log("[SelectChatGPT] Found message containers:", messageElements.length)
 
   messageElements.forEach((container, index) => {
-    // 이미 체크박스가 있으면 스킵
     if (container.querySelector('.selectchatgpt-checkbox-wrapper')) return
 
     const role = detectMessageRole(container)
     const htmlContainer = container as HTMLElement
 
-    // 컨테이너의 position이 static이면 relative로 변경
     const computedStyle = window.getComputedStyle(htmlContainer)
     if (computedStyle.position === 'static') {
       htmlContainer.style.position = 'relative'
@@ -210,13 +317,11 @@ function createCheckboxes() {
       display: block;
     `
 
-    // 클릭 이벤트 전파 방지 (React 간섭 방지)
-    checkbox.addEventListener('click', (e) => {
-      e.stopPropagation()
+    checkbox.addEventListener('change', () => {
+      updateSelectedCount()
     })
-    checkboxWrapper.addEventListener('click', (e) => {
-      e.stopPropagation()
-    })
+    checkbox.addEventListener('click', (e) => e.stopPropagation())
+    checkboxWrapper.addEventListener('click', (e) => e.stopPropagation())
 
     checkboxWrapper.appendChild(checkbox)
     htmlContainer.appendChild(checkboxWrapper)
@@ -234,18 +339,15 @@ function getSelectedMessages(): Array<{id: string, role: string, content: string
     const container = messageElements[index]
     if (!container) return
 
-    // role은 반드시 'user' 또는 'assistant'여야 함
     let role = checkbox.dataset.role || detectMessageRole(container)
     if (role !== 'user' && role !== 'assistant') {
-      role = 'user' // 기본값
+      role = 'user'
     }
 
-    // 메시지 ID 추출 시도 (data-message-id 등)
     const messageId = container.getAttribute('data-message-id') ||
                       container.getAttribute('data-testid') ||
                       `msg-${index}-${Date.now()}`
 
-    // 콘텐츠 요소 찾기 - 여러 가능한 선택자 시도
     const contentSelectors = [
       '.markdown',
       '.whitespace-pre-wrap',
@@ -263,7 +365,6 @@ function getSelectedMessages(): Array<{id: string, role: string, content: string
       }
     }
 
-    // 콘텐츠 요소를 못 찾으면 컨테이너 전체 텍스트 사용
     const content = contentEl?.textContent || container.textContent || ''
     const html = contentEl?.innerHTML || container.innerHTML || ''
 
@@ -300,9 +401,8 @@ async function createShareLink(messages: Array<{id: string, role: string, conten
 
     const data = await response.json()
 
-    // 클립보드에 복사
-    await navigator.clipboard.writeText(data.url)
-    alert(`공유 링크가 생성되어 클립보드에 복사되었습니다!\n\n${data.url}`)
+    // 새 탭에서 공유 페이지 열기
+    window.open(data.url, '_blank')
 
   } catch (error) {
     console.error('[SelectChatGPT] Error:', error)
@@ -317,15 +417,13 @@ if (document.readyState === 'loading') {
   init()
 }
 
-// SPA 네비게이션 대응 (ChatGPT 페이지에서만)
+// SPA 네비게이션 대응
 let lastUrl = location.href
 if (isChatGPTSharePage()) {
   new MutationObserver(() => {
     if (location.href !== lastUrl) {
       lastUrl = location.href
-      // 페이지가 변경되면 기존 UI 정리
       cleanup()
-      // ChatGPT 공유 페이지인 경우에만 다시 초기화
       if (isChatGPTSharePage()) {
         setTimeout(init, 1000)
       }
