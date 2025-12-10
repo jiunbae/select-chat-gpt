@@ -1,6 +1,9 @@
 // Content Script for ChatGPT Share Pages
 console.log("[SelectChatGPT] Content script loaded!")
 
+// API URL 설정
+const API_BASE_URL = process.env.PLASMO_PUBLIC_API_URL || 'https://api.selectchatgpt.jiun.dev'
+
 // 전역 상태
 let checkboxOverlay: HTMLDivElement | null = null
 let messageElements: Element[] = []
@@ -279,7 +282,7 @@ async function createShareLink(messages: Array<{id: string, role: string, conten
   const title = document.querySelector('h1')?.textContent || 'ChatGPT Conversation'
 
   try {
-    const response = await fetch('http://localhost:3001/api/shares', {
+    const response = await fetch(`${API_BASE_URL}/api/shares`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

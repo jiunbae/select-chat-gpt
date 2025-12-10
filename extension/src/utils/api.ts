@@ -1,6 +1,6 @@
 import type { ShareRequest, ShareResponse } from "~src/types"
 
-const API_BASE_URL = process.env.PLASMO_PUBLIC_API_URL || 'http://localhost:3001'
+const API_BASE_URL = process.env.PLASMO_PUBLIC_API_URL || 'https://api.selectchatgpt.jiun.dev'
 
 export async function createShare(data: ShareRequest): Promise<ShareResponse> {
   const response = await fetch(`${API_BASE_URL}/api/shares`, {

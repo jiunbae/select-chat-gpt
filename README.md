@@ -27,7 +27,7 @@ select-chat-gpt/
 - Docker & Docker Compose (MongoDB 실행용)
 - pnpm
 
-### 빠른 시작 (Docker 사용)
+### 빠른 시작
 
 ```bash
 # 1. 저장소 클론
@@ -44,16 +44,32 @@ cp server/.env.example server/.env
 pnpm docker:db
 
 # 5. 개발 서버 실행
-pnpm dev:server  # 터미널 1
-pnpm dev:web     # 터미널 2
-pnpm dev:ext     # 터미널 3
+pnpm dev
 ```
 
-### Docker로 전체 서비스 실행 (프로덕션)
+## 개발 환경
+
+### 방법 1: 한 번에 실행 (권장)
 
 ```bash
-# 전체 빌드 및 실행 (MongoDB + Server + Web)
-pnpm docker:up
+pnpm docker:db   # MongoDB 실행
+pnpm dev         # Server + Web + Extension 모두 실행 (핫 리로드)
+```
+
+### 방법 2: 개별 실행
+
+```bash
+pnpm docker:db    # MongoDB 실행
+pnpm dev:server   # 터미널 1 - 백엔드 서버
+pnpm dev:web      # 터미널 2 - 웹 프론트엔드
+pnpm dev:ext      # 터미널 3 - 크롬 확장
+```
+
+### 방법 3: Docker로 전체 실행 (로컬 테스트)
+
+```bash
+pnpm docker:up    # MongoDB + Server + Web 전부 Docker로 실행
+pnpm dev:ext      # Extension만 별도 실행
 
 # 로그 확인
 pnpm docker:logs
@@ -62,22 +78,28 @@ pnpm docker:logs
 pnpm docker:down
 ```
 
+### 환경별 API URL
+
+| 환경 | Extension API URL | 설정 파일 |
+|------|-------------------|-----------|
+| 개발 (`pnpm dev:ext`) | `http://localhost:3001` | `extension/.env.development` |
+| 프로덕션 (`pnpm build:ext`) | `https://api.selectchatgpt.jiun.dev` | `extension/.env.production` |
+
 ### pnpm 명령어
 
 | 명령어 | 설명 |
 |--------|------|
 | `pnpm install` | 모든 의존성 설치 |
-| `pnpm dev` | 모든 서비스 동시 실행 |
+| `pnpm dev` | 모든 서비스 동시 실행 (Server + Web + Extension) |
 | `pnpm dev:server` | 백엔드 서버만 실행 |
 | `pnpm dev:web` | 웹 프론트엔드만 실행 |
-| `pnpm dev:ext` | 크롬 확장만 실행 |
+| `pnpm dev:ext` | 크롬 확장만 실행 (개발 모드) |
+| `pnpm build` | 전체 빌드 |
+| `pnpm build:ext` | 크롬 확장 프로덕션 빌드 |
 | `pnpm docker:db` | MongoDB만 Docker로 실행 |
 | `pnpm docker:up` | 전체 서비스 Docker로 실행 |
 | `pnpm docker:down` | Docker 서비스 중지 |
-| `pnpm docker:build:registry` | Private Registry용 이미지 빌드 |
-| `pnpm docker:push` | Private Registry에 이미지 Push |
-| `pnpm docker:release` | 빌드 + Push 한 번에 실행 |
-| `pnpm build` | 전체 빌드 |
+| `pnpm docker:release` | 이미지 빌드 + Registry Push |
 
 ### 환경 변수
 
@@ -189,7 +211,7 @@ kubectl get pods -n selectchatgpt
 
 ### 업데이트 배포
 
-코드 변경 후 업데이트:
+#### 서버 배포 (Server + Web)
 
 ```bash
 # 1. 이미지 빌드 & Push
@@ -201,6 +223,28 @@ kubectl rollout restart deployment/web -n selectchatgpt
 
 # 3. 상태 확인
 kubectl get pods -n selectchatgpt -w
+```
+
+#### Extension 배포
+
+```bash
+# 프로덕션 빌드 (api.selectchatgpt.jiun.dev 사용)
+pnpm build:ext
+
+# 결과물: extension/build/chrome-mv3-prod/
+# Chrome 웹 스토어에 업로드 또는 직접 배포
+```
+
+#### 전체 배포 (서버 + Extension)
+
+```bash
+# 1. 서버 배포
+pnpm docker:release
+kubectl rollout restart deployment/server -n selectchatgpt
+kubectl rollout restart deployment/web -n selectchatgpt
+
+# 2. Extension 빌드
+pnpm build:ext
 ```
 
 ### 로그 확인

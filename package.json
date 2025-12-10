@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "pnpm -r --parallel run dev",
-    "dev:ext": "pnpm --filter extension dev",
+    "dev:ext": "pnpm --filter select-chatgpt dev",
+    "build:ext": "pnpm --filter select-chatgpt build",
     "dev:server": "pnpm --filter select-chatgpt-server dev",
     "dev:web": "pnpm --filter select-chatgpt-web dev",
     "build": "pnpm -r run build",
