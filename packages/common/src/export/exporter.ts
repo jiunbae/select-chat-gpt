@@ -138,11 +138,53 @@ export function sanitizeFilename(filename: string): string {
 
 export function downloadAsImage(canvas: HTMLCanvasElement, filename: string): void {
   try {
-    const link = document.createElement('a');
-    link.download = `${filename}.png`;
-    link.href = canvas.toDataURL('image/png', 1.0);
-    link.click();
-  } catch {
+    console.log('[Export] downloadAsImage called, canvas size:', canvas.width, 'x', canvas.height);
+
+    // Check if canvas is too large
+    const maxSize = 16384; // Common browser limit
+    if (canvas.width > maxSize || canvas.height > maxSize) {
+      console.warn('[Export] Canvas exceeds max size, scaling down');
+      // Scale down the canvas
+      const scale = Math.min(maxSize / canvas.width, maxSize / canvas.height);
+      const scaledCanvas = document.createElement('canvas');
+      scaledCanvas.width = Math.floor(canvas.width * scale);
+      scaledCanvas.height = Math.floor(canvas.height * scale);
+      const ctx = scaledCanvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+        canvas = scaledCanvas;
+        console.log('[Export] Scaled canvas to:', scaledCanvas.width, 'x', scaledCanvas.height);
+      }
+    }
+
+    const dataUrl = canvas.toDataURL('image/png', 1.0);
+    console.log('[Export] dataUrl length:', dataUrl.length, 'starts with:', dataUrl.slice(0, 50));
+
+    if (!dataUrl || dataUrl === 'data:,') {
+      throw new Error('Canvas toDataURL returned empty');
+    }
+
+    // Use blob for large images (more reliable)
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        console.error('[Export] toBlob returned null');
+        // Fallback to dataURL
+        const link = document.createElement('a');
+        link.download = `${filename}.png`;
+        link.href = dataUrl;
+        link.click();
+        return;
+      }
+      console.log('[Export] Blob size:', blob.size);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `${filename}.png`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png', 1.0);
+  } catch (e) {
+    console.error('[Export] downloadAsImage error:', e);
     throw new ExportError('Failed to download image', 'DOWNLOAD_FAILED');
   }
 }
