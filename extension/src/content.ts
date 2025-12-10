@@ -1,8 +1,7 @@
 // Content Script for ChatGPT Share Pages
-console.log("[SelectChatGPT] Content script loaded!")
+import { createShare, NetworkError, getErrorMessage, isOnline } from "~src/utils/api"
 
-// API URL 설정
-const API_BASE_URL = process.env.PLASMO_PUBLIC_API_URL || 'https://api.selectchatgpt.jiun.dev'
+console.log("[SelectChatGPT] Content script loaded!")
 
 // 전역 상태
 let checkboxOverlay: HTMLDivElement | null = null
@@ -86,7 +85,7 @@ function createUI() {
       return
     }
     console.log("[SelectChatGPT] Selected messages:", selected)
-    createShareLink(selected)
+    createShareLinkHandler(selected)
   })
 }
 
@@ -278,35 +277,175 @@ function getSelectedMessages(): Array<{id: string, role: string, content: string
   return messages
 }
 
-async function createShareLink(messages: Array<{id: string, role: string, content: string, html: string}>) {
+async function createShareLinkHandler(messages: Array<{id: string, role: string, content: string, html: string}>) {
   const title = document.querySelector('h1')?.textContent || 'ChatGPT Conversation'
 
+  // 오프라인 상태 사전 체크
+  if (!isOnline()) {
+    showErrorToast('인터넷 연결이 끊겼습니다. 네트워크 연결을 확인해주세요.')
+    return
+  }
+
+  // 로딩 표시
+  showLoadingToast('공유 링크 생성 중...')
+
   try {
-    const response = await fetch(`${API_BASE_URL}/api/shares`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        title,
-        sourceUrl: window.location.href,
-        messages
-      })
+    const data = await createShare({
+      title,
+      sourceUrl: window.location.href,
+      messages: messages.map(m => ({
+        ...m,
+        role: m.role as 'user' | 'assistant'
+      }))
     })
 
-    if (!response.ok) {
-      throw new Error('Failed to create share')
-    }
-
-    const data = await response.json()
+    hideToast()
 
     // 클립보드에 복사
     await navigator.clipboard.writeText(data.url)
-    alert(`공유 링크가 생성되어 클립보드에 복사되었습니다!\n\n${data.url}`)
+    showSuccessToast(`공유 링크가 클립보드에 복사되었습니다!\n${data.url}`)
 
   } catch (error) {
+    hideToast()
     console.error('[SelectChatGPT] Error:', error)
-    alert('공유 링크 생성에 실패했습니다. 서버가 실행 중인지 확인해주세요.')
+
+    if (error instanceof NetworkError) {
+      showErrorToast(getErrorMessage(error))
+    } else if (error instanceof Error) {
+      showErrorToast(error.message || '공유 링크 생성에 실패했습니다.')
+    } else {
+      showErrorToast('알 수 없는 오류가 발생했습니다.')
+    }
+  }
+}
+
+// Toast 알림 UI 함수들
+let currentToast: HTMLDivElement | null = null
+
+function createToastElement(): HTMLDivElement {
+  if (currentToast) {
+    currentToast.remove()
+  }
+
+  const toast = document.createElement('div')
+  toast.id = 'selectchatgpt-toast'
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+    z-index: 10001;
+    max-width: 350px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideIn 0.3s ease;
+  `
+
+  // 애니메이션 스타일 추가
+  if (!document.getElementById('selectchatgpt-toast-style')) {
+    const style = document.createElement('style')
+    style.id = 'selectchatgpt-toast-style'
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+    `
+    document.head.appendChild(style)
+  }
+
+  document.body.appendChild(toast)
+  currentToast = toast
+  return toast
+}
+
+function showLoadingToast(message: string) {
+  const toast = createToastElement()
+  toast.style.background = '#f0f0f0'
+  toast.style.color = '#333'
+  toast.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+      <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+    </svg>
+    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+    <span>${message}</span>
+  `
+}
+
+function showSuccessToast(message: string) {
+  const toast = createToastElement()
+  toast.style.background = '#10a37f'
+  toast.style.color = 'white'
+  toast.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M9 12l2 2 4-4"/>
+      <circle cx="12" cy="12" r="10"/>
+    </svg>
+    <span style="white-space: pre-line;">${message}</span>
+  `
+
+  // 10초 후 자동 닫기
+  setTimeout(() => {
+    if (currentToast === toast) {
+      hideToast()
+    }
+  }, 10000)
+}
+
+function showErrorToast(message: string) {
+  const toast = createToastElement()
+  toast.style.background = '#ef4444'
+  toast.style.color = 'white'
+  toast.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 8v4"/>
+      <circle cx="12" cy="16" r="1" fill="currentColor"/>
+    </svg>
+    <span>${message}</span>
+    <button class="selectchatgpt-toast-close" style="
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      padding: 4px;
+      margin-left: auto;
+      opacity: 0.7;
+    ">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
+  `
+
+  // 닫기 버튼 이벤트 (Content Script에서는 inline onclick이 동작하지 않음)
+  const closeBtn = toast.querySelector('.selectchatgpt-toast-close')
+  closeBtn?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    hideToast()
+  })
+
+  // 에러는 자동으로 닫히지 않음 - 사용자가 직접 닫아야 함
+}
+
+function hideToast() {
+  if (currentToast) {
+    const toastToRemove = currentToast // 삭제할 toast를 로컬 변수로 캡처
+    currentToast = null // 즉시 null로 설정하여 새 toast 생성 가능하게 함
+    toastToRemove.style.animation = 'slideOut 0.3s ease forwards'
+    setTimeout(() => {
+      toastToRemove.remove()
+    }, 300)
   }
 }
 
