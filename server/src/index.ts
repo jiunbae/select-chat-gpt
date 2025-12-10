@@ -6,6 +6,7 @@ import mongoose from 'mongoose'
 import dotenv from 'dotenv'
 
 import shareRoutes from './routes/share.js'
+import parseRoutes from './routes/parse.js'
 
 dotenv.config()
 
@@ -36,6 +37,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter)
 
 app.use('/api/shares', shareRoutes)
+app.use('/api/parse', parseRoutes)
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })

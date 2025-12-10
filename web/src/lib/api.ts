@@ -99,6 +99,66 @@ async function fetchWithErrorHandling(
   }
 }
 
+export interface ParseResult {
+  shareId: string;
+  shareUrl: string;
+}
+
+export async function parseUrl(url: string): Promise<ApiResult<ParseResult>> {
+  try {
+    const apiUrl = getApiBaseUrl();
+
+    const response = await fetchWithErrorHandling(`${apiUrl}/api/parse`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status >= 500) {
+        return {
+          success: false,
+          error: new NetworkError('server_error', data.error || 'Server error', response.status)
+        };
+      }
+      return {
+        success: false,
+        error: new NetworkError('unknown', data.error || 'Failed to parse URL')
+      };
+    }
+
+    if (!data.success) {
+      return {
+        success: false,
+        error: new NetworkError('unknown', data.error || 'Failed to parse URL')
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        shareId: data.shareId,
+        shareUrl: data.shareUrl
+      }
+    };
+  } catch (error) {
+    console.error("Failed to parse URL:", error);
+
+    if (error instanceof NetworkError) {
+      return { success: false, error };
+    }
+
+    return {
+      success: false,
+      error: new NetworkError('unknown', error instanceof Error ? error.message : 'Unknown error')
+    };
+  }
+}
+
 export async function getShare(id: string): Promise<ApiResult<ShareData>> {
   try {
     const apiUrl = getApiBaseUrl();

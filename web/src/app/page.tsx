@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { UrlInput } from "@/components/UrlInput";
 
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-8 bg-gradient-to-b from-white to-gray-50 dark:from-chatgpt-dark dark:to-gray-900">
-      <div className="max-w-2xl text-center">
+      <div className="max-w-2xl w-full text-center">
+        {/* Header */}
         <div className="mb-8">
           <div className="w-20 h-20 mx-auto bg-primary rounded-2xl flex items-center justify-center mb-6">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
@@ -20,9 +22,27 @@ export default function Home() {
           </p>
         </div>
 
+        {/* URL Input Section */}
+        <div className="mb-8">
+          <UrlInput />
+        </div>
+
+        {/* Divider */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-4 bg-gradient-to-b from-white to-gray-50 dark:from-chatgpt-dark dark:to-gray-900 text-gray-500 dark:text-gray-400">
+              or use the extension for more control
+            </span>
+          </div>
+        </div>
+
+        {/* How it works */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            How it works
+            How it works with Extension
           </h2>
           <ol className="text-left text-gray-600 dark:text-gray-400 space-y-4">
             <li className="flex items-start gap-3">
@@ -52,6 +72,7 @@ export default function Home() {
           </ol>
         </div>
 
+        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="https://chrome.google.com/webstore"
