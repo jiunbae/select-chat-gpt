@@ -132,6 +132,7 @@ function SharePageContent({ share }: SharePageClientProps) {
             <Message
               key={message.id}
               message={message}
+              styleType={styleType}
               fontSize={fontSize}
               lineHeight={lineHeight}
               letterSpacing={letterSpacing}
