@@ -440,10 +440,11 @@ function showErrorToast(message: string) {
 
 function hideToast() {
   if (currentToast) {
-    currentToast.style.animation = 'slideOut 0.3s ease forwards'
+    const toastToRemove = currentToast // 삭제할 toast를 로컬 변수로 캡처
+    currentToast = null // 즉시 null로 설정하여 새 toast 생성 가능하게 함
+    toastToRemove.style.animation = 'slideOut 0.3s ease forwards'
     setTimeout(() => {
-      currentToast?.remove()
-      currentToast = null
+      toastToRemove.remove()
     }, 300)
   }
 }
