@@ -136,54 +136,76 @@ export function sanitizeFilename(filename: string): string {
     .slice(0, 100);
 }
 
-export function downloadAsImage(canvas: HTMLCanvasElement, filename: string): void {
-  try {
-    console.log('[Export] downloadAsImage called, canvas size:', canvas.width, 'x', canvas.height);
+function downloadCanvasPart(
+  canvas: HTMLCanvasElement,
+  filename: string,
+  startY: number,
+  height: number,
+  partNumber?: number
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const partCanvas = document.createElement('canvas');
+    partCanvas.width = canvas.width;
+    partCanvas.height = height;
+    const ctx = partCanvas.getContext('2d');
 
-    // Check if canvas is too large - crop instead of scale to maintain readability
-    const maxHeight = 16384; // Common browser limit
-    let outputCanvas = canvas;
-
-    if (canvas.height > maxHeight) {
-      console.warn('[Export] Canvas exceeds max height, cropping to first', maxHeight, 'pixels');
-      const croppedCanvas = document.createElement('canvas');
-      croppedCanvas.width = canvas.width;
-      croppedCanvas.height = maxHeight;
-      const ctx = croppedCanvas.getContext('2d');
-      if (ctx) {
-        // Crop from top, keeping full width
-        ctx.drawImage(canvas, 0, 0, canvas.width, maxHeight, 0, 0, canvas.width, maxHeight);
-        outputCanvas = croppedCanvas;
-        console.log('[Export] Cropped canvas to:', croppedCanvas.width, 'x', croppedCanvas.height);
-      }
+    if (!ctx) {
+      reject(new Error('Failed to get canvas context'));
+      return;
     }
 
-    const dataUrl = outputCanvas.toDataURL('image/png', 1.0);
-    console.log('[Export] dataUrl length:', dataUrl.length, 'starts with:', dataUrl.slice(0, 50));
+    ctx.drawImage(canvas, 0, startY, canvas.width, height, 0, 0, canvas.width, height);
 
-    if (!dataUrl || dataUrl === 'data:,') {
-      throw new Error('Canvas toDataURL returned empty');
-    }
+    const suffix = partNumber !== undefined ? `_${partNumber}` : '';
+    const fullFilename = `${filename}${suffix}.png`;
 
-    // Use blob for large images (more reliable)
-    outputCanvas.toBlob((blob) => {
+    partCanvas.toBlob((blob) => {
       if (!blob) {
-        console.error('[Export] toBlob returned null');
-        // Fallback to dataURL
-        const link = document.createElement('a');
-        link.download = `${filename}.png`;
-        link.href = dataUrl;
-        link.click();
+        reject(new Error('toBlob returned null'));
         return;
       }
-      console.log('[Export] Blob size:', blob.size);
+      console.log(`[Export] Part ${partNumber ?? 1} blob size:`, blob.size);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = `${filename}.png`;
+      link.download = fullFilename;
       link.href = url;
       link.click();
       URL.revokeObjectURL(url);
+      resolve();
     }, 'image/png', 1.0);
+  });
+}
+
+export async function downloadAsImage(canvas: HTMLCanvasElement, filename: string): Promise<void> {
+  try {
+    console.log('[Export] downloadAsImage called, canvas size:', canvas.width, 'x', canvas.height);
+
+    const maxHeight = 16384; // Common browser limit
+
+    if (canvas.height <= maxHeight) {
+      // Single image - no splitting needed
+      await downloadCanvasPart(canvas, filename, 0, canvas.height);
+      return;
+    }
+
+    // Split into multiple images
+    const totalParts = Math.ceil(canvas.height / maxHeight);
+    console.log(`[Export] Canvas too tall, splitting into ${totalParts} parts`);
+
+    for (let i = 0; i < totalParts; i++) {
+      const startY = i * maxHeight;
+      const partHeight = Math.min(maxHeight, canvas.height - startY);
+      console.log(`[Export] Downloading part ${i + 1}/${totalParts}: startY=${startY}, height=${partHeight}`);
+
+      await downloadCanvasPart(canvas, filename, startY, partHeight, i + 1);
+
+      // Small delay between downloads to prevent browser blocking
+      if (i < totalParts - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    console.log(`[Export] Successfully downloaded ${totalParts} images`);
   } catch (e) {
     console.error('[Export] downloadAsImage error:', e);
     throw new ExportError('Failed to download image', 'DOWNLOAD_FAILED');
@@ -261,7 +283,7 @@ export async function exportToImage(
   onProgress?.({ stage: 'downloading', progress: 90 });
 
   const filename = sanitizeFilename(title || 'chatgpt-conversation');
-  downloadAsImage(canvas, filename);
+  await downloadAsImage(canvas, filename);
 
   onProgress?.({ stage: 'downloading', progress: 100 });
 }
