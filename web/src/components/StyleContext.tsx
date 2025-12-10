@@ -51,7 +51,7 @@ interface StyleContextValue {
 const StyleContext = createContext<StyleContextValue | null>(null);
 
 export function StyleProvider({ children }: { children: ReactNode }) {
-  const [styleType, setStyleType] = useState<ExportStyleType>('chatgpt');
+  const [styleType, setStyleType] = useState<ExportStyleType>('clean');
   const [letterSpacing, setLetterSpacing] = useState<LetterSpacing>('normal');
   const [lineHeight, setLineHeight] = useState<LineHeight>('normal');
   const [fontSize, setFontSize] = useState<FontSize>('base');
