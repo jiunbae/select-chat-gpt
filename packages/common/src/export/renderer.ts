@@ -130,9 +130,13 @@ export function createExportableElement(
   const filteredMessages = filterMessages(messages, options);
 
   const container = document.createElement('div');
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
+  // Position off-screen but still renderable by html2canvas
+  container.style.position = 'fixed';
+  container.style.left = '0';
   container.style.top = '0';
+  container.style.zIndex = '-9999';
+  container.style.opacity = '1'; // Must be visible for html2canvas
+  container.style.pointerEvents = 'none';
   applyStyles(container, style.container);
 
   // Title

@@ -77,6 +77,9 @@ export async function renderToCanvas(
   document.body.appendChild(element);
 
   try {
+    // Wait for fonts and images to load
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     const canvas = await html2canvas(element, {
       scale,
       useCORS,
@@ -86,7 +89,11 @@ export async function renderToCanvas(
       foreignObjectRendering: false,
       // Improve rendering quality
       allowTaint: false,
-      removeContainer: true,
+      // Capture the element's actual dimensions
+      width: element.scrollWidth,
+      height: element.scrollHeight,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight,
     });
     return canvas;
   } catch (error) {
