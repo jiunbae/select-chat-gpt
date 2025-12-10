@@ -33,3 +33,31 @@ export class ExportError extends Error {
     this.name = 'ExportError';
   }
 }
+
+// Export styling options
+export type LetterSpacing = 'tighter' | 'tight' | 'normal' | 'wide' | 'wider';
+export type LineHeight = 'tight' | 'snug' | 'normal' | 'relaxed' | 'loose';
+export type FontSize = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl';
+export type MessageGap = 'none' | 'sm' | 'md' | 'lg' | 'xl';
+export type ContentPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
+export type PageSize = 'a4' | 'letter' | 'a5';
+export type Margin = 'compact' | 'normal' | 'wide';
+
+export interface ExportOptions {
+  // Text styling (image/pdf only)
+  letterSpacing?: LetterSpacing;
+  lineHeight?: LineHeight;
+  fontSize?: FontSize;
+
+  // Spacing
+  messageGap?: MessageGap;
+  contentPadding?: ContentPadding;
+
+  // Content filtering (markdown/image/pdf)
+  hideUserMessages?: boolean;
+  hideCodeBlocks?: boolean;
+
+  // Layout (pdf only)
+  pageSize?: PageSize;
+  margin?: Margin;
+}

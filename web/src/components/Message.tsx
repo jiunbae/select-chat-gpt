@@ -1,28 +1,100 @@
 "use client";
 
+import { useMemo } from "react";
 import type { Message as MessageType } from "@/lib/api";
+import {
+  type ExportStyleType,
+  type FontSize,
+  type LineHeight,
+  type LetterSpacing,
+  type MessageGap,
+  type ContentPadding,
+  getFontSizeValue,
+  getLineHeightValue,
+  getLetterSpacingValue,
+  getMessageGapValue,
+  getContentPaddingValue,
+} from "@/lib/export";
 
 interface MessageProps {
   message: MessageType;
+  styleType?: ExportStyleType;
+  fontSize?: FontSize;
+  lineHeight?: LineHeight;
+  letterSpacing?: LetterSpacing;
+  messageGap?: MessageGap;
+  contentPadding?: ContentPadding;
+  hideCodeBlocks?: boolean;
 }
 
-export function Message({ message }: MessageProps) {
+// Remove code blocks from HTML
+function removeCodeBlocks(html: string): string {
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+  temp.querySelectorAll('pre').forEach(el => el.remove());
+  return temp.innerHTML;
+}
+
+export function Message({
+  message,
+  styleType = 'chatgpt',
+  fontSize = 'base',
+  lineHeight = 'normal',
+  letterSpacing = 'normal',
+  messageGap = 'md',
+  contentPadding = 'md',
+  hideCodeBlocks = false,
+}: MessageProps) {
   const isUser = message.role === "user";
+  const isCleanStyle = styleType === 'clean';
+
+  // Dynamic content styles
+  const contentStyle = useMemo(() => ({
+    fontSize: getFontSizeValue(fontSize),
+    lineHeight: getLineHeightValue(lineHeight),
+    letterSpacing: getLetterSpacingValue(letterSpacing),
+    fontFamily: isCleanStyle ? 'Georgia, "Times New Roman", serif' : 'inherit',
+  }), [fontSize, lineHeight, letterSpacing, isCleanStyle]);
+
+  // Dynamic container styles based on styleType
+  const containerStyle = useMemo(() => ({
+    paddingTop: getMessageGapValue(messageGap),
+    paddingBottom: getMessageGapValue(messageGap),
+    backgroundColor: isCleanStyle
+      ? (isUser ? '#ffffff' : '#f9fafb')
+      : (isUser ? '#212121' : '#1a1a1a'), // ChatGPT dark style
+  }), [messageGap, isCleanStyle, isUser]);
+
+  // Dynamic inner padding styles
+  const innerStyle = useMemo(() => ({
+    paddingLeft: getContentPaddingValue(contentPadding),
+    paddingRight: getContentPaddingValue(contentPadding),
+  }), [contentPadding]);
+
+  // Process HTML content
+  const processedHtml = useMemo(() => {
+    const html = message.html || message.content;
+    if (hideCodeBlocks && typeof window !== 'undefined') {
+      return removeCodeBlocks(html);
+    }
+    return html;
+  }, [message.html, message.content, hideCodeBlocks]);
+
+  // Style-specific text colors (using inline styles instead of dark: classes)
+  const textColor = isCleanStyle ? '#1f2937' : '#ffffff';
+  const contentColor = isCleanStyle ? '#374151' : '#e5e7eb';
 
   return (
-    <div
-      className={`py-6 ${
-        isUser ? "bg-white dark:bg-chatgpt-dark" : "bg-gray-50 dark:bg-gray-900"
-      }`}
-    >
-      <div className="max-w-3xl mx-auto px-4">
+    <div style={containerStyle}>
+      <div className="max-w-3xl mx-auto px-4" style={innerStyle}>
         <div className="flex gap-4">
           <div
-            className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-              isUser
-                ? "bg-primary text-white"
-                : "bg-[#19c37d] text-white"
-            }`}
+            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white"
+            style={{
+              backgroundColor: isCleanStyle
+                ? (isUser ? '#4b5563' : '#1f2937')
+                : (isUser ? '#10a37f' : '#19c37d'),
+            }}
           >
             {isUser ? (
               <svg
@@ -49,12 +121,16 @@ export function Message({ message }: MessageProps) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-gray-900 dark:text-white mb-2">
+            <div
+              className="font-semibold mb-2"
+              style={{ color: textColor }}
+            >
               {isUser ? "You" : "ChatGPT"}
             </div>
             <div
-              className="markdown-content text-gray-800 dark:text-gray-200 prose prose-sm dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: message.html || message.content }}
+              className="markdown-content prose prose-sm max-w-none"
+              style={{ ...contentStyle, color: contentColor }}
+              dangerouslySetInnerHTML={{ __html: processedHtml }}
             />
           </div>
         </div>

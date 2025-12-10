@@ -1,5 +1,19 @@
-import type { ExportMessage, ExportStyle, ExportStyleType } from './types';
+import type { ExportMessage, ExportStyle, ExportStyleType, ExportOptions } from './types';
 import { getExportStyle } from './styles';
+
+// Filter messages based on export options
+export function filterMessages(messages: ExportMessage[], options?: ExportOptions): ExportMessage[] {
+  if (!options) return messages;
+
+  let filtered = messages;
+
+  // Filter out user messages if requested
+  if (options.hideUserMessages) {
+    filtered = filtered.filter(m => m.role !== 'user');
+  }
+
+  return filtered;
+}
 
 function applyStyles(element: HTMLElement, styles: Partial<CSSStyleDeclaration>): void {
   Object.assign(element.style, styles);
@@ -7,15 +21,26 @@ function applyStyles(element: HTMLElement, styles: Partial<CSSStyleDeclaration>)
 
 // Remove interactive elements that should not be in the exported output.
 // This is not a security sanitizer.
-function sanitizeHTML(html: string): string {
+function sanitizeHTML(html: string, options?: ExportOptions): string {
   const temp = document.createElement('div');
   temp.innerHTML = html;
   temp.querySelectorAll('button, [role="button"], .copy-button, svg.icon')
     .forEach(el => el.remove());
+
+  // Remove code blocks if requested
+  if (options?.hideCodeBlocks) {
+    temp.querySelectorAll('pre').forEach(el => el.remove());
+  }
+
   return temp.innerHTML;
 }
 
-function processCodeBlocks(container: HTMLElement, style: ExportStyle): void {
+function processCodeBlocks(container: HTMLElement, style: ExportStyle, options?: ExportOptions): void {
+  // Skip processing if code blocks are hidden
+  if (options?.hideCodeBlocks) {
+    return;
+  }
+
   // Style pre > code blocks
   container.querySelectorAll('pre').forEach(pre => {
     applyStyles(pre as HTMLElement, style.codeBlock);
@@ -38,7 +63,8 @@ function processCodeBlocks(container: HTMLElement, style: ExportStyle): void {
 
 export function createMessageElement(
   message: ExportMessage,
-  style: ExportStyle
+  style: ExportStyle,
+  options?: ExportOptions
 ): HTMLDivElement {
   const wrapper = document.createElement('div');
   applyStyles(wrapper, style.messageWrapper);
@@ -55,11 +81,11 @@ export function createMessageElement(
 
   // Content
   const content = document.createElement('div');
-  content.innerHTML = sanitizeHTML(message.html);
+  content.innerHTML = sanitizeHTML(message.html, options);
   applyStyles(content, style.content);
 
   // Process code blocks inside content
-  processCodeBlocks(content, style);
+  processCodeBlocks(content, style, options);
 
   // Style other elements
   content.querySelectorAll('p').forEach(p => {
@@ -95,14 +121,22 @@ export function createMessageElement(
 export function createExportableElement(
   messages: ExportMessage[],
   title: string,
-  styleType: ExportStyleType
+  styleType: ExportStyleType,
+  options?: ExportOptions
 ): HTMLDivElement {
-  const style = getExportStyle(styleType);
+  const style = getExportStyle(styleType, options);
+
+  // Filter messages based on options
+  const filteredMessages = filterMessages(messages, options);
 
   const container = document.createElement('div');
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
+  // Position off-screen but still renderable by html2canvas
+  container.style.position = 'fixed';
+  container.style.left = '0';
   container.style.top = '0';
+  container.style.zIndex = '-9999';
+  container.style.opacity = '1'; // Must be visible for html2canvas
+  container.style.pointerEvents = 'none';
   applyStyles(container, style.container);
 
   // Title
@@ -122,9 +156,9 @@ export function createExportableElement(
   }
 
   // Messages
-  messages.forEach((message, index) => {
-    const msgEl = createMessageElement(message, style);
-    if (index === messages.length - 1) {
+  filteredMessages.forEach((message, index) => {
+    const msgEl = createMessageElement(message, style, options);
+    if (index === filteredMessages.length - 1) {
       msgEl.style.borderBottom = 'none';
     }
     container.appendChild(msgEl);

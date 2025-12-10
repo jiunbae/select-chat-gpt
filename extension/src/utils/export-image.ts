@@ -2,6 +2,12 @@
 export {
   type ExportProgress,
   type RenderOptions,
+  type ExportOptions,
+  type LetterSpacing,
+  type LineHeight,
+  type FontSize,
+  type PageSize,
+  type Margin,
   ExportError,
   exportToImage,
   exportToPDF,
