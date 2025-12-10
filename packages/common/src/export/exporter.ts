@@ -1,20 +1,8 @@
 import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import TurndownService from 'turndown';
-import type { ExportMessage, ExportProgress, ExportStyleType, ExportOptions, PageSize, Margin } from './types';
+import type { ExportMessage, ExportProgress, ExportStyleType, ExportOptions } from './types';
 import { ExportError } from './types';
 import { createExportableElement, filterMessages } from './renderer';
-import { getMarginValue } from './styles';
-
-// Get PDF page format from options
-function getPDFFormat(pageSize?: PageSize): 'a4' | 'letter' | 'a5' {
-  return pageSize || 'a4';
-}
-
-// Get PDF margin value from options
-function getPDFMargin(margin?: Margin): number {
-  return margin ? getMarginValue(margin) / 2.5 : 10; // Convert px to mm approximately
-}
 
 // Get background color based on style type
 function getBackgroundColor(styleType: ExportStyleType): string {
@@ -212,46 +200,206 @@ export async function downloadAsImage(canvas: HTMLCanvasElement, filename: strin
   }
 }
 
+function generatePrintStyles(options?: ExportOptions): string {
+  const margin = options?.margin || 'normal';
+  const marginValue = margin === 'compact' ? '10mm' : margin === 'wide' ? '25mm' : '15mm';
+
+  return `
+    @media print {
+      @page {
+        size: ${options?.pageSize || 'A4'};
+        margin: ${marginValue};
+      }
+      body {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+    }
+    .export-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .export-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #1a1a1a;
+    }
+    .export-subtitle {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    .message-wrapper {
+      padding: 16px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .message-wrapper:last-child {
+      border-bottom: none;
+    }
+    .role-label {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #374151;
+    }
+    .message-content {
+      color: #1f2937;
+    }
+    .message-content p {
+      margin: 0 0 16px 0;
+    }
+    .message-content p:last-child {
+      margin-bottom: 0;
+    }
+    .message-content pre {
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 14px;
+      margin: 16px 0;
+    }
+    .message-content code {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 14px;
+    }
+    .message-content pre code {
+      background: transparent;
+      padding: 0;
+    }
+    .message-content code:not(pre code) {
+      background-color: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .message-content ul, .message-content ol {
+      margin: 0 0 16px 0;
+      padding-left: 24px;
+    }
+    .message-content li {
+      margin-bottom: 8px;
+    }
+    .message-content a {
+      color: #10a37f;
+      text-decoration: underline;
+    }
+    .message-content blockquote {
+      border-left: 3px solid #10a37f;
+      padding-left: 16px;
+      margin: 16px 0;
+      font-style: italic;
+      color: #6b7280;
+    }
+    .message-content table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 16px 0;
+    }
+    .message-content th, .message-content td {
+      border: 1px solid #e5e7eb;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    .message-content th {
+      background-color: #f9fafb;
+      font-weight: 600;
+    }
+  `;
+}
+
+function generatePrintHTML(
+  messages: ExportMessage[],
+  title: string,
+  options?: ExportOptions
+): string {
+  const filteredMessages = options?.hideUserMessages
+    ? messages.filter(m => m.role !== 'user')
+    : messages;
+
+  const messagesHTML = filteredMessages.map(msg => {
+    let content = msg.html;
+
+    // Remove interactive elements
+    const temp = document.createElement('div');
+    temp.innerHTML = content;
+    temp.querySelectorAll('button, [role="button"], .copy-button, svg.icon').forEach(el => el.remove());
+
+    // Remove code blocks if requested
+    if (options?.hideCodeBlocks) {
+      temp.querySelectorAll('pre').forEach(el => el.remove());
+    }
+
+    content = temp.innerHTML;
+
+    return `
+      <div class="message-wrapper">
+        <div class="role-label">${msg.role === 'user' ? 'You' : 'ChatGPT'}</div>
+        <div class="message-content">${content}</div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>${title}</title>
+      <style>${generatePrintStyles(options)}</style>
+    </head>
+    <body>
+      <div class="export-container">
+        <h1 class="export-title">${title}</h1>
+        <div class="export-subtitle">Generated by SelectChatGPT</div>
+        ${messagesHTML}
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 export async function downloadAsPDF(
-  canvas: HTMLCanvasElement,
-  filename: string,
+  messages: ExportMessage[],
+  title: string,
   options?: ExportOptions
 ): Promise<void> {
   try {
-    const format = getPDFFormat(options?.pageSize);
-    const margin = getPDFMargin(options?.margin);
+    const html = generatePrintHTML(messages, title, options);
 
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format,
-    });
-
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-
-    const imgWidth = pageWidth - (margin * 2);
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    const imgData = canvas.toDataURL('image/png', 1.0);
-
-    let heightLeft = imgHeight;
-    let position = margin;
-
-    // First page
-    pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-    heightLeft -= (pageHeight - margin * 2);
-
-    // Additional pages if needed
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight + margin;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-      heightLeft -= (pageHeight - margin * 2);
+    // Open a new window for printing
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      throw new Error('Failed to open print window. Please allow popups.');
     }
 
-    pdf.save(`${filename}.pdf`);
-  } catch {
+    printWindow.document.write(html);
+    printWindow.document.close();
+
+    // Wait for content to load then print
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print();
+        // Close window after print dialog closes (user clicks cancel or finishes)
+        printWindow.onafterprint = () => {
+          printWindow.close();
+        };
+      }, 250);
+    };
+  } catch (e) {
+    console.error('[Export] downloadAsPDF error:', e);
     throw new ExportError('Failed to generate PDF', 'DOWNLOAD_FAILED');
   }
 }
@@ -291,23 +439,15 @@ export async function exportToImage(
 export async function exportToPDF(
   messages: ExportMessage[],
   title: string,
-  styleType: ExportStyleType,
+  _styleType: ExportStyleType,
   onProgress?: (progress: ExportProgress) => void,
   options?: ExportOptions
 ): Promise<void> {
   onProgress?.({ stage: 'preparing', progress: 10 });
-
-  const element = createExportableElement(messages, title, styleType, options);
-
   onProgress?.({ stage: 'rendering', progress: 30 });
-
-  const backgroundColor = getBackgroundColor(styleType);
-  const canvas = await renderToCanvas(element, { backgroundColor });
-
   onProgress?.({ stage: 'generating', progress: 70 });
 
-  const filename = sanitizeFilename(title || 'chatgpt-conversation');
-  await downloadAsPDF(canvas, filename, options);
+  await downloadAsPDF(messages, title, options);
 
   onProgress?.({ stage: 'downloading', progress: 100 });
 }
