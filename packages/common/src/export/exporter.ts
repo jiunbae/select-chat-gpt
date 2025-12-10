@@ -80,21 +80,36 @@ export async function renderToCanvas(
     // Wait for fonts and images to load
     await new Promise(resolve => setTimeout(resolve, 100));
 
+    // Debug: log element dimensions
+    console.log('[Export] Element dimensions:', {
+      scrollWidth: element.scrollWidth,
+      scrollHeight: element.scrollHeight,
+      offsetWidth: element.offsetWidth,
+      offsetHeight: element.offsetHeight,
+      childCount: element.children.length,
+    });
+
     const canvas = await html2canvas(element, {
       scale,
       useCORS,
-      logging: false,
+      logging: true, // Enable logging for debugging
       backgroundColor,
       // Mitigate CSP issues
       foreignObjectRendering: false,
       // Improve rendering quality
       allowTaint: false,
       // Capture the element's actual dimensions
-      width: element.scrollWidth,
-      height: element.scrollHeight,
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight,
+      width: element.scrollWidth || 800,
+      height: element.scrollHeight || 600,
+      windowWidth: element.scrollWidth || 800,
+      windowHeight: element.scrollHeight || 600,
     });
+
+    console.log('[Export] Canvas dimensions:', {
+      width: canvas.width,
+      height: canvas.height,
+    });
+
     return canvas;
   } catch (error) {
     if (error instanceof Error) {
@@ -183,9 +198,17 @@ export async function exportToImage(
   onProgress?: (progress: ExportProgress) => void,
   options?: ExportOptions
 ): Promise<void> {
+  console.log('[Export] Starting exportToImage:', {
+    messageCount: messages.length,
+    title,
+    styleType,
+    options,
+  });
+
   onProgress?.({ stage: 'preparing', progress: 10 });
 
   const element = createExportableElement(messages, title, styleType, options);
+  console.log('[Export] Created element:', element.outerHTML.slice(0, 500));
 
   onProgress?.({ stage: 'rendering', progress: 30 });
 
