@@ -27,9 +27,11 @@ export interface ShareData {
 }
 
 export type ExportFormat = 'png' | 'pdf'
-export type ExportStyleType = 'chatgpt' | 'clean'
+
+// Re-export from common package
+export type { ExportStyleType } from '@selectchatgpt/common/export'
 
 export interface ExportOptions {
   format: ExportFormat
-  styleType: ExportStyleType
+  styleType: import('@selectchatgpt/common/export').ExportStyleType
 }

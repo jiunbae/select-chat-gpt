@@ -12,6 +12,12 @@
     "paths": {
       "~*": [
         "./src/*"
+      ],
+      "@selectchatgpt/common": [
+        "../packages/common/src/index.ts"
+      ],
+      "@selectchatgpt/common/*": [
+        "../packages/common/src/*"
       ]
     },
     "baseUrl": "."

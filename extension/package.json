@@ -12,6 +12,7 @@
   "dependencies": {
     "@plasmohq/messaging": "^0.6.2",
     "@plasmohq/storage": "^1.9.3",
+    "@selectchatgpt/common": "workspace:*",
     "dompurify": "^3.2.4",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.4",

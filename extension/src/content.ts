@@ -44,6 +44,7 @@ function updateSelectedCount() {
 function updateActionBar() {
   const countEl = document.getElementById('selectchatgpt-count')
   const shareBtn = document.getElementById('selectchatgpt-share-btn') as HTMLButtonElement
+  const selectAllBtn = document.getElementById('selectchatgpt-selectall-btn') as HTMLButtonElement
 
   if (countEl) {
     countEl.textContent = `${selectedCount} / ${messageElements.length} selected`
@@ -52,6 +53,10 @@ function updateActionBar() {
     shareBtn.disabled = selectedCount === 0
     shareBtn.style.opacity = selectedCount === 0 ? '0.5' : '1'
     shareBtn.style.cursor = selectedCount === 0 ? 'not-allowed' : 'pointer'
+  }
+  if (selectAllBtn) {
+    const allSelected = messageElements.length > 0 && selectedCount === messageElements.length
+    selectAllBtn.textContent = allSelected ? 'Deselect All' : 'Select All'
   }
 }
 
@@ -159,7 +164,6 @@ function createUI() {
     const checkboxes = document.querySelectorAll('.selectchatgpt-checkbox-wrapper input') as NodeListOf<HTMLInputElement>
     const allSelected = selectedCount === messageElements.length
     checkboxes.forEach(cb => { cb.checked = !allSelected })
-    selectAllBtn.textContent = allSelected ? 'Select All' : 'Deselect All'
     updateSelectedCount()
   })
 
@@ -167,7 +171,6 @@ function createUI() {
   clearBtn.addEventListener('click', () => {
     const checkboxes = document.querySelectorAll('.selectchatgpt-checkbox-wrapper input') as NodeListOf<HTMLInputElement>
     checkboxes.forEach(cb => { cb.checked = false })
-    selectAllBtn.textContent = 'Select All'
     updateSelectedCount()
   })
 
