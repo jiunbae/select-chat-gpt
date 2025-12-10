@@ -69,7 +69,13 @@ body {
 }
 
 .markdown-content pre {
-  @apply my-4 rounded-lg overflow-x-auto;
+  @apply my-4 rounded-lg overflow-x-auto bg-gray-900 dark:bg-gray-950 p-4;
+}
+
+.markdown-content pre code {
+  @apply text-sm font-mono text-gray-100 bg-transparent p-0;
+  white-space: pre;
+  word-wrap: normal;
 }
 
 .markdown-content table {

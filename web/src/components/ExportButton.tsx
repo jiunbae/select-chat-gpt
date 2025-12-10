@@ -169,7 +169,7 @@ export function ExportButton({
   const [internalStyleType, setInternalStyleType] = useState<ExportStyleType>('chatgpt');
   const [letterSpacing, setLetterSpacing] = useState<LetterSpacing>('normal');
   const [lineHeight, setLineHeight] = useState<LineHeight>('normal');
-  const [fontSize, setFontSize] = useState<FontSize>('medium');
+  const [fontSize, setFontSize] = useState<FontSize>('base');
   const [hideUserMessages, setHideUserMessages] = useState(false);
   const [hideCodeBlocks, setHideCodeBlocks] = useState(false);
   const [pageSize, setPageSize] = useState<PageSize>('a4');
@@ -368,34 +368,41 @@ export function ExportButton({
                   onToggle={() => setTextStylingOpen(!textStylingOpen)}
                 >
                   <SelectField
-                    label="Letter Spacing"
-                    value={letterSpacing}
+                    label="Font Size"
+                    value={fontSize}
                     options={[
-                      { value: 'tight', label: 'Tight (-0.5px)' },
-                      { value: 'normal', label: 'Normal (0)' },
-                      { value: 'wide', label: 'Wide (1px)' },
+                      { value: 'xs', label: '12px' },
+                      { value: 'sm', label: '14px' },
+                      { value: 'base', label: '16px' },
+                      { value: 'lg', label: '18px' },
+                      { value: 'xl', label: '20px' },
+                      { value: '2xl', label: '24px' },
                     ]}
-                    onChange={setLetterSpacing}
+                    onChange={setFontSize}
                   />
                   <SelectField
                     label="Line Height"
                     value={lineHeight}
                     options={[
-                      { value: 'compact', label: 'Compact (1.4)' },
-                      { value: 'normal', label: 'Normal (1.75)' },
-                      { value: 'relaxed', label: 'Relaxed (2.0)' },
+                      { value: 'tight', label: '1.25' },
+                      { value: 'snug', label: '1.375' },
+                      { value: 'normal', label: '1.5' },
+                      { value: 'relaxed', label: '1.625' },
+                      { value: 'loose', label: '2.0' },
                     ]}
                     onChange={setLineHeight}
                   />
                   <SelectField
-                    label="Font Size"
-                    value={fontSize}
+                    label="Letter Spacing"
+                    value={letterSpacing}
                     options={[
-                      { value: 'small', label: 'Small (14px)' },
-                      { value: 'medium', label: 'Medium (16px)' },
-                      { value: 'large', label: 'Large (18px)' },
+                      { value: 'tighter', label: '-0.05em' },
+                      { value: 'tight', label: '-0.025em' },
+                      { value: 'normal', label: '0' },
+                      { value: 'wide', label: '0.025em' },
+                      { value: 'wider', label: '0.05em' },
                     ]}
-                    onChange={setFontSize}
+                    onChange={setLetterSpacing}
                   />
                 </CollapsibleSection>
               )}

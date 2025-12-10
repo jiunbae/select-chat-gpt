@@ -3,27 +3,34 @@ import type { ExportStyle, ExportStyleType, ExportOptions, LetterSpacing, LineHe
 // Helper functions for style values
 export function getLetterSpacingValue(spacing: LetterSpacing): string {
   const values: Record<LetterSpacing, string> = {
-    tight: '-0.5px',
+    tighter: '-0.05em',
+    tight: '-0.025em',
     normal: '0',
-    wide: '1px',
+    wide: '0.025em',
+    wider: '0.05em',
   };
   return values[spacing];
 }
 
 export function getLineHeightValue(height: LineHeight): string {
   const values: Record<LineHeight, string> = {
-    compact: '1.4',
-    normal: '1.75',
-    relaxed: '2.0',
+    tight: '1.25',
+    snug: '1.375',
+    normal: '1.5',
+    relaxed: '1.625',
+    loose: '2',
   };
   return values[height];
 }
 
 export function getFontSizeValue(size: FontSize): string {
   const values: Record<FontSize, string> = {
-    small: '14px',
-    medium: '16px',
-    large: '18px',
+    xs: '12px',
+    sm: '14px',
+    base: '16px',
+    lg: '18px',
+    xl: '20px',
+    '2xl': '24px',
   };
   return values[size];
 }

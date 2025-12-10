@@ -35,9 +35,9 @@ export class ExportError extends Error {
 }
 
 // Export styling options
-export type LetterSpacing = 'tight' | 'normal' | 'wide';
-export type LineHeight = 'compact' | 'normal' | 'relaxed';
-export type FontSize = 'small' | 'medium' | 'large';
+export type LetterSpacing = 'tighter' | 'tight' | 'normal' | 'wide' | 'wider';
+export type LineHeight = 'tight' | 'snug' | 'normal' | 'relaxed' | 'loose';
+export type FontSize = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl';
 export type PageSize = 'a4' | 'letter' | 'a5';
 export type Margin = 'compact' | 'normal' | 'wide';
 

@@ -46,7 +46,7 @@ export function StyleProvider({ children }: { children: ReactNode }) {
   const [styleType, setStyleType] = useState<ExportStyleType>('chatgpt');
   const [letterSpacing, setLetterSpacing] = useState<LetterSpacing>('normal');
   const [lineHeight, setLineHeight] = useState<LineHeight>('normal');
-  const [fontSize, setFontSize] = useState<FontSize>('medium');
+  const [fontSize, setFontSize] = useState<FontSize>('base');
   const [hideUserMessages, setHideUserMessages] = useState(false);
   const [hideCodeBlocks, setHideCodeBlocks] = useState(false);
   const [pageSize, setPageSize] = useState<PageSize>('a4');

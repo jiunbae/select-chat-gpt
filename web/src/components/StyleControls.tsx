@@ -57,9 +57,12 @@ export function StyleControls() {
             label="Font Size"
             value={fontSize}
             options={[
-              { value: 'small', label: '14px' },
-              { value: 'medium', label: '16px' },
-              { value: 'large', label: '18px' },
+              { value: 'xs', label: '12px' },
+              { value: 'sm', label: '14px' },
+              { value: 'base', label: '16px' },
+              { value: 'lg', label: '18px' },
+              { value: 'xl', label: '20px' },
+              { value: '2xl', label: '24px' },
             ]}
             onChange={(v) => setFontSize(v as FontSize)}
           />
@@ -67,9 +70,11 @@ export function StyleControls() {
             label="Line Height"
             value={lineHeight}
             options={[
-              { value: 'compact', label: '1.4' },
-              { value: 'normal', label: '1.75' },
-              { value: 'relaxed', label: '2.0' },
+              { value: 'tight', label: '1.25' },
+              { value: 'snug', label: '1.375' },
+              { value: 'normal', label: '1.5' },
+              { value: 'relaxed', label: '1.625' },
+              { value: 'loose', label: '2.0' },
             ]}
             onChange={(v) => setLineHeight(v as LineHeight)}
           />
@@ -77,9 +82,11 @@ export function StyleControls() {
             label="Letter Spacing"
             value={letterSpacing}
             options={[
-              { value: 'tight', label: '-0.5px' },
+              { value: 'tighter', label: '-0.05em' },
+              { value: 'tight', label: '-0.025em' },
               { value: 'normal', label: '0' },
-              { value: 'wide', label: '1px' },
+              { value: 'wide', label: '0.025em' },
+              { value: 'wider', label: '0.05em' },
             ]}
             onChange={(v) => setLetterSpacing(v as LetterSpacing)}
           />
