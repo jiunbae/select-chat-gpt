@@ -25,3 +25,11 @@ export interface ShareData {
   messages: Omit<ChatMessage, "index">[]
   createdAt: string
 }
+
+export type ExportFormat = 'png' | 'pdf'
+export type ExportStyleType = 'chatgpt' | 'clean'
+
+export interface ExportOptions {
+  format: ExportFormat
+  styleType: ExportStyleType
+}

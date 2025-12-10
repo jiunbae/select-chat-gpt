@@ -1,0 +1,177 @@
+import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
+import type { ChatMessage, ExportStyleType } from '~src/types'
+import { createExportableElement } from './export-styles'
+
+export interface RenderOptions {
+  scale?: number
+  useCORS?: boolean
+  backgroundColor?: string | null
+}
+
+export interface ExportProgress {
+  stage: 'preparing' | 'rendering' | 'generating' | 'downloading'
+  progress: number
+}
+
+export class ExportError extends Error {
+  constructor(
+    message: string,
+    public readonly code: 'RENDER_FAILED' | 'DOWNLOAD_FAILED' | 'MEMORY_ERROR'
+  ) {
+    super(message)
+    this.name = 'ExportError'
+  }
+}
+
+export async function renderToCanvas(
+  element: HTMLElement,
+  options: RenderOptions = {}
+): Promise<HTMLCanvasElement> {
+  const {
+    scale = 2,
+    useCORS = true,
+    backgroundColor = null
+  } = options
+
+  // Temporarily add to DOM (required by html2canvas)
+  document.body.appendChild(element)
+
+  try {
+    const canvas = await html2canvas(element, {
+      scale,
+      useCORS,
+      logging: false,
+      backgroundColor,
+      // Mitigate CSP issues
+      foreignObjectRendering: false,
+      // Improve rendering quality
+      allowTaint: false,
+      removeContainer: true,
+    })
+    return canvas
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('memory') || error.message.includes('Memory')) {
+        throw new ExportError(
+          'Content too large. Try selecting fewer messages.',
+          'MEMORY_ERROR'
+        )
+      }
+    }
+    throw new ExportError('Failed to render content', 'RENDER_FAILED')
+  } finally {
+    if (element.parentNode === document.body) {
+      document.body.removeChild(element)
+    }
+  }
+}
+
+export function downloadAsImage(
+  canvas: HTMLCanvasElement,
+  filename: string
+): void {
+  try {
+    const link = document.createElement('a')
+    link.download = `${filename}.png`
+    link.href = canvas.toDataURL('image/png', 1.0)
+    link.click()
+  } catch (error) {
+    throw new ExportError('Failed to download image', 'DOWNLOAD_FAILED')
+  }
+}
+
+export async function downloadAsPDF(
+  canvas: HTMLCanvasElement,
+  filename: string
+): Promise<void> {
+  try {
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    })
+
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+    const margin = 10
+
+    const imgWidth = pageWidth - (margin * 2)
+    const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+    const imgData = canvas.toDataURL('image/png', 1.0)
+
+    let heightLeft = imgHeight
+    let position = margin
+
+    // First page
+    pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight)
+    heightLeft -= (pageHeight - margin * 2)
+
+    // Additional pages if needed
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight + margin
+      pdf.addPage()
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight)
+      heightLeft -= (pageHeight - margin * 2)
+    }
+
+    pdf.save(`${filename}.pdf`)
+  } catch (error) {
+    throw new ExportError('Failed to generate PDF', 'DOWNLOAD_FAILED')
+  }
+}
+
+export function sanitizeFilename(filename: string): string {
+  return filename
+    .replace(/[^a-z0-9가-힣\s]/gi, '_')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .slice(0, 100)
+}
+
+export async function exportToImage(
+  messages: ChatMessage[],
+  title: string,
+  styleType: ExportStyleType,
+  onProgress?: (progress: ExportProgress) => void
+): Promise<void> {
+  onProgress?.({ stage: 'preparing', progress: 10 })
+
+  const element = createExportableElement(messages, title, styleType)
+
+  onProgress?.({ stage: 'rendering', progress: 30 })
+
+  const backgroundColor = styleType === 'chatgpt' ? '#212121' : '#ffffff'
+  const canvas = await renderToCanvas(element, { backgroundColor })
+
+  onProgress?.({ stage: 'downloading', progress: 90 })
+
+  const filename = sanitizeFilename(title || 'chatgpt-conversation')
+  downloadAsImage(canvas, filename)
+
+  onProgress?.({ stage: 'downloading', progress: 100 })
+}
+
+export async function exportToPDF(
+  messages: ChatMessage[],
+  title: string,
+  styleType: ExportStyleType,
+  onProgress?: (progress: ExportProgress) => void
+): Promise<void> {
+  onProgress?.({ stage: 'preparing', progress: 10 })
+
+  const element = createExportableElement(messages, title, styleType)
+
+  onProgress?.({ stage: 'rendering', progress: 30 })
+
+  const backgroundColor = styleType === 'chatgpt' ? '#212121' : '#ffffff'
+  const canvas = await renderToCanvas(element, { backgroundColor })
+
+  onProgress?.({ stage: 'generating', progress: 70 })
+
+  const filename = sanitizeFilename(title || 'chatgpt-conversation')
+  await downloadAsPDF(canvas, filename)
+
+  onProgress?.({ stage: 'downloading', progress: 100 })
+}
