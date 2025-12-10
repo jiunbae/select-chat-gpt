@@ -23,19 +23,22 @@ function DropdownToggle({
   label,
   isOpen,
   onToggle,
+  isCleanStyle,
 }: {
   label: string;
   isOpen: boolean;
   onToggle: () => void;
+  isCleanStyle: boolean;
 }) {
   return (
     <button
       onClick={onToggle}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors ${
-        isOpen
-          ? 'border-primary bg-primary/10 text-primary'
-          : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'
-      }`}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors"
+      style={{
+        borderColor: isOpen ? '#10a37f' : (isCleanStyle ? '#e5e7eb' : '#444444'),
+        backgroundColor: isOpen ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
+        color: isOpen ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
+      }}
     >
       {label}
       <ChevronIcon isOpen={isOpen} />
@@ -49,19 +52,31 @@ function SelectControl<T extends string>({
   value,
   options,
   onChange,
+  isCleanStyle,
 }: {
   label: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
+  isCleanStyle: boolean;
 }) {
   return (
     <div className="flex items-center gap-2">
-      <label className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{label}</label>
+      <label
+        className="text-sm whitespace-nowrap"
+        style={{ color: isCleanStyle ? '#6b7280' : '#9ca3af' }}
+      >
+        {label}
+      </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
-        className="px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+        className="px-2 py-1 text-sm border rounded-md"
+        style={{
+          borderColor: isCleanStyle ? '#e5e7eb' : '#444444',
+          backgroundColor: isCleanStyle ? '#ffffff' : '#2a2a2a',
+          color: isCleanStyle ? '#1f2937' : '#ffffff',
+        }}
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -78,18 +93,24 @@ function CheckboxControl({
   label,
   checked,
   onChange,
+  isCleanStyle,
 }: {
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  isCleanStyle: boolean;
 }) {
   return (
-    <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+    <label
+      className="flex items-center gap-2 cursor-pointer text-sm whitespace-nowrap"
+      style={{ color: isCleanStyle ? '#6b7280' : '#9ca3af' }}
+    >
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary"
+        className="w-4 h-4 rounded text-primary focus:ring-primary"
+        style={{ borderColor: isCleanStyle ? '#d1d5db' : '#444444' }}
       />
       {label}
     </label>
@@ -119,38 +140,52 @@ export function StyleControls() {
   } = useStyleContext();
 
   const [openSection, setOpenSection] = useState<OpenSection>(null);
+  const isCleanStyle = styleType === 'clean';
 
   const toggleSection = (section: OpenSection) => {
     setOpenSection(openSection === section ? null : section);
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+    <div
+      className="border-b transition-colors"
+      style={{
+        backgroundColor: isCleanStyle ? '#f9fafb' : '#1a1a1a',
+        borderColor: isCleanStyle ? '#e5e7eb' : '#444444',
+      }}
+    >
       <div className="max-w-3xl mx-auto px-4 py-3">
         {/* All controls in one row */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Style Type */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Style:</span>
+            <span
+              className="text-sm font-medium"
+              style={{ color: isCleanStyle ? '#374151' : '#d1d5db' }}
+            >
+              Style:
+            </span>
             <div className="flex gap-1">
               <button
                 onClick={() => setStyleType('chatgpt')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors ${
-                  styleType === 'chatgpt'
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
-                }`}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors"
+                style={{
+                  borderColor: styleType === 'chatgpt' ? '#10a37f' : (isCleanStyle ? '#e5e7eb' : '#444444'),
+                  backgroundColor: styleType === 'chatgpt' ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
+                  color: styleType === 'chatgpt' ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
+                }}
               >
                 <div className="w-2.5 h-2.5 rounded bg-[#212121]" />
                 ChatGPT
               </button>
               <button
                 onClick={() => setStyleType('clean')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors ${
-                  styleType === 'clean'
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
-                }`}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors"
+                style={{
+                  borderColor: styleType === 'clean' ? '#10a37f' : (isCleanStyle ? '#e5e7eb' : '#444444'),
+                  backgroundColor: styleType === 'clean' ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
+                  color: styleType === 'clean' ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
+                }}
               >
                 <div className="w-2.5 h-2.5 rounded bg-white border border-gray-300" />
                 Clean
@@ -159,29 +194,38 @@ export function StyleControls() {
           </div>
 
           {/* Divider */}
-          <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
+          <div
+            className="h-6 w-px"
+            style={{ backgroundColor: isCleanStyle ? '#d1d5db' : '#444444' }}
+          />
 
           {/* Dropdown Toggles */}
           <DropdownToggle
             label="Text"
             isOpen={openSection === 'text'}
             onToggle={() => toggleSection('text')}
+            isCleanStyle={isCleanStyle}
           />
           <DropdownToggle
             label="Spacing"
             isOpen={openSection === 'spacing'}
             onToggle={() => toggleSection('spacing')}
+            isCleanStyle={isCleanStyle}
           />
           <DropdownToggle
             label="Filters"
             isOpen={openSection === 'filters'}
             onToggle={() => toggleSection('filters')}
+            isCleanStyle={isCleanStyle}
           />
         </div>
 
         {/* Expanded Section Content */}
         {openSection && (
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div
+            className="mt-3 pt-3 border-t"
+            style={{ borderColor: isCleanStyle ? '#e5e7eb' : '#444444' }}
+          >
             {openSection === 'text' && (
               <div className="flex flex-wrap items-center gap-4">
                 <SelectControl
@@ -196,6 +240,7 @@ export function StyleControls() {
                     { value: '2xl', label: '24px' },
                   ]}
                   onChange={(v) => setFontSize(v as FontSize)}
+                  isCleanStyle={isCleanStyle}
                 />
                 <SelectControl
                   label="Line"
@@ -208,6 +253,7 @@ export function StyleControls() {
                     { value: 'loose', label: '2.0' },
                   ]}
                   onChange={(v) => setLineHeight(v as LineHeight)}
+                  isCleanStyle={isCleanStyle}
                 />
                 <SelectControl
                   label="Letter"
@@ -220,6 +266,7 @@ export function StyleControls() {
                     { value: 'wider', label: '0.05em' },
                   ]}
                   onChange={(v) => setLetterSpacing(v as LetterSpacing)}
+                  isCleanStyle={isCleanStyle}
                 />
               </div>
             )}
@@ -237,6 +284,7 @@ export function StyleControls() {
                     { value: 'xl', label: '32px' },
                   ]}
                   onChange={(v) => setMessageGap(v as MessageGap)}
+                  isCleanStyle={isCleanStyle}
                 />
                 <SelectControl
                   label="Padding"
@@ -249,6 +297,7 @@ export function StyleControls() {
                     { value: 'xl', label: '32px' },
                   ]}
                   onChange={(v) => setContentPadding(v as ContentPadding)}
+                  isCleanStyle={isCleanStyle}
                 />
               </div>
             )}
@@ -259,11 +308,13 @@ export function StyleControls() {
                   label="Hide questions"
                   checked={hideUserMessages}
                   onChange={setHideUserMessages}
+                  isCleanStyle={isCleanStyle}
                 />
                 <CheckboxControl
                   label="Hide code"
                   checked={hideCodeBlocks}
                   onChange={setHideCodeBlocks}
+                  isCleanStyle={isCleanStyle}
                 />
               </div>
             )}
