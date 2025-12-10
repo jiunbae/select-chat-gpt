@@ -4,6 +4,12 @@ export type {
   ExportProgress,
   ExportMessage,
   ExportStyle,
+  ExportOptions,
+  LetterSpacing,
+  LineHeight,
+  FontSize,
+  PageSize,
+  Margin,
 } from './types';
 export { ExportError } from './types';
 
@@ -12,12 +18,17 @@ export {
   getChatGPTStyle,
   getCleanDocumentStyle,
   getExportStyle,
+  getLetterSpacingValue,
+  getLineHeightValue,
+  getFontSizeValue,
+  getMarginValue,
 } from './styles';
 
 // Renderer
 export {
   createMessageElement,
   createExportableElement,
+  filterMessages,
 } from './renderer';
 
 // Exporter

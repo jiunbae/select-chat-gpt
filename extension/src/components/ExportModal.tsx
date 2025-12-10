@@ -3,7 +3,18 @@ import type { ChatMessage, ExportStyleType } from "~src/types"
 import { getPageTitle } from "~src/hooks/useChatGPTMessages"
 import { createShare } from "~src/utils/api"
 import { convertToMarkdown } from "~src/utils/markdown"
-import { exportToImage, exportToPDF, ExportError, type ExportProgress } from "~src/utils/export-image"
+import {
+  exportToImage,
+  exportToPDF,
+  ExportError,
+  type ExportProgress,
+  type ExportOptions,
+  type LetterSpacing,
+  type LineHeight,
+  type FontSize,
+  type PageSize,
+  type Margin,
+} from "~src/utils/export-image"
 
 interface ExportModalProps {
   messages: ChatMessage[]
@@ -24,6 +35,92 @@ const STAGE_MESSAGES: Record<ExportProgress['stage'], string> = {
   rendering: 'Rendering...',
   generating: 'Generating...',
   downloading: 'Downloading...'
+}
+
+// Collapsible section component
+function CollapsibleSection({
+  title,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  title: string
+  isOpen: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <div className="scgpt-mb-3">
+      <button
+        onClick={onToggle}
+        className="scgpt-flex scgpt-items-center scgpt-justify-between scgpt-w-full scgpt-py-2 scgpt-text-sm scgpt-font-medium scgpt-text-gray-700"
+      >
+        <span>{title}</span>
+        <svg
+          className={`scgpt-w-4 scgpt-h-4 scgpt-transition-transform ${isOpen ? 'scgpt-rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {isOpen && <div className="scgpt-pt-2 scgpt-space-y-3">{children}</div>}
+    </div>
+  )
+}
+
+// Select field component
+function SelectField<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (value: T) => void
+}) {
+  return (
+    <div className="scgpt-flex scgpt-items-center scgpt-justify-between">
+      <label className="scgpt-text-sm scgpt-text-gray-600">{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+        className="scgpt-px-2 scgpt-py-1 scgpt-text-sm scgpt-border scgpt-border-gray-200 scgpt-rounded-md scgpt-bg-white scgpt-text-gray-900"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+// Checkbox field component
+function CheckboxField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <label className="scgpt-flex scgpt-items-center scgpt-gap-2 scgpt-text-sm scgpt-text-gray-600 scgpt-cursor-pointer">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="scgpt-w-4 scgpt-h-4 scgpt-rounded scgpt-border-gray-300"
+      />
+      {label}
+    </label>
+  )
 }
 
 interface ExportActionConfig {
@@ -59,6 +156,31 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null)
+
+  // Styling options state
+  const [letterSpacing, setLetterSpacing] = useState<LetterSpacing>('normal')
+  const [lineHeight, setLineHeight] = useState<LineHeight>('normal')
+  const [fontSize, setFontSize] = useState<FontSize>('medium')
+  const [hideUserMessages, setHideUserMessages] = useState(false)
+  const [hideCodeBlocks, setHideCodeBlocks] = useState(false)
+  const [pageSize, setPageSize] = useState<PageSize>('a4')
+  const [margin, setMargin] = useState<Margin>('normal')
+
+  // Collapsible sections state
+  const [textStylingOpen, setTextStylingOpen] = useState(false)
+  const [contentOpen, setContentOpen] = useState(false)
+  const [layoutOpen, setLayoutOpen] = useState(false)
+
+  // Build export options
+  const getExportOptions = (): ExportOptions => ({
+    letterSpacing,
+    lineHeight,
+    fontSize,
+    hideUserMessages,
+    hideCodeBlocks,
+    pageSize,
+    margin,
+  })
 
   const handleCreateLink = async () => {
     setIsLoading(true)
@@ -130,7 +252,8 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
     setExportProgress(null)
 
     try {
-      await exportFn(messages, getPageTitle(), styleType, setExportProgress)
+      const options = getExportOptions()
+      await exportFn(messages, getPageTitle(), styleType, setExportProgress, options)
     } catch (e) {
       if (e instanceof ExportError) {
         setError(e.message)
@@ -245,6 +368,96 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                 </button>
               </div>
             </div>
+          )}
+
+          {/* Text Styling Options (image/pdf only) */}
+          {showStyleSelector && (
+            <CollapsibleSection
+              title="Text Styling"
+              isOpen={textStylingOpen}
+              onToggle={() => setTextStylingOpen(!textStylingOpen)}
+            >
+              <SelectField
+                label="Letter Spacing"
+                value={letterSpacing}
+                options={[
+                  { value: 'tight', label: 'Tight (-0.5px)' },
+                  { value: 'normal', label: 'Normal (0)' },
+                  { value: 'wide', label: 'Wide (1px)' },
+                ]}
+                onChange={setLetterSpacing}
+              />
+              <SelectField
+                label="Line Height"
+                value={lineHeight}
+                options={[
+                  { value: 'compact', label: 'Compact (1.4)' },
+                  { value: 'normal', label: 'Normal (1.75)' },
+                  { value: 'relaxed', label: 'Relaxed (2.0)' },
+                ]}
+                onChange={setLineHeight}
+              />
+              <SelectField
+                label="Font Size"
+                value={fontSize}
+                options={[
+                  { value: 'small', label: 'Small (14px)' },
+                  { value: 'medium', label: 'Medium (16px)' },
+                  { value: 'large', label: 'Large (18px)' },
+                ]}
+                onChange={setFontSize}
+              />
+            </CollapsibleSection>
+          )}
+
+          {/* Content Filtering Options (markdown/image/pdf) */}
+          {mode !== 'link' && (
+            <CollapsibleSection
+              title="Content"
+              isOpen={contentOpen}
+              onToggle={() => setContentOpen(!contentOpen)}
+            >
+              <CheckboxField
+                label="Hide user questions"
+                checked={hideUserMessages}
+                onChange={setHideUserMessages}
+              />
+              <CheckboxField
+                label="Hide code blocks"
+                checked={hideCodeBlocks}
+                onChange={setHideCodeBlocks}
+              />
+            </CollapsibleSection>
+          )}
+
+          {/* Layout Options (pdf only) */}
+          {mode === 'pdf' && (
+            <CollapsibleSection
+              title="Layout"
+              isOpen={layoutOpen}
+              onToggle={() => setLayoutOpen(!layoutOpen)}
+            >
+              <SelectField
+                label="Page Size"
+                value={pageSize}
+                options={[
+                  { value: 'a4', label: 'A4' },
+                  { value: 'letter', label: 'Letter' },
+                  { value: 'a5', label: 'A5' },
+                ]}
+                onChange={setPageSize}
+              />
+              <SelectField
+                label="Margin"
+                value={margin}
+                options={[
+                  { value: 'compact', label: 'Compact' },
+                  { value: 'normal', label: 'Normal' },
+                  { value: 'wide', label: 'Wide' },
+                ]}
+                onChange={setMargin}
+              />
+            </CollapsibleSection>
           )}
 
           {error && (

@@ -33,3 +33,25 @@ export class ExportError extends Error {
     this.name = 'ExportError';
   }
 }
+
+// Export styling options
+export type LetterSpacing = 'tight' | 'normal' | 'wide';
+export type LineHeight = 'compact' | 'normal' | 'relaxed';
+export type FontSize = 'small' | 'medium' | 'large';
+export type PageSize = 'a4' | 'letter' | 'a5';
+export type Margin = 'compact' | 'normal' | 'wide';
+
+export interface ExportOptions {
+  // Text styling (image/pdf only)
+  letterSpacing?: LetterSpacing;
+  lineHeight?: LineHeight;
+  fontSize?: FontSize;
+
+  // Content filtering (markdown/image/pdf)
+  hideUserMessages?: boolean;
+  hideCodeBlocks?: boolean;
+
+  // Layout (pdf only)
+  pageSize?: PageSize;
+  margin?: Margin;
+}

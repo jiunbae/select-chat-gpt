@@ -1,4 +1,41 @@
-import type { ExportStyle, ExportStyleType } from './types';
+import type { ExportStyle, ExportStyleType, ExportOptions, LetterSpacing, LineHeight, FontSize, Margin } from './types';
+
+// Helper functions for style values
+export function getLetterSpacingValue(spacing: LetterSpacing): string {
+  const values: Record<LetterSpacing, string> = {
+    tight: '-0.5px',
+    normal: '0',
+    wide: '1px',
+  };
+  return values[spacing];
+}
+
+export function getLineHeightValue(height: LineHeight): string {
+  const values: Record<LineHeight, string> = {
+    compact: '1.4',
+    normal: '1.75',
+    relaxed: '2.0',
+  };
+  return values[height];
+}
+
+export function getFontSizeValue(size: FontSize): string {
+  const values: Record<FontSize, string> = {
+    small: '14px',
+    medium: '16px',
+    large: '18px',
+  };
+  return values[size];
+}
+
+export function getMarginValue(margin: Margin): number {
+  const values: Record<Margin, number> = {
+    compact: 24,
+    normal: 32,
+    wide: 48,
+  };
+  return values[margin];
+}
 
 export function getChatGPTStyle(): ExportStyle {
   return {
@@ -129,6 +166,23 @@ export function getCleanDocumentStyle(): ExportStyle {
   };
 }
 
-export function getExportStyle(styleType: ExportStyleType): ExportStyle {
-  return styleType === 'chatgpt' ? getChatGPTStyle() : getCleanDocumentStyle();
+export function getExportStyle(styleType: ExportStyleType, options?: ExportOptions): ExportStyle {
+  const baseStyle = styleType === 'chatgpt' ? getChatGPTStyle() : getCleanDocumentStyle();
+
+  if (!options) {
+    return baseStyle;
+  }
+
+  // Apply text styling options
+  if (options.letterSpacing) {
+    baseStyle.content.letterSpacing = getLetterSpacingValue(options.letterSpacing);
+  }
+  if (options.lineHeight) {
+    baseStyle.content.lineHeight = getLineHeightValue(options.lineHeight);
+  }
+  if (options.fontSize) {
+    baseStyle.content.fontSize = getFontSizeValue(options.fontSize);
+  }
+
+  return baseStyle;
 }

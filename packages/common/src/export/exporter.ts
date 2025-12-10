@@ -1,9 +1,25 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import TurndownService from 'turndown';
-import type { ExportMessage, ExportProgress, ExportStyleType } from './types';
+import type { ExportMessage, ExportProgress, ExportStyleType, ExportOptions, PageSize, Margin } from './types';
 import { ExportError } from './types';
-import { createExportableElement } from './renderer';
+import { createExportableElement, filterMessages } from './renderer';
+import { getMarginValue } from './styles';
+
+// Get PDF page format from options
+function getPDFFormat(pageSize?: PageSize): 'a4' | 'letter' | 'a5' {
+  return pageSize || 'a4';
+}
+
+// Get PDF margin value from options
+function getPDFMargin(margin?: Margin): number {
+  return margin ? getMarginValue(margin) / 2.5 : 10; // Convert px to mm approximately
+}
+
+// Get background color based on style type
+function getBackgroundColor(styleType: ExportStyleType): string {
+  return styleType === 'chatgpt' ? '#212121' : '#ffffff';
+}
 
 // Create a configured turndown instance for HTML to Markdown conversion
 function createTurndownService(): TurndownService {
@@ -109,17 +125,23 @@ export function downloadAsImage(canvas: HTMLCanvasElement, filename: string): vo
   }
 }
 
-export async function downloadAsPDF(canvas: HTMLCanvasElement, filename: string): Promise<void> {
+export async function downloadAsPDF(
+  canvas: HTMLCanvasElement,
+  filename: string,
+  options?: ExportOptions
+): Promise<void> {
   try {
+    const format = getPDFFormat(options?.pageSize);
+    const margin = getPDFMargin(options?.margin);
+
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: 'a4',
+      format,
     });
 
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 10;
 
     const imgWidth = pageWidth - (margin * 2);
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -151,15 +173,16 @@ export async function exportToImage(
   messages: ExportMessage[],
   title: string,
   styleType: ExportStyleType,
-  onProgress?: (progress: ExportProgress) => void
+  onProgress?: (progress: ExportProgress) => void,
+  options?: ExportOptions
 ): Promise<void> {
   onProgress?.({ stage: 'preparing', progress: 10 });
 
-  const element = createExportableElement(messages, title, styleType);
+  const element = createExportableElement(messages, title, styleType, options);
 
   onProgress?.({ stage: 'rendering', progress: 30 });
 
-  const backgroundColor = styleType === 'chatgpt' ? '#212121' : '#ffffff';
+  const backgroundColor = getBackgroundColor(styleType);
   const canvas = await renderToCanvas(element, { backgroundColor });
 
   onProgress?.({ stage: 'downloading', progress: 90 });
@@ -174,21 +197,22 @@ export async function exportToPDF(
   messages: ExportMessage[],
   title: string,
   styleType: ExportStyleType,
-  onProgress?: (progress: ExportProgress) => void
+  onProgress?: (progress: ExportProgress) => void,
+  options?: ExportOptions
 ): Promise<void> {
   onProgress?.({ stage: 'preparing', progress: 10 });
 
-  const element = createExportableElement(messages, title, styleType);
+  const element = createExportableElement(messages, title, styleType, options);
 
   onProgress?.({ stage: 'rendering', progress: 30 });
 
-  const backgroundColor = styleType === 'chatgpt' ? '#212121' : '#ffffff';
+  const backgroundColor = getBackgroundColor(styleType);
   const canvas = await renderToCanvas(element, { backgroundColor });
 
   onProgress?.({ stage: 'generating', progress: 70 });
 
   const filename = sanitizeFilename(title || 'chatgpt-conversation');
-  await downloadAsPDF(canvas, filename);
+  await downloadAsPDF(canvas, filename, options);
 
   onProgress?.({ stage: 'downloading', progress: 100 });
 }
@@ -196,8 +220,12 @@ export async function exportToPDF(
 export function exportToMarkdown(
   messages: ExportMessage[],
   title: string,
-  sourceUrl: string
+  sourceUrl: string,
+  options?: ExportOptions
 ): string {
+  // Filter messages based on options
+  const filteredMessages = filterMessages(messages, options);
+
   const lines: string[] = [];
 
   lines.push(`# ${title}`);
@@ -208,16 +236,22 @@ export function exportToMarkdown(
   lines.push('---');
   lines.push('');
 
-  messages.forEach((message, index) => {
+  filteredMessages.forEach((message, index) => {
     const roleLabel = message.role === 'user' ? '**User**' : '**ChatGPT**';
     lines.push(`## ${roleLabel}`);
     lines.push('');
     // Convert HTML to markdown to preserve formatting (bold, italic, code blocks, lists, etc.)
-    const markdownContent = htmlToMarkdown(message.html);
+    let markdownContent = htmlToMarkdown(message.html);
+
+    // Remove code blocks if requested
+    if (options?.hideCodeBlocks) {
+      markdownContent = markdownContent.replace(/```[\s\S]*?```/g, '');
+    }
+
     lines.push(markdownContent);
     lines.push('');
 
-    if (index < messages.length - 1) {
+    if (index < filteredMessages.length - 1) {
       lines.push('---');
       lines.push('');
     }
