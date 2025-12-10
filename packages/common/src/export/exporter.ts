@@ -56,7 +56,7 @@ export async function renderToCanvas(
   options: RenderOptions = {}
 ): Promise<HTMLCanvasElement> {
   const {
-    scale = 1, // Reduced from 2 to handle large content
+    scale = 2, // High resolution, large images will be split into multiple files
     useCORS = true,
     backgroundColor = null
   } = options;
