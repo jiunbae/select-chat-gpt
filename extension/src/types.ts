@@ -25,3 +25,13 @@ export interface ShareData {
   messages: Omit<ChatMessage, "index">[]
   createdAt: string
 }
+
+export type ExportFormat = 'png' | 'pdf'
+
+// Re-export from common package
+export type { ExportStyleType } from '@selectchatgpt/common/export'
+
+export interface ExportOptions {
+  format: ExportFormat
+  styleType: import('@selectchatgpt/common/export').ExportStyleType
+}
