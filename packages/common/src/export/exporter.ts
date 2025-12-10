@@ -68,7 +68,7 @@ export async function renderToCanvas(
   options: RenderOptions = {}
 ): Promise<HTMLCanvasElement> {
   const {
-    scale = 2,
+    scale = 1, // Reduced from 2 to handle large content
     useCORS = true,
     backgroundColor = null
   } = options;
@@ -140,24 +140,25 @@ export function downloadAsImage(canvas: HTMLCanvasElement, filename: string): vo
   try {
     console.log('[Export] downloadAsImage called, canvas size:', canvas.width, 'x', canvas.height);
 
-    // Check if canvas is too large
-    const maxSize = 16384; // Common browser limit
-    if (canvas.width > maxSize || canvas.height > maxSize) {
-      console.warn('[Export] Canvas exceeds max size, scaling down');
-      // Scale down the canvas
-      const scale = Math.min(maxSize / canvas.width, maxSize / canvas.height);
-      const scaledCanvas = document.createElement('canvas');
-      scaledCanvas.width = Math.floor(canvas.width * scale);
-      scaledCanvas.height = Math.floor(canvas.height * scale);
-      const ctx = scaledCanvas.getContext('2d');
+    // Check if canvas is too large - crop instead of scale to maintain readability
+    const maxHeight = 16384; // Common browser limit
+    let outputCanvas = canvas;
+
+    if (canvas.height > maxHeight) {
+      console.warn('[Export] Canvas exceeds max height, cropping to first', maxHeight, 'pixels');
+      const croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = canvas.width;
+      croppedCanvas.height = maxHeight;
+      const ctx = croppedCanvas.getContext('2d');
       if (ctx) {
-        ctx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-        canvas = scaledCanvas;
-        console.log('[Export] Scaled canvas to:', scaledCanvas.width, 'x', scaledCanvas.height);
+        // Crop from top, keeping full width
+        ctx.drawImage(canvas, 0, 0, canvas.width, maxHeight, 0, 0, canvas.width, maxHeight);
+        outputCanvas = croppedCanvas;
+        console.log('[Export] Cropped canvas to:', croppedCanvas.width, 'x', croppedCanvas.height);
       }
     }
 
-    const dataUrl = canvas.toDataURL('image/png', 1.0);
+    const dataUrl = outputCanvas.toDataURL('image/png', 1.0);
     console.log('[Export] dataUrl length:', dataUrl.length, 'starts with:', dataUrl.slice(0, 50));
 
     if (!dataUrl || dataUrl === 'data:,') {
@@ -165,7 +166,7 @@ export function downloadAsImage(canvas: HTMLCanvasElement, filename: string): vo
     }
 
     // Use blob for large images (more reliable)
-    canvas.toBlob((blob) => {
+    outputCanvas.toBlob((blob) => {
       if (!blob) {
         console.error('[Export] toBlob returned null');
         // Fallback to dataURL
