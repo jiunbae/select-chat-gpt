@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getShare } from "@/lib/api";
 import { Message } from "@/components/Message";
 import { AdUnit } from "@/components/AdUnit";
+import { ExportButton } from "@/components/ExportButton";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -74,26 +75,33 @@ export default async function SharePage({ params }: PageProps) {
             <span className="font-semibold">SelectChatGPT</span>
           </Link>
 
-          <a
-            href={share.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-primary hover:underline flex items-center gap-1"
-          >
-            View Original
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+          <div className="flex items-center gap-3">
+            <ExportButton
+              messages={share.messages}
+              title={share.title}
+              sourceUrl={share.sourceUrl}
+            />
+            <a
+              href={share.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-primary hover:underline flex items-center gap-1"
             >
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
-            </svg>
-          </a>
+              View Original
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </div>
         </div>
       </header>
 
