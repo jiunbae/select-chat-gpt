@@ -1,0 +1,23 @@
+/* SelectChatGPT Content Script Styles */
+
+/* Action bar button hover effects */
+#selectchatgpt-selectall-btn:hover,
+#selectchatgpt-clear-btn:hover {
+  background: #f3f4f6 !important;
+}
+
+#selectchatgpt-share-btn:hover:not(:disabled) {
+  background: #0d8a6a !important;
+}
+
+/* Checkbox wrapper hover effect */
+.selectchatgpt-checkbox-wrapper:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Transition for smooth effects */
+#selectchatgpt-selectall-btn,
+#selectchatgpt-clear-btn,
+#selectchatgpt-share-btn {
+  transition: background-color 0.15s ease;
+}

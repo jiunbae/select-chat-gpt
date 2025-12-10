@@ -1,8 +1,45 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import TurndownService from 'turndown';
 import type { ExportMessage, ExportProgress, ExportStyleType } from './types';
 import { ExportError } from './types';
 import { createExportableElement } from './renderer';
+
+// Create a configured turndown instance for HTML to Markdown conversion
+function createTurndownService(): TurndownService {
+  const turndownService = new TurndownService({
+    headingStyle: 'atx',
+    codeBlockStyle: 'fenced',
+    bulletListMarker: '-',
+  });
+
+  // Preserve code blocks with language hints
+  turndownService.addRule('fencedCodeBlock', {
+    filter: (node) => {
+      return (
+        node.nodeName === 'PRE' &&
+        node.firstChild !== null &&
+        node.firstChild.nodeName === 'CODE'
+      );
+    },
+    replacement: (_content, node) => {
+      const codeElement = node.firstChild as HTMLElement;
+      const className = codeElement.className || '';
+      const languageMatch = className.match(/language-(\w+)/);
+      const language = languageMatch ? languageMatch[1] : '';
+      const code = codeElement.textContent || '';
+      return `\n\`\`\`${language}\n${code}\n\`\`\`\n`;
+    },
+  });
+
+  return turndownService;
+}
+
+// Convert HTML to Markdown preserving formatting
+export function htmlToMarkdown(html: string): string {
+  const turndownService = createTurndownService();
+  return turndownService.turndown(html);
+}
 
 export interface RenderOptions {
   scale?: number;
@@ -175,7 +212,9 @@ export function exportToMarkdown(
     const roleLabel = message.role === 'user' ? '**User**' : '**ChatGPT**';
     lines.push(`## ${roleLabel}`);
     lines.push('');
-    lines.push(message.content);
+    // Convert HTML to markdown to preserve formatting (bold, italic, code blocks, lists, etc.)
+    const markdownContent = htmlToMarkdown(message.html);
+    lines.push(markdownContent);
     lines.push('');
 
     if (index < messages.length - 1) {

@@ -87,7 +87,13 @@ importers:
       jspdf:
         specifier: ^2.5.2
         version: 2.5.2
+      turndown:
+        specifier: ^7.2.2
+        version: 7.2.2
     devDependencies:
+      '@types/turndown':
+        specifier: ^5.0.6
+        version: 5.0.6
       typescript:
         specifier: ^5.0.0
         version: 5.9.3

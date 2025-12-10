@@ -1,4 +1,6 @@
 // Content Script for ChatGPT Share Pages
+import "./content.css"
+
 console.log("[SelectChatGPT] Content script loaded!")
 
 // API URL 설정
@@ -142,22 +144,12 @@ function createUI() {
   `
   document.body.appendChild(actionBar)
 
-  // 버튼 호버 효과
+  // 버튼 이벤트 바인딩
   const selectAllBtn = document.getElementById('selectchatgpt-selectall-btn')!
   const clearBtn = document.getElementById('selectchatgpt-clear-btn')!
   const shareBtn = document.getElementById('selectchatgpt-share-btn')!
 
-  ;[selectAllBtn, clearBtn].forEach(btn => {
-    btn.addEventListener('mouseenter', () => { btn.style.background = '#f3f4f6' })
-    btn.addEventListener('mouseleave', () => { btn.style.background = 'transparent' })
-  })
-
-  shareBtn.addEventListener('mouseenter', () => {
-    if (!shareBtn.disabled) shareBtn.style.background = '#0d8a6a'
-  })
-  shareBtn.addEventListener('mouseleave', () => {
-    shareBtn.style.background = '#10a37f'
-  })
+  // 호버 효과는 content.css에서 처리
 
   // Select All 버튼
   selectAllBtn.addEventListener('click', () => {
@@ -404,8 +396,13 @@ async function createShareLink(messages: Array<{id: string, role: string, conten
 
     const data = await response.json()
 
-    // 새 탭에서 공유 페이지 열기
-    window.open(data.url, '_blank')
+    // 새 탭에서 공유 페이지 열기 (팝업 차단 대응)
+    const newTab = window.open(data.url, '_blank')
+    if (!newTab) {
+      // 팝업이 차단된 경우 클립보드에 복사
+      await navigator.clipboard.writeText(data.url)
+      alert(`팝업이 차단되었습니다. 공유 링크가 클립보드에 복사되었습니다.\n\n${data.url}`)
+    }
 
   } catch (error) {
     console.error('[SelectChatGPT] Error:', error)

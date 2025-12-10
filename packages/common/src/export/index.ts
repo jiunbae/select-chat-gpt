@@ -31,4 +31,5 @@ export {
   exportToPDF,
   exportToMarkdown,
   downloadMarkdown,
+  htmlToMarkdown,
 } from './exporter';
