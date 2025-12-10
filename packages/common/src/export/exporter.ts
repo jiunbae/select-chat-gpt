@@ -3,6 +3,13 @@ import TurndownService from 'turndown';
 import type { ExportMessage, ExportProgress, ExportStyleType, ExportOptions } from './types';
 import { ExportError } from './types';
 import { createExportableElement, filterMessages } from './renderer';
+import {
+  getFontSizeValue,
+  getLineHeightValue,
+  getLetterSpacingValue,
+  getMessageGapValue,
+  getContentPaddingValue,
+} from './styles';
 
 // Get background color based on style type
 function getBackgroundColor(styleType: ExportStyleType): string {
@@ -200,9 +207,29 @@ export async function downloadAsImage(canvas: HTMLCanvasElement, filename: strin
   }
 }
 
-function generatePrintStyles(options?: ExportOptions): string {
+function generatePrintStyles(options?: ExportOptions, styleType?: ExportStyleType): string {
   const margin = options?.margin || 'normal';
   const marginValue = margin === 'compact' ? '10mm' : margin === 'wide' ? '25mm' : '15mm';
+
+  // Get style values from options
+  const fontSize = getFontSizeValue(options?.fontSize || 'base');
+  const lineHeight = getLineHeightValue(options?.lineHeight || 'normal');
+  const letterSpacing = getLetterSpacingValue(options?.letterSpacing || 'normal');
+  const messageGap = getMessageGapValue(options?.messageGap || 'md');
+  const contentPadding = getContentPaddingValue(options?.contentPadding || 'md');
+
+  // Style-specific colors
+  const isClean = styleType === 'clean';
+  const bgColor = isClean ? '#ffffff' : '#212121';
+  const textColor = isClean ? '#1f2937' : '#ececec';
+  const titleColor = isClean ? '#1a1a1a' : '#ffffff';
+  const subtitleColor = isClean ? '#6b7280' : '#8e8ea0';
+  const roleLabelColor = isClean ? '#374151' : '#ececec';
+  const borderColor = isClean ? '#e5e7eb' : '#444444';
+  const linkColor = '#10a37f';
+  const fontFamily = isClean
+    ? 'Georgia, "Times New Roman", serif'
+    : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
   return `
     @media print {
@@ -221,27 +248,32 @@ function generatePrintStyles(options?: ExportOptions): string {
     body {
       margin: 0;
       padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      line-height: 1.6;
+      font-family: ${fontFamily};
+      font-size: ${fontSize};
+      line-height: ${lineHeight};
+      letter-spacing: ${letterSpacing};
+      background-color: ${bgColor};
+      color: ${textColor};
     }
     .export-container {
       max-width: 800px;
       margin: 0 auto;
+      padding: 0 ${contentPadding};
     }
     .export-title {
       font-size: 24px;
       font-weight: 600;
       margin-bottom: 8px;
-      color: #1a1a1a;
+      color: ${titleColor};
     }
     .export-subtitle {
       font-size: 12px;
-      color: #6b7280;
+      color: ${subtitleColor};
       margin-bottom: 24px;
     }
     .message-wrapper {
-      padding: 16px 0;
-      border-bottom: 1px solid #e5e7eb;
+      padding: ${messageGap} 0;
+      border-bottom: 1px solid ${borderColor};
     }
     .message-wrapper:last-child {
       border-bottom: none;
@@ -250,10 +282,11 @@ function generatePrintStyles(options?: ExportOptions): string {
       font-weight: 600;
       font-size: 14px;
       margin-bottom: 8px;
-      color: #374151;
+      color: ${roleLabelColor};
     }
     .message-content {
-      color: #1f2937;
+      color: ${textColor};
+      padding: 0 ${contentPadding};
     }
     .message-content p {
       margin: 0 0 16px 0;
@@ -262,7 +295,7 @@ function generatePrintStyles(options?: ExportOptions): string {
       margin-bottom: 0;
     }
     .message-content pre {
-      background-color: #1e1e1e;
+      background-color: ${isClean ? '#1e1e1e' : '#0d0d0d'};
       color: #d4d4d4;
       padding: 16px;
       border-radius: 8px;
@@ -280,7 +313,8 @@ function generatePrintStyles(options?: ExportOptions): string {
       padding: 0;
     }
     .message-content code:not(pre code) {
-      background-color: #f3f4f6;
+      background-color: ${isClean ? '#f3f4f6' : '#3a3a3a'};
+      color: ${isClean ? '#1f2937' : '#d4d4d4'};
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 13px;
@@ -293,15 +327,15 @@ function generatePrintStyles(options?: ExportOptions): string {
       margin-bottom: 8px;
     }
     .message-content a {
-      color: #10a37f;
+      color: ${linkColor};
       text-decoration: underline;
     }
     .message-content blockquote {
-      border-left: 3px solid #10a37f;
+      border-left: 3px solid ${linkColor};
       padding-left: 16px;
       margin: 16px 0;
       font-style: italic;
-      color: #6b7280;
+      color: ${subtitleColor};
     }
     .message-content table {
       border-collapse: collapse;
@@ -309,12 +343,12 @@ function generatePrintStyles(options?: ExportOptions): string {
       margin: 16px 0;
     }
     .message-content th, .message-content td {
-      border: 1px solid #e5e7eb;
+      border: 1px solid ${borderColor};
       padding: 8px 12px;
       text-align: left;
     }
     .message-content th {
-      background-color: #f9fafb;
+      background-color: ${isClean ? '#f9fafb' : '#2a2a2a'};
       font-weight: 600;
     }
   `;
@@ -323,6 +357,7 @@ function generatePrintStyles(options?: ExportOptions): string {
 function generatePrintHTML(
   messages: ExportMessage[],
   title: string,
+  styleType?: ExportStyleType,
   options?: ExportOptions
 ): string {
   const filteredMessages = options?.hideUserMessages
@@ -358,7 +393,7 @@ function generatePrintHTML(
     <head>
       <meta charset="utf-8">
       <title>${title}</title>
-      <style>${generatePrintStyles(options)}</style>
+      <style>${generatePrintStyles(options, styleType)}</style>
     </head>
     <body>
       <div class="export-container">
@@ -374,10 +409,11 @@ function generatePrintHTML(
 export async function downloadAsPDF(
   messages: ExportMessage[],
   title: string,
+  styleType?: ExportStyleType,
   options?: ExportOptions
 ): Promise<void> {
   try {
-    const html = generatePrintHTML(messages, title, options);
+    const html = generatePrintHTML(messages, title, styleType, options);
 
     // Open a new window for printing
     const printWindow = window.open('', '_blank');
@@ -439,7 +475,7 @@ export async function exportToImage(
 export async function exportToPDF(
   messages: ExportMessage[],
   title: string,
-  _styleType: ExportStyleType,
+  styleType: ExportStyleType,
   onProgress?: (progress: ExportProgress) => void,
   options?: ExportOptions
 ): Promise<void> {
@@ -447,7 +483,7 @@ export async function exportToPDF(
   onProgress?.({ stage: 'rendering', progress: 30 });
   onProgress?.({ stage: 'generating', progress: 70 });
 
-  await downloadAsPDF(messages, title, options);
+  await downloadAsPDF(messages, title, styleType, options);
 
   onProgress?.({ stage: 'downloading', progress: 100 });
 }
