@@ -2,7 +2,19 @@
 
 import { useMemo } from "react";
 import type { Message as MessageType } from "@/lib/api";
-import type { ExportStyleType, FontSize, LineHeight, LetterSpacing, MessageGap, ContentPadding } from "@/lib/export";
+import {
+  type ExportStyleType,
+  type FontSize,
+  type LineHeight,
+  type LetterSpacing,
+  type MessageGap,
+  type ContentPadding,
+  getFontSizeValue,
+  getLineHeightValue,
+  getLetterSpacingValue,
+  getMessageGapValue,
+  getContentPaddingValue,
+} from "@/lib/export";
 
 interface MessageProps {
   message: MessageType;
@@ -13,63 +25,6 @@ interface MessageProps {
   messageGap?: MessageGap;
   contentPadding?: ContentPadding;
   hideCodeBlocks?: boolean;
-}
-
-// Helper functions to convert option values to CSS
-function getFontSizeValue(size: FontSize): string {
-  const values: Record<FontSize, string> = {
-    xs: '12px',
-    sm: '14px',
-    base: '16px',
-    lg: '18px',
-    xl: '20px',
-    '2xl': '24px',
-  };
-  return values[size];
-}
-
-function getLineHeightValue(height: LineHeight): string {
-  const values: Record<LineHeight, string> = {
-    tight: '1.25',
-    snug: '1.375',
-    normal: '1.5',
-    relaxed: '1.625',
-    loose: '2',
-  };
-  return values[height];
-}
-
-function getLetterSpacingValue(spacing: LetterSpacing): string {
-  const values: Record<LetterSpacing, string> = {
-    tighter: '-0.05em',
-    tight: '-0.025em',
-    normal: '0',
-    wide: '0.025em',
-    wider: '0.05em',
-  };
-  return values[spacing];
-}
-
-function getMessageGapValue(gap: MessageGap): string {
-  const values: Record<MessageGap, string> = {
-    none: '0',
-    sm: '8px',
-    md: '16px',
-    lg: '24px',
-    xl: '32px',
-  };
-  return values[gap];
-}
-
-function getContentPaddingValue(padding: ContentPadding): string {
-  const values: Record<ContentPadding, string> = {
-    none: '0',
-    sm: '8px',
-    md: '16px',
-    lg: '24px',
-    xl: '32px',
-  };
-  return values[padding];
 }
 
 // Remove code blocks from HTML

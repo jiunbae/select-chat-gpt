@@ -17,4 +17,10 @@ export {
   exportToPDF,
   exportToMarkdown,
   downloadMarkdown,
+  // Helper functions
+  getFontSizeValue,
+  getLineHeightValue,
+  getLetterSpacingValue,
+  getMessageGapValue,
+  getContentPaddingValue,
 } from '@selectchatgpt/common/export';

@@ -72,22 +72,28 @@ export async function renderToCanvas(
   document.body.appendChild(element);
 
   try {
-    // Wait for fonts and images to load
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Wait for fonts to load
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+    }
 
-    // Debug: log element dimensions
-    console.log('[Export] Element dimensions:', {
-      scrollWidth: element.scrollWidth,
-      scrollHeight: element.scrollHeight,
-      offsetWidth: element.offsetWidth,
-      offsetHeight: element.offsetHeight,
-      childCount: element.children.length,
-    });
+    // Wait for images to load
+    const images = element.querySelectorAll('img');
+    if (images.length > 0) {
+      await Promise.all(
+        Array.from(images).map(img =>
+          img.complete ? Promise.resolve() : new Promise(resolve => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          })
+        )
+      );
+    }
 
     const canvas = await html2canvas(element, {
       scale,
       useCORS,
-      logging: true, // Enable logging for debugging
+      logging: false,
       backgroundColor,
       // Mitigate CSP issues
       foreignObjectRendering: false,
@@ -98,11 +104,6 @@ export async function renderToCanvas(
       height: element.scrollHeight || 600,
       windowWidth: element.scrollWidth || 800,
       windowHeight: element.scrollHeight || 600,
-    });
-
-    console.log('[Export] Canvas dimensions:', {
-      width: canvas.width,
-      height: canvas.height,
     });
 
     return canvas;
@@ -159,7 +160,6 @@ function downloadCanvasPart(
         reject(new Error('toBlob returned null'));
         return;
       }
-      console.log(`[Export] Part ${partNumber ?? 1} blob size:`, blob.size);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.download = fullFilename;
@@ -173,8 +173,6 @@ function downloadCanvasPart(
 
 export async function downloadAsImage(canvas: HTMLCanvasElement, filename: string): Promise<void> {
   try {
-    console.log('[Export] downloadAsImage called, canvas size:', canvas.width, 'x', canvas.height);
-
     const maxHeight = 16384; // Common browser limit
 
     if (canvas.height <= maxHeight) {
@@ -185,12 +183,10 @@ export async function downloadAsImage(canvas: HTMLCanvasElement, filename: strin
 
     // Split into multiple images
     const totalParts = Math.ceil(canvas.height / maxHeight);
-    console.log(`[Export] Canvas too tall, splitting into ${totalParts} parts`);
 
     for (let i = 0; i < totalParts; i++) {
       const startY = i * maxHeight;
       const partHeight = Math.min(maxHeight, canvas.height - startY);
-      console.log(`[Export] Downloading part ${i + 1}/${totalParts}: startY=${startY}, height=${partHeight}`);
 
       await downloadCanvasPart(canvas, filename, startY, partHeight, i + 1);
 
@@ -199,10 +195,7 @@ export async function downloadAsImage(canvas: HTMLCanvasElement, filename: strin
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
-
-    console.log(`[Export] Successfully downloaded ${totalParts} images`);
-  } catch (e) {
-    console.error('[Export] downloadAsImage error:', e);
+  } catch {
     throw new ExportError('Failed to download image', 'DOWNLOAD_FAILED');
   }
 }
@@ -449,8 +442,7 @@ export async function downloadAsPDF(
         };
       }, 250);
     };
-  } catch (e) {
-    console.error('[Export] downloadAsPDF error:', e);
+  } catch {
     throw new ExportError('Failed to generate PDF', 'DOWNLOAD_FAILED');
   }
 }
@@ -462,17 +454,9 @@ export async function exportToImage(
   onProgress?: (progress: ExportProgress) => void,
   options?: ExportOptions
 ): Promise<void> {
-  console.log('[Export] Starting exportToImage:', {
-    messageCount: messages.length,
-    title,
-    styleType,
-    options,
-  });
-
   onProgress?.({ stage: 'preparing', progress: 10 });
 
   const element = createExportableElement(messages, title, styleType, options);
-  console.log('[Export] Created element:', element.outerHTML.slice(0, 500));
 
   onProgress?.({ stage: 'rendering', progress: 30 });
 
@@ -494,13 +478,11 @@ export async function exportToPDF(
   onProgress?: (progress: ExportProgress) => void,
   options?: ExportOptions
 ): Promise<void> {
-  onProgress?.({ stage: 'preparing', progress: 10 });
-  onProgress?.({ stage: 'rendering', progress: 30 });
-  onProgress?.({ stage: 'generating', progress: 70 });
+  onProgress?.({ stage: 'generating', progress: 30 });
 
   await downloadAsPDF(messages, title, styleType, options);
 
-  onProgress?.({ stage: 'downloading', progress: 100 });
+  onProgress?.({ stage: 'generating', progress: 100 });
 }
 
 export function exportToMarkdown(
