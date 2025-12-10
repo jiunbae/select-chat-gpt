@@ -15,7 +15,15 @@ export interface ShareData {
 }
 
 // 네트워크 에러 타입 정의
-export type NetworkErrorType = 'offline' | 'server_unreachable' | 'timeout' | 'server_error' | 'unknown';
+export type NetworkErrorType =
+  | 'offline'
+  | 'server_unreachable'
+  | 'timeout'
+  | 'server_error'
+  | 'invalid_url'
+  | 'conversation_not_found'
+  | 'no_messages'
+  | 'unknown';
 
 export class NetworkError extends Error {
   type: NetworkErrorType;
@@ -44,7 +52,13 @@ export function getErrorMessage(error: NetworkError): string {
     case 'timeout':
       return '서버 응답 시간이 초과되었습니다. 네트워크 상태를 확인하고 다시 시도해주세요.';
     case 'server_error':
-      return `서버 오류가 발생했습니다. (${error.statusCode || '알 수 없음'})`;
+      return '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+    case 'invalid_url':
+      return '올바른 ChatGPT Share URL을 입력해주세요.';
+    case 'conversation_not_found':
+      return '대화를 찾을 수 없습니다. URL을 확인해주세요.';
+    case 'no_messages':
+      return '대화에서 메시지를 찾을 수 없습니다.';
     default:
       return '알 수 없는 오류가 발생했습니다. 다시 시도해주세요.';
   }
@@ -96,6 +110,72 @@ async function fetchWithErrorHandling(
     }
 
     throw new NetworkError('unknown', error instanceof Error ? error.message : 'Unknown error');
+  }
+}
+
+export interface ParseResult {
+  shareId: string;
+  shareUrl: string;
+}
+
+export async function parseUrl(url: string): Promise<ApiResult<ParseResult>> {
+  try {
+    const apiUrl = getApiBaseUrl();
+
+    const response = await fetchWithErrorHandling(`${apiUrl}/api/parse`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status >= 500) {
+        return {
+          success: false,
+          error: new NetworkError('server_error', data.error || 'Server error', response.status)
+        };
+      }
+
+      // Map specific error types based on status code and error message
+      const errorMessage = (data.error || '').toLowerCase();
+      let errorType: NetworkErrorType = 'unknown';
+
+      if (response.status === 404 || errorMessage.includes('not found')) {
+        errorType = 'conversation_not_found';
+      } else if (errorMessage.includes('invalid') || errorMessage.includes('url')) {
+        errorType = 'invalid_url';
+      } else if (errorMessage.includes('no messages')) {
+        errorType = 'no_messages';
+      }
+
+      return {
+        success: false,
+        error: new NetworkError(errorType, data.error || 'Failed to parse URL', response.status)
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        shareId: data.shareId,
+        shareUrl: data.shareUrl
+      }
+    };
+  } catch (error) {
+    console.error("Failed to parse URL:", error);
+
+    if (error instanceof NetworkError) {
+      return { success: false, error };
+    }
+
+    return {
+      success: false,
+      error: new NetworkError('unknown', error instanceof Error ? error.message : 'Unknown error')
+    };
   }
 }
 
