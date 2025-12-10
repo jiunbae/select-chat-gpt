@@ -394,12 +394,12 @@ function showSuccessToast(message: string) {
     <span style="white-space: pre-line;">${message}</span>
   `
 
-  // 5초 후 자동 닫기
+  // 10초 후 자동 닫기
   setTimeout(() => {
     if (currentToast === toast) {
       hideToast()
     }
-  }, 5000)
+  }, 10000)
 }
 
 function showErrorToast(message: string) {
@@ -413,7 +413,7 @@ function showErrorToast(message: string) {
       <circle cx="12" cy="16" r="1" fill="currentColor"/>
     </svg>
     <span>${message}</span>
-    <button style="
+    <button class="selectchatgpt-toast-close" style="
       background: none;
       border: none;
       color: white;
@@ -421,19 +421,21 @@ function showErrorToast(message: string) {
       padding: 4px;
       margin-left: auto;
       opacity: 0.7;
-    " onclick="this.parentElement.remove()">
+    ">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M18 6L6 18M6 6l12 12"/>
       </svg>
     </button>
   `
 
-  // 10초 후 자동 닫기
-  setTimeout(() => {
-    if (currentToast === toast) {
-      hideToast()
-    }
-  }, 10000)
+  // 닫기 버튼 이벤트 (Content Script에서는 inline onclick이 동작하지 않음)
+  const closeBtn = toast.querySelector('.selectchatgpt-toast-close')
+  closeBtn?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    hideToast()
+  })
+
+  // 에러는 자동으로 닫히지 않음 - 사용자가 직접 닫아야 함
 }
 
 function hideToast() {
