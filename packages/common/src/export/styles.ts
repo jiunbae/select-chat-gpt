@@ -1,4 +1,4 @@
-import type { ExportStyle, ExportStyleType, ExportOptions, LetterSpacing, LineHeight, FontSize, Margin } from './types';
+import type { ExportStyle, ExportStyleType, ExportOptions, LetterSpacing, LineHeight, FontSize, MessageGap, ContentPadding, Margin } from './types';
 
 // Helper functions for style values
 export function getLetterSpacingValue(spacing: LetterSpacing): string {
@@ -33,6 +33,28 @@ export function getFontSizeValue(size: FontSize): string {
     '2xl': '24px',
   };
   return values[size];
+}
+
+export function getMessageGapValue(gap: MessageGap): string {
+  const values: Record<MessageGap, string> = {
+    none: '0',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+  };
+  return values[gap];
+}
+
+export function getContentPaddingValue(padding: ContentPadding): string {
+  const values: Record<ContentPadding, string> = {
+    none: '0',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+  };
+  return values[padding];
 }
 
 export function getMarginValue(margin: Margin): number {

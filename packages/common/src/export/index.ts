@@ -8,6 +8,8 @@ export type {
   LetterSpacing,
   LineHeight,
   FontSize,
+  MessageGap,
+  ContentPadding,
   PageSize,
   Margin,
 } from './types';
@@ -21,6 +23,8 @@ export {
   getLetterSpacingValue,
   getLineHeightValue,
   getFontSizeValue,
+  getMessageGapValue,
+  getContentPaddingValue,
   getMarginValue,
 } from './styles';
 

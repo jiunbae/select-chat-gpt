@@ -2,13 +2,15 @@
 
 import { useMemo } from "react";
 import type { Message as MessageType } from "@/lib/api";
-import type { FontSize, LineHeight, LetterSpacing } from "@/lib/export";
+import type { FontSize, LineHeight, LetterSpacing, MessageGap, ContentPadding } from "@/lib/export";
 
 interface MessageProps {
   message: MessageType;
   fontSize?: FontSize;
   lineHeight?: LineHeight;
   letterSpacing?: LetterSpacing;
+  messageGap?: MessageGap;
+  contentPadding?: ContentPadding;
   hideCodeBlocks?: boolean;
 }
 
@@ -47,6 +49,28 @@ function getLetterSpacingValue(spacing: LetterSpacing): string {
   return values[spacing];
 }
 
+function getMessageGapValue(gap: MessageGap): string {
+  const values: Record<MessageGap, string> = {
+    none: '0',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+  };
+  return values[gap];
+}
+
+function getContentPaddingValue(padding: ContentPadding): string {
+  const values: Record<ContentPadding, string> = {
+    none: '0',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+  };
+  return values[padding];
+}
+
 // Remove code blocks from HTML
 function removeCodeBlocks(html: string): string {
   const temp = document.createElement('div');
@@ -60,6 +84,8 @@ export function Message({
   fontSize = 'base',
   lineHeight = 'normal',
   letterSpacing = 'normal',
+  messageGap = 'md',
+  contentPadding = 'md',
   hideCodeBlocks = false,
 }: MessageProps) {
   const isUser = message.role === "user";
@@ -70,6 +96,18 @@ export function Message({
     lineHeight: getLineHeightValue(lineHeight),
     letterSpacing: getLetterSpacingValue(letterSpacing),
   }), [fontSize, lineHeight, letterSpacing]);
+
+  // Dynamic container styles
+  const containerStyle = useMemo(() => ({
+    paddingTop: getMessageGapValue(messageGap),
+    paddingBottom: getMessageGapValue(messageGap),
+  }), [messageGap]);
+
+  // Dynamic inner padding styles
+  const innerStyle = useMemo(() => ({
+    paddingLeft: getContentPaddingValue(contentPadding),
+    paddingRight: getContentPaddingValue(contentPadding),
+  }), [contentPadding]);
 
   // Process HTML content
   const processedHtml = useMemo(() => {
@@ -82,11 +120,12 @@ export function Message({
 
   return (
     <div
-      className={`py-6 ${
+      className={`${
         isUser ? "bg-white dark:bg-chatgpt-dark" : "bg-gray-50 dark:bg-gray-900"
       }`}
+      style={containerStyle}
     >
-      <div className="max-w-3xl mx-auto px-4">
+      <div className="max-w-3xl mx-auto px-4" style={innerStyle}>
         <div className="flex gap-4">
           <div
             className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${

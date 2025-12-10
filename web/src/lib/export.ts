@@ -8,6 +8,8 @@ export {
   type LetterSpacing,
   type LineHeight,
   type FontSize,
+  type MessageGap,
+  type ContentPadding,
   type PageSize,
   type Margin,
   ExportError,

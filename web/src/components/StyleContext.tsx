@@ -7,6 +7,8 @@ import type {
   LetterSpacing,
   LineHeight,
   FontSize,
+  MessageGap,
+  ContentPadding,
   PageSize,
   Margin,
 } from '@/lib/export';
@@ -23,6 +25,12 @@ interface StyleContextValue {
   setLineHeight: (height: LineHeight) => void;
   fontSize: FontSize;
   setFontSize: (size: FontSize) => void;
+
+  // Spacing
+  messageGap: MessageGap;
+  setMessageGap: (gap: MessageGap) => void;
+  contentPadding: ContentPadding;
+  setContentPadding: (padding: ContentPadding) => void;
 
   // Content filtering
   hideUserMessages: boolean;
@@ -47,6 +55,8 @@ export function StyleProvider({ children }: { children: ReactNode }) {
   const [letterSpacing, setLetterSpacing] = useState<LetterSpacing>('normal');
   const [lineHeight, setLineHeight] = useState<LineHeight>('normal');
   const [fontSize, setFontSize] = useState<FontSize>('base');
+  const [messageGap, setMessageGap] = useState<MessageGap>('md');
+  const [contentPadding, setContentPadding] = useState<ContentPadding>('md');
   const [hideUserMessages, setHideUserMessages] = useState(false);
   const [hideCodeBlocks, setHideCodeBlocks] = useState(false);
   const [pageSize, setPageSize] = useState<PageSize>('a4');
@@ -56,6 +66,8 @@ export function StyleProvider({ children }: { children: ReactNode }) {
     letterSpacing,
     lineHeight,
     fontSize,
+    messageGap,
+    contentPadding,
     hideUserMessages,
     hideCodeBlocks,
     pageSize,
@@ -73,6 +85,10 @@ export function StyleProvider({ children }: { children: ReactNode }) {
         setLineHeight,
         fontSize,
         setFontSize,
+        messageGap,
+        setMessageGap,
+        contentPadding,
+        setContentPadding,
         hideUserMessages,
         setHideUserMessages,
         hideCodeBlocks,

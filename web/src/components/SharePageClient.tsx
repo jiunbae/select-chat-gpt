@@ -25,6 +25,8 @@ function SharePageContent({ share }: SharePageClientProps) {
     fontSize,
     lineHeight,
     letterSpacing,
+    messageGap,
+    contentPadding,
     hideUserMessages,
     hideCodeBlocks,
     getExportOptions,
@@ -133,6 +135,8 @@ function SharePageContent({ share }: SharePageClientProps) {
               fontSize={fontSize}
               lineHeight={lineHeight}
               letterSpacing={letterSpacing}
+              messageGap={messageGap}
+              contentPadding={contentPadding}
               hideCodeBlocks={hideCodeBlocks}
             />
           ))
