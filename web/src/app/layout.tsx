@@ -1,21 +1,43 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
+import { Noto_Sans_KR, Noto_Serif_KR, IBM_Plex_Sans_KR } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-// Korean Sans-serif font
+// Pretendard - 인기 있는 한글 산세리프 폰트 (Variable Font)
+const pretendard = localFont({
+  src: [
+    {
+      path: "./fonts/PretendardVariable.woff2",
+      style: "normal",
+    },
+  ],
+  variable: "--font-pretendard",
+  display: "swap",
+  fallback: ["-apple-system", "BlinkMacSystemFont", "system-ui", "Roboto", "sans-serif"],
+});
+
+// Noto Sans KR - 구글 한글 산세리프 폰트
 const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-noto-sans-kr",
   display: "swap",
 });
 
-// Korean Serif font
+// Noto Serif KR - 구글 한글 세리프 폰트
 const notoSerifKR = Noto_Serif_KR({
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-noto-serif-kr",
+  display: "swap",
+});
+
+// IBM Plex Sans KR - IBM 한글 산세리프 폰트
+const ibmPlexSansKR = IBM_Plex_Sans_KR({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-ibm-plex-sans-kr",
   display: "swap",
 });
 
@@ -43,7 +65,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${notoSansKR.variable} ${notoSerifKR.variable}`}>
+    <html lang="ko" className={`${pretendard.variable} ${notoSansKR.variable} ${notoSerifKR.variable} ${ibmPlexSansKR.variable}`}>
       <head>
         {/* Google Analytics 4 */}
         {GA_ID && (

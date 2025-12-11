@@ -40,8 +40,10 @@ export function getFontFamilyValue(family: FontFamily, styleType: ExportStyleTyp
     'system': styleType === 'chatgpt'
       ? '"Söhne", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
       : 'Georgia, "Times New Roman", Times, serif',
+    'pretendard': 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
     'noto-sans-kr': '"Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     'noto-serif-kr': '"Noto Serif KR", Georgia, "Times New Roman", Times, serif',
+    'ibm-plex-sans-kr': '"IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   };
   return values[family];
 }

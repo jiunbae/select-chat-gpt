@@ -234,8 +234,10 @@ export function StyleControls() {
                   label="글꼴"
                   value={fontFamily}
                   options={[
+                    { value: 'pretendard', label: 'Pretendard' },
                     { value: 'noto-sans-kr', label: 'Noto Sans KR' },
                     { value: 'noto-serif-kr', label: 'Noto Serif KR' },
+                    { value: 'ibm-plex-sans-kr', label: 'IBM Plex Sans KR' },
                     { value: 'system', label: '시스템 기본' },
                   ]}
                   onChange={(v) => setFontFamily(v as FontFamily)}

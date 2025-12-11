@@ -42,7 +42,7 @@ export function Message({
   message,
   styleType = 'chatgpt',
   fontSize = 'base',
-  fontFamily = 'noto-sans-kr',
+  fontFamily = 'pretendard',
   lineHeight = 'normal',
   letterSpacing = 'normal',
   messageGap = 'md',

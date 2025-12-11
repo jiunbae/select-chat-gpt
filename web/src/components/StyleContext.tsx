@@ -59,7 +59,7 @@ export function StyleProvider({ children }: { children: React.ReactNode }) {
   const [letterSpacing, setLetterSpacing] = useState<LetterSpacing>('normal');
   const [lineHeight, setLineHeight] = useState<LineHeight>('normal');
   const [fontSize, setFontSize] = useState<FontSize>('base');
-  const [fontFamily, setFontFamily] = useState<FontFamily>('noto-sans-kr');
+  const [fontFamily, setFontFamily] = useState<FontFamily>('pretendard');
   const [messageGap, setMessageGap] = useState<MessageGap>('md');
   const [contentPadding, setContentPadding] = useState<ContentPadding>('md');
   const [hideUserMessages, setHideUserMessages] = useState(false);

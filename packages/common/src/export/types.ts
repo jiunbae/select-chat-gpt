@@ -38,7 +38,7 @@ export class ExportError extends Error {
 export type LetterSpacing = 'tighter' | 'tight' | 'normal' | 'wide' | 'wider';
 export type LineHeight = 'tight' | 'snug' | 'normal' | 'relaxed' | 'loose';
 export type FontSize = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl';
-export type FontFamily = 'system' | 'noto-sans-kr' | 'noto-serif-kr';
+export type FontFamily = 'system' | 'pretendard' | 'noto-sans-kr' | 'noto-serif-kr' | 'ibm-plex-sans-kr';
 export type MessageGap = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 export type ContentPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 export type PageSize = 'a4' | 'letter' | 'a5';
