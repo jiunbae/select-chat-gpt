@@ -18,6 +18,7 @@ const pretendard = localFont({
 });
 
 // Noto Sans KR - 구글 한글 산세리프 폰트
+// 한글 글리프는 기본 포함되어 있으며, latin은 영문/숫자 지원용
 const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -26,6 +27,7 @@ const notoSansKR = Noto_Sans_KR({
 });
 
 // Noto Serif KR - 구글 한글 세리프 폰트
+// 한글 글리프는 기본 포함되어 있으며, latin은 영문/숫자 지원용
 const notoSerifKR = Noto_Serif_KR({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -34,6 +36,7 @@ const notoSerifKR = Noto_Serif_KR({
 });
 
 // IBM Plex Sans KR - IBM 한글 산세리프 폰트
+// 한글 글리프는 기본 포함되어 있으며, latin은 영문/숫자 지원용
 const ibmPlexSansKR = IBM_Plex_Sans_KR({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],

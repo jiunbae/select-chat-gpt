@@ -410,19 +410,20 @@ const GOOGLE_FONT_URL_MAP: Record<string, string> = {
   'ibm-plex-sans-kr': 'IBM+Plex+Sans+KR',
 };
 
+const PRETENDARD_CDN_URL = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css';
+
 function getFontLinks(fontFamily?: string): string {
   const links: string[] = [];
-
-  // Always include Pretendard from CDN for PDF export
-  links.push('<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />');
-
-  // Add Google Fonts based on selected font
   const googleFontName = fontFamily ? GOOGLE_FONT_URL_MAP[fontFamily] : undefined;
 
   if (googleFontName) {
+    // Google Font가 선택된 경우 해당 폰트만 로드
     links.push('<link rel="preconnect" href="https://fonts.googleapis.com" />');
     links.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />');
     links.push(`<link href="https://fonts.googleapis.com/css2?family=${googleFontName}:wght@400;500;600;700&display=swap" rel="stylesheet" />`);
+  } else {
+    // 'pretendard' 또는 'system' 글꼴인 경우 Pretendard를 폴백으로 로드
+    links.push(`<link rel="stylesheet" href="${PRETENDARD_CDN_URL}" />`);
   }
 
   return links.join('\n    ');
