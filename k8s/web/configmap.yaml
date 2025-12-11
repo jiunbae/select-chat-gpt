@@ -4,5 +4,5 @@ metadata:
   name: web-config
   namespace: selectchatgpt
 data:
-  NEXT_PUBLIC_API_URL: "https://api.selectchatgpt.jiun.dev"
+  NEXT_PUBLIC_API_URL: "https://selectchatgpt.jiun.dev"
   API_URL_INTERNAL: "http://server:3001"
