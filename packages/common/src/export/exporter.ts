@@ -5,6 +5,7 @@ import { ExportError } from './types';
 import { createExportableElement, filterMessages } from './renderer';
 import {
   getFontSizeValue,
+  getFontFamilyValue,
   getLineHeightValue,
   getLetterSpacingValue,
   getMessageGapValue,
@@ -58,9 +59,57 @@ export interface RenderOptions {
   backgroundColor?: string | null;
 }
 
+// Preload fonts for html2canvas rendering
+async function preloadFonts(fontFamily?: string): Promise<void> {
+  // Wait for document fonts to be ready
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
+
+  // List of fonts to preload based on selection
+  const fontsToLoad: string[] = [];
+
+  switch (fontFamily) {
+    case 'pretendard':
+      fontsToLoad.push('Pretendard');
+      break;
+    case 'noto-sans-kr':
+      fontsToLoad.push('Noto Sans KR');
+      break;
+    case 'noto-serif-kr':
+      fontsToLoad.push('Noto Serif KR');
+      break;
+    case 'ibm-plex-sans-kr':
+      fontsToLoad.push('IBM Plex Sans KR');
+      break;
+  }
+
+  // Force font loading by checking each font
+  if (document.fonts && fontsToLoad.length > 0) {
+    const weights = ['400', '500', '600', '700'];
+    const loadPromises: Promise<FontFace[]>[] = [];
+
+    for (const font of fontsToLoad) {
+      for (const weight of weights) {
+        try {
+          loadPromises.push(document.fonts.load(`${weight} 16px "${font}"`));
+        } catch {
+          // Ignore font load errors
+        }
+      }
+    }
+
+    await Promise.allSettled(loadPromises);
+  }
+
+  // Additional delay to ensure fonts are rendered
+  await new Promise(resolve => setTimeout(resolve, 100));
+}
+
 export async function renderToCanvas(
   element: HTMLElement,
-  options: RenderOptions = {}
+  options: RenderOptions = {},
+  fontFamily?: string
 ): Promise<HTMLCanvasElement> {
   const {
     scale = 2, // High resolution, large images will be split into multiple files
@@ -72,10 +121,8 @@ export async function renderToCanvas(
   document.body.appendChild(element);
 
   try {
-    // Wait for fonts to load
-    if (document.fonts && document.fonts.ready) {
-      await document.fonts.ready;
-    }
+    // Preload fonts before rendering
+    await preloadFonts(fontFamily);
 
     // Wait for images to load
     const images = element.querySelectorAll('img');
@@ -220,9 +267,12 @@ function generatePrintStyles(options?: ExportOptions, styleType?: ExportStyleTyp
   const roleLabelColor = isClean ? '#374151' : '#ececec';
   const borderColor = isClean ? '#e5e7eb' : '#444444';
   const linkColor = '#10a37f';
-  const fontFamily = isClean
-    ? 'Georgia, "Times New Roman", serif'
-    : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  // Use selected font family or default based on style type
+  const fontFamily = options?.fontFamily
+    ? getFontFamilyValue(options.fontFamily, styleType)
+    : (isClean
+      ? 'Georgia, "Times New Roman", serif'
+      : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
 
   return `
     @media print {
@@ -361,6 +411,39 @@ function generatePrintStyles(options?: ExportOptions, styleType?: ExportStyleTyp
   `;
 }
 
+// Get font links for PDF/print export
+function getFontLinks(fontFamily?: string): string {
+  const links: string[] = [];
+
+  // Always include Pretendard from CDN for PDF export
+  links.push('<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />');
+
+  // Add Google Fonts based on selected font
+  switch (fontFamily) {
+    case 'noto-sans-kr':
+      links.push('<link rel="preconnect" href="https://fonts.googleapis.com" />');
+      links.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />');
+      links.push('<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />');
+      break;
+    case 'noto-serif-kr':
+      links.push('<link rel="preconnect" href="https://fonts.googleapis.com" />');
+      links.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />');
+      links.push('<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />');
+      break;
+    case 'ibm-plex-sans-kr':
+      links.push('<link rel="preconnect" href="https://fonts.googleapis.com" />');
+      links.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />');
+      links.push('<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />');
+      break;
+    case 'pretendard':
+    default:
+      // Pretendard already included above
+      break;
+  }
+
+  return links.join('\n    ');
+}
+
 function generatePrintHTML(
   messages: ExportMessage[],
   title: string,
@@ -395,12 +478,15 @@ function generatePrintHTML(
     `;
   }).join('');
 
+  const fontLinks = getFontLinks(options?.fontFamily);
+
   return `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
       <title>${title}</title>
+      ${fontLinks}
       <style>${generatePrintStyles(options, styleType)}</style>
     </head>
     <body>
@@ -461,7 +547,7 @@ export async function exportToImage(
   onProgress?.({ stage: 'rendering', progress: 30 });
 
   const backgroundColor = getBackgroundColor(styleType);
-  const canvas = await renderToCanvas(element, { backgroundColor });
+  const canvas = await renderToCanvas(element, { backgroundColor }, options?.fontFamily);
 
   onProgress?.({ stage: 'downloading', progress: 90 });
 
