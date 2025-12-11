@@ -15,8 +15,8 @@
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:build": "docker compose build",
-    "docker:build:registry": "docker build -t registry.jiun.dev/selectchatgpt-server:latest ./server && docker build -t registry.jiun.dev/selectchatgpt-web:latest -f web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=https://selectchatgpt.jiun.dev .",
-    "docker:push": "docker push registry.jiun.dev/selectchatgpt-server:latest && docker push registry.jiun.dev/selectchatgpt-web:latest",
+    "docker:build:registry": "docker build --platform linux/amd64 -t registry.im-si.org/selectchatgpt-server:latest ./server && docker build --platform linux/amd64 -t registry.im-si.org/selectchatgpt-web:latest -f web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=https://selectchatgpt.im-si.org .",
+    "docker:push": "docker push registry.im-si.org/selectchatgpt-server:latest && docker push registry.im-si.org/selectchatgpt-web:latest",
     "docker:release": "pnpm docker:build:registry && pnpm docker:push",
     "docker:logs": "docker compose logs -f"
   },
