@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseUrl, getErrorMessage } from "@/lib/api";
+import { Analytics } from "@/lib/analytics";
 
 export function UrlInput() {
   const [url, setUrl] = useState("");
@@ -28,13 +29,20 @@ export function UrlInput() {
     setIsLoading(true);
     setError(null);
 
+    // Track URL submission
+    Analytics.urlSubmitted(trimmedUrl);
+
     const result = await parseUrl(trimmedUrl);
 
     setIsLoading(false);
 
     if (result.success) {
+      // Track parse success
+      Analytics.parseSuccess(result.data.shareId);
       router.push(result.data.shareUrl);
     } else {
+      // Track parse failure
+      Analytics.parseFailed(getErrorMessage(result.error));
       setError(getErrorMessage(result.error));
     }
   };
