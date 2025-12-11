@@ -35,15 +35,19 @@ export function getFontSizeValue(size: FontSize): string {
   return values[size];
 }
 
+// Fallback font stacks
+const SANS_SERIF_FALLBACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+const SERIF_FALLBACK = 'Georgia, "Times New Roman", Times, serif';
+
 export function getFontFamilyValue(family: FontFamily, styleType: ExportStyleType = 'clean'): string {
   const values: Record<FontFamily, string> = {
     'system': styleType === 'chatgpt'
-      ? '"Söhne", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-      : 'Georgia, "Times New Roman", Times, serif',
-    'pretendard': 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
-    'noto-sans-kr': '"Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    'noto-serif-kr': '"Noto Serif KR", Georgia, "Times New Roman", Times, serif',
-    'ibm-plex-sans-kr': '"IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      ? `"Söhne", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`
+      : SERIF_FALLBACK,
+    'pretendard': `Pretendard, ${SANS_SERIF_FALLBACK}`,
+    'noto-sans-kr': `"Noto Sans KR", ${SANS_SERIF_FALLBACK}`,
+    'noto-serif-kr': `"Noto Serif KR", ${SERIF_FALLBACK}`,
+    'ibm-plex-sans-kr': `"IBM Plex Sans KR", ${SANS_SERIF_FALLBACK}`,
   };
   return values[family];
 }

@@ -59,6 +59,14 @@ export interface RenderOptions {
   backgroundColor?: string | null;
 }
 
+// Font name mapping for preloading
+const FONT_NAME_MAP: Record<string, string> = {
+  'pretendard': 'Pretendard',
+  'noto-sans-kr': 'Noto Sans KR',
+  'noto-serif-kr': 'Noto Serif KR',
+  'ibm-plex-sans-kr': 'IBM Plex Sans KR',
+};
+
 // Preload fonts for html2canvas rendering
 async function preloadFonts(fontFamily?: string): Promise<void> {
   // Wait for document fonts to be ready
@@ -66,44 +74,27 @@ async function preloadFonts(fontFamily?: string): Promise<void> {
     await document.fonts.ready;
   }
 
-  // List of fonts to preload based on selection
-  const fontsToLoad: string[] = [];
-
-  switch (fontFamily) {
-    case 'pretendard':
-      fontsToLoad.push('Pretendard');
-      break;
-    case 'noto-sans-kr':
-      fontsToLoad.push('Noto Sans KR');
-      break;
-    case 'noto-serif-kr':
-      fontsToLoad.push('Noto Serif KR');
-      break;
-    case 'ibm-plex-sans-kr':
-      fontsToLoad.push('IBM Plex Sans KR');
-      break;
-  }
+  // Get font name to preload
+  const fontName = fontFamily ? FONT_NAME_MAP[fontFamily] : undefined;
 
   // Force font loading by checking each font
-  if (document.fonts && fontsToLoad.length > 0) {
+  if (document.fonts && fontName) {
     const weights = ['400', '500', '600', '700'];
     const loadPromises: Promise<FontFace[]>[] = [];
 
-    for (const font of fontsToLoad) {
-      for (const weight of weights) {
-        try {
-          loadPromises.push(document.fonts.load(`${weight} 16px "${font}"`));
-        } catch {
-          // Ignore font load errors
-        }
+    for (const weight of weights) {
+      try {
+        loadPromises.push(document.fonts.load(`${weight} 16px "${fontName}"`));
+      } catch (err) {
+        console.warn(`Failed to load font: ${fontName} (weight: ${weight})`, err);
       }
     }
 
     await Promise.allSettled(loadPromises);
   }
 
-  // Additional delay to ensure fonts are rendered
-  await new Promise(resolve => setTimeout(resolve, 100));
+  // Wait for next frame to ensure fonts are applied to DOM
+  await new Promise(resolve => requestAnimationFrame(resolve));
 }
 
 export async function renderToCanvas(
@@ -412,6 +403,13 @@ function generatePrintStyles(options?: ExportOptions, styleType?: ExportStyleTyp
 }
 
 // Get font links for PDF/print export
+// Google Fonts URL mapping for PDF export
+const GOOGLE_FONT_URL_MAP: Record<string, string> = {
+  'noto-sans-kr': 'Noto+Sans+KR',
+  'noto-serif-kr': 'Noto+Serif+KR',
+  'ibm-plex-sans-kr': 'IBM+Plex+Sans+KR',
+};
+
 function getFontLinks(fontFamily?: string): string {
   const links: string[] = [];
 
@@ -419,26 +417,12 @@ function getFontLinks(fontFamily?: string): string {
   links.push('<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />');
 
   // Add Google Fonts based on selected font
-  switch (fontFamily) {
-    case 'noto-sans-kr':
-      links.push('<link rel="preconnect" href="https://fonts.googleapis.com" />');
-      links.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />');
-      links.push('<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />');
-      break;
-    case 'noto-serif-kr':
-      links.push('<link rel="preconnect" href="https://fonts.googleapis.com" />');
-      links.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />');
-      links.push('<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />');
-      break;
-    case 'ibm-plex-sans-kr':
-      links.push('<link rel="preconnect" href="https://fonts.googleapis.com" />');
-      links.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />');
-      links.push('<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />');
-      break;
-    case 'pretendard':
-    default:
-      // Pretendard already included above
-      break;
+  const googleFontName = fontFamily ? GOOGLE_FONT_URL_MAP[fontFamily] : undefined;
+
+  if (googleFontName) {
+    links.push('<link rel="preconnect" href="https://fonts.googleapis.com" />');
+    links.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />');
+    links.push(`<link href="https://fonts.googleapis.com/css2?family=${googleFontName}:wght@400;500;600;700&display=swap" rel="stylesheet" />`);
   }
 
   return links.join('\n    ');
