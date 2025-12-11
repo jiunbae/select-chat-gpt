@@ -1,12 +1,14 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import * as React from 'react';
+import { createContext, useContext, useState } from 'react';
 import type {
   ExportStyleType,
   ExportOptions,
   LetterSpacing,
   LineHeight,
   FontSize,
+  FontFamily,
   MessageGap,
   ContentPadding,
   PageSize,
@@ -25,6 +27,8 @@ interface StyleContextValue {
   setLineHeight: (height: LineHeight) => void;
   fontSize: FontSize;
   setFontSize: (size: FontSize) => void;
+  fontFamily: FontFamily;
+  setFontFamily: (family: FontFamily) => void;
 
   // Spacing
   messageGap: MessageGap;
@@ -50,11 +54,12 @@ interface StyleContextValue {
 
 const StyleContext = createContext<StyleContextValue | null>(null);
 
-export function StyleProvider({ children }: { children: ReactNode }) {
+export function StyleProvider({ children }: { children: React.ReactNode }) {
   const [styleType, setStyleType] = useState<ExportStyleType>('clean');
   const [letterSpacing, setLetterSpacing] = useState<LetterSpacing>('normal');
   const [lineHeight, setLineHeight] = useState<LineHeight>('normal');
   const [fontSize, setFontSize] = useState<FontSize>('base');
+  const [fontFamily, setFontFamily] = useState<FontFamily>('noto-sans-kr');
   const [messageGap, setMessageGap] = useState<MessageGap>('md');
   const [contentPadding, setContentPadding] = useState<ContentPadding>('md');
   const [hideUserMessages, setHideUserMessages] = useState(false);
@@ -66,6 +71,7 @@ export function StyleProvider({ children }: { children: ReactNode }) {
     letterSpacing,
     lineHeight,
     fontSize,
+    fontFamily,
     messageGap,
     contentPadding,
     hideUserMessages,
@@ -85,6 +91,8 @@ export function StyleProvider({ children }: { children: ReactNode }) {
         setLineHeight,
         fontSize,
         setFontSize,
+        fontFamily,
+        setFontFamily,
         messageGap,
         setMessageGap,
         contentPadding,

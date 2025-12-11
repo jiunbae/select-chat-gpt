@@ -5,11 +5,13 @@ import type { Message as MessageType } from "@/lib/api";
 import {
   type ExportStyleType,
   type FontSize,
+  type FontFamily,
   type LineHeight,
   type LetterSpacing,
   type MessageGap,
   type ContentPadding,
   getFontSizeValue,
+  getFontFamilyValue,
   getLineHeightValue,
   getLetterSpacingValue,
   getMessageGapValue,
@@ -20,6 +22,7 @@ interface MessageProps {
   message: MessageType;
   styleType?: ExportStyleType;
   fontSize?: FontSize;
+  fontFamily?: FontFamily;
   lineHeight?: LineHeight;
   letterSpacing?: LetterSpacing;
   messageGap?: MessageGap;
@@ -39,6 +42,7 @@ export function Message({
   message,
   styleType = 'chatgpt',
   fontSize = 'base',
+  fontFamily = 'noto-sans-kr',
   lineHeight = 'normal',
   letterSpacing = 'normal',
   messageGap = 'md',
@@ -53,8 +57,8 @@ export function Message({
     fontSize: getFontSizeValue(fontSize),
     lineHeight: getLineHeightValue(lineHeight),
     letterSpacing: getLetterSpacingValue(letterSpacing),
-    fontFamily: isCleanStyle ? 'Georgia, "Times New Roman", serif' : 'inherit',
-  }), [fontSize, lineHeight, letterSpacing, isCleanStyle]);
+    fontFamily: getFontFamilyValue(fontFamily, styleType),
+  }), [fontSize, lineHeight, letterSpacing, fontFamily, styleType]);
 
   // Dynamic container styles based on styleType
   const containerStyle = useMemo(() => ({

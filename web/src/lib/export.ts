@@ -8,6 +8,7 @@ export {
   type LetterSpacing,
   type LineHeight,
   type FontSize,
+  type FontFamily,
   type MessageGap,
   type ContentPadding,
   type PageSize,
@@ -19,6 +20,7 @@ export {
   downloadMarkdown,
   // Helper functions
   getFontSizeValue,
+  getFontFamilyValue,
   getLineHeightValue,
   getLetterSpacingValue,
   getMessageGapValue,
