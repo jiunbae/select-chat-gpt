@@ -1,6 +1,13 @@
+import { useEffect } from "react"
 import "~style.css"
+import { Analytics } from "~src/utils/analytics"
 
 function IndexPopup() {
+  useEffect(() => {
+    // Track popup opened
+    Analytics.popupOpened()
+  }, [])
+
   const handleOpenChatGPT = () => {
     chrome.tabs.create({ url: 'https://chatgpt.com' })
   }

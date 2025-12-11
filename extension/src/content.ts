@@ -1,6 +1,7 @@
 // Content Script for ChatGPT Share Pages
 import "./content.css"
 import { createShare, NetworkError, getErrorMessage, isOnline } from "~src/utils/api"
+import { Analytics } from "~src/utils/analytics"
 
 console.log("[SelectChatGPT] Content script loaded!")
 
@@ -22,6 +23,9 @@ function init() {
 
   console.log("[SelectChatGPT] Initializing on:", window.location.href)
   cleanup()
+
+  // Track page view
+  Analytics.pageView(window.location.href)
 
   setTimeout(() => {
     createUI()
@@ -160,6 +164,13 @@ function createUI() {
     const allSelected = selectedCount === messageElements.length
     checkboxes.forEach(cb => { cb.checked = !allSelected })
     updateSelectedCount()
+
+    // Track select/deselect all
+    if (!allSelected) {
+      Analytics.selectAll(messageElements.length)
+    } else {
+      Analytics.deselectAll()
+    }
   })
 
   // Clear 버튼
@@ -167,6 +178,9 @@ function createUI() {
     const checkboxes = document.querySelectorAll('.selectchatgpt-checkbox-wrapper input') as NodeListOf<HTMLInputElement>
     checkboxes.forEach(cb => { cb.checked = false })
     updateSelectedCount()
+
+    // Track deselect all
+    Analytics.deselectAll()
   })
 
   // Share 버튼
@@ -175,6 +189,9 @@ function createUI() {
 
     const selected = getSelectedMessages()
     if (selected.length === 0) return
+
+    // Track share clicked
+    Analytics.shareClicked(selected.length)
 
     shareBtn.disabled = true
     shareBtn.innerHTML = `
@@ -403,6 +420,9 @@ async function createShareLinkHandler(messages: Array<{id: string, role: string,
 
     hideToast()
 
+    // Track share created
+    Analytics.shareCreated(data.id, messages.length)
+
     // 새 탭에서 공유 페이지 열기 (팝업 차단 대응)
     const newTab = window.open(data.url, '_blank')
     if (!newTab) {
@@ -418,6 +438,10 @@ async function createShareLinkHandler(messages: Array<{id: string, role: string,
   } catch (error) {
     hideToast()
     console.error('[SelectChatGPT] Error:', error)
+
+    // Track share failed
+    const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
+    Analytics.shareFailed(errorMessage)
 
     if (error instanceof NetworkError) {
       showErrorToast(getErrorMessage(error))

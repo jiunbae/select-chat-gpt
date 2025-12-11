@@ -17,6 +17,7 @@ import {
   type PageSize,
   type Margin,
 } from '@/lib/export';
+import { Analytics } from '@/lib/analytics';
 
 interface ExportButtonProps {
   messages: Message[];
@@ -202,27 +203,50 @@ export function ExportButton({
   };
 
   const handleCopyMarkdown = async () => {
+    // Track export clicked
+    Analytics.exportClicked('markdown', messages.length);
+
     try {
       const options = getExportOptions();
       const markdown = exportToMarkdown(messages, title, sourceUrl, options);
       await navigator.clipboard.writeText(markdown);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
+
+      // Track export success
+      Analytics.exportSuccess('markdown');
+    } catch (e) {
+      // Track export failed
+      Analytics.exportFailed('markdown', e instanceof Error ? e.message : 'Unknown error');
       setError('Failed to copy markdown');
     }
   };
 
   const handleDownloadMarkdown = () => {
-    const options = getExportOptions();
-    const markdown = exportToMarkdown(messages, title, sourceUrl, options);
-    downloadMarkdown(markdown, title);
+    // Track export clicked
+    Analytics.exportClicked('markdown', messages.length);
+
+    try {
+      const options = getExportOptions();
+      const markdown = exportToMarkdown(messages, title, sourceUrl, options);
+      downloadMarkdown(markdown, title);
+
+      // Track export success
+      Analytics.exportSuccess('markdown');
+    } catch (e) {
+      // Track export failed
+      Analytics.exportFailed('markdown', e instanceof Error ? e.message : 'Unknown error');
+    }
   };
 
   const createExportHandler = (
     exportFn: typeof exportToImage,
+    format: 'image' | 'pdf',
     errorMessage: string
   ) => async () => {
+    // Track export clicked
+    Analytics.exportClicked(format, messages.length);
+
     setIsLoading(true);
     setError(null);
     setExportProgress(null);
@@ -230,7 +254,15 @@ export function ExportButton({
     try {
       const options = getExportOptions();
       await exportFn(messages, title, styleType, setExportProgress, options);
+
+      // Track export success
+      Analytics.exportSuccess(format);
     } catch (e) {
+      const errMsg = e instanceof ExportError ? e.message : errorMessage;
+
+      // Track export failed
+      Analytics.exportFailed(format, errMsg);
+
       if (e instanceof ExportError) {
         setError(e.message);
       } else {
@@ -242,8 +274,8 @@ export function ExportButton({
     }
   };
 
-  const handleExportImage = createExportHandler(exportToImage, 'Failed to export image');
-  const handleExportPDF = createExportHandler(exportToPDF, 'Failed to export PDF');
+  const handleExportImage = createExportHandler(exportToImage, 'image', 'Failed to export image');
+  const handleExportPDF = createExportHandler(exportToPDF, 'pdf', 'Failed to export PDF');
 
   const EXPORT_ACTIONS: Record<'image' | 'pdf', ExportActionConfig & { handler: () => void }> = {
     image: {
