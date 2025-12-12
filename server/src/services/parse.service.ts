@@ -52,6 +52,11 @@ const MIN_REASONING_CONTENT_LENGTH = 20
 // Constants for message deduplication
 const DEDUPE_PREFIX_LENGTH = 200
 
+// Constants for context lookbehind/lookahead in filtering functions
+const REASONING_LOOKBEHIND = 50
+const CONTEXT_LOOKBEHIND = 50
+const CONTEXT_LOOKAHEAD = 30
+
 const CHATGPT_URL_PATTERNS = [
   /^https:\/\/chatgpt\.com\/share\/[a-zA-Z0-9-]+$/,
   /^https:\/\/chat\.openai\.com\/share\/[a-zA-Z0-9-]+$/
@@ -136,35 +141,36 @@ function looksLikeStandaloneCode(content: string): boolean {
     const l = line.trim()
     if (l.length === 0) continue
 
-    // Text-like patterns (natural language) - check first
+    // Text-like patterns (natural language) - check first to avoid false positives
     const isTextLine = (
-      (/^[A-Z][a-z]/.test(l) && l.includes(' ') && l.length > 30) ||
-      /^[-*•]/.test(l) ||
-      /^\*\*/.test(l) ||
-      /^#{1,6}\s/.test(l) ||
-      (/^\\?\[/.test(l) && l.includes('\\')) ||
-      /^\\\(/.test(l) ||
-      l.includes('\\frac') || l.includes('\\text') ||
-      /^\([a-z]\)\s/i.test(l) ||
-      /^Problem\s+\d/i.test(l) ||
-      /^Question\s+\d/i.test(l) ||
-      /^\d+\.\s+[A-Z]/i.test(l) ||
+      (/^[A-Z][a-z]/.test(l) && l.includes(' ') && l.length > 30) ||  // Sentence starting with capital letter
+      /^[-*•]/.test(l) ||                                              // Bullet points
+      /^\*\*/.test(l) ||                                               // Markdown bold
+      /^#{1,6}\s/.test(l) ||                                           // Markdown headings
+      (/^\\?\[/.test(l) && l.includes('\\')) ||                        // LaTeX brackets
+      /^\\\(/.test(l) ||                                               // LaTeX inline math
+      l.includes('\\frac') || l.includes('\\text') ||                  // LaTeX commands
+      /^\([a-z]\)\s/i.test(l) ||                                       // Problem labels like (a), (b)
+      /^Problem\s+\d/i.test(l) ||                                      // "Problem 1" etc.
+      /^Question\s+\d/i.test(l) ||                                     // "Question 1" etc.
+      /^\d+\.\s+[A-Z]/i.test(l) ||                                     // Numbered lists "1. Something"
+      // English "for any..." vs Python "for x in y" - exclude if contains " in " pattern
       (/^for\s+[a-z]+\s+[a-z]+/i.test(l) && l.includes(' ') && !/\s+in\s+/.test(l))
     )
 
-    // Code-like patterns - only if not already text
+    // Code-like patterns - only if not already classified as text
     const isCodeLine = !isTextLine && (
-      /^[a-z_][a-z0-9_]*\s*=/i.test(l) ||
-      /^[a-z_][a-z0-9_]*\s*\([^)]*\)\s*$/i.test(l) ||
-      /^(while|elif|else|return|print|try|except|with)\s/i.test(l) ||
-      /^for\s+[a-z_]+\s+in\s+/i.test(l) ||
-      /^if\s+[a-z_]+\s*(==|!=|<|>|in|not)/i.test(l) ||
-      /^#[^#]/.test(l) ||
-      /^\s*(def|class|import|from)\s/i.test(l) ||
-      /^[a-z_][a-z0-9_]*\.[a-z]/i.test(l) ||
-      /^\[\d/.test(l) ||
-      /^\{['"]/i.test(l) ||
-      (/^\([a-z_]/i.test(l) && !/^\([a-z]\)\s/i.test(l))
+      /^[a-z_][a-z0-9_]*\s*=/i.test(l) ||                              // Variable assignment
+      /^[a-z_][a-z0-9_]*\s*\([^)]*\)\s*$/i.test(l) ||                  // Function call ending with )
+      /^(while|elif|else|return|print|try|except|with)\s/i.test(l) ||  // Python keywords
+      /^for\s+[a-z_]+\s+in\s+/i.test(l) ||                             // Python for loop "for x in y"
+      /^if\s+[a-z_]+\s*(==|!=|<|>|in|not)/i.test(l) ||                 // Python if with comparison
+      /^#[^#]/.test(l) ||                                               // Python comment (not markdown heading)
+      /^\s*(def|class|import|from)\s/i.test(l) ||                       // Python definitions/imports
+      /^[a-z_][a-z0-9_]*\.[a-z]/i.test(l) ||                           // Method calls like np.mean
+      /^\[\d/.test(l) ||                                                // List starting with number
+      /^\{['"]/i.test(l) ||                                             // Dict with string key
+      (/^\([a-z_]/i.test(l) && !/^\([a-z]\)\s/i.test(l))               // Tuple (not problem label)
     )
 
     if (isTextLine) {
@@ -200,8 +206,6 @@ function looksLikeStandaloneCode(content: string): boolean {
 
 // Check if content at index is part of reasoning/thinking section
 function isReasoningContent(arr: unknown[], index: number): boolean {
-  const REASONING_LOOKBEHIND = 50
-
   for (let j = index - 1; j >= Math.max(0, index - REASONING_LOOKBEHIND); j--) {
     const val = arr[j]
     if (typeof val === 'string') {
@@ -218,9 +222,6 @@ function isReasoningContent(arr: unknown[], index: number): boolean {
 
 // Check if content at index is from a filtered role or content type
 function isFilteredContent(arr: unknown[], index: number): boolean {
-  const CONTEXT_LOOKBEHIND = 50
-  const CONTEXT_LOOKAHEAD = 30
-
   let contentType: string | null = null
   let role: string | null = null
   let hasCodeExecutionContext = false
