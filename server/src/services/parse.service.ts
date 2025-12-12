@@ -40,6 +40,32 @@ export class InvalidUrlError extends Error {
 const MIN_REACT_ROUTER_DATA_LENGTH = 1000
 const ROLE_LOOKBEHIND_WINDOW = 30
 
+// Constants for code detection heuristics
+const CODE_RATIO_THRESHOLD = 0.7
+const MAX_TEXT_LINES_FOR_CODE_RATIO = 2
+const SHORT_CONTENT_THRESHOLD = 300
+
+// Constants for reasoning content detection
+const REASONING_CONTENT_LOOKAHEAD = 100
+const MIN_REASONING_CONTENT_LENGTH = 20
+
+// Constants for message deduplication
+const DEDUPE_PREFIX_LENGTH = 200
+
+// Constants for context lookbehind/lookahead in filtering functions
+const REASONING_LOOKBEHIND = 50
+const CONTEXT_LOOKBEHIND = 50
+const CONTEXT_LOOKAHEAD = 30
+
+// Strong code indicator patterns - if first line matches, it's definitely code
+const STRONG_CODE_PATTERNS = [
+  /^import\s+[a-z]/i,           // import statements
+  /^from\s+[a-z]/i,             // from ... import
+  /^def\s+[a-z_]/i,             // function definitions
+  /^class\s+[A-Z]/i,            // class definitions
+  /^@[a-z]/i,                   // decorators
+]
+
 const CHATGPT_URL_PATTERNS = [
   /^https:\/\/chatgpt\.com\/share\/[a-zA-Z0-9-]+$/,
   /^https:\/\/chat\.openai\.com\/share\/[a-zA-Z0-9-]+$/
@@ -67,8 +93,163 @@ const METADATA_KEYWORDS = new Set([
   'serverResponse', 'type', 'data', 'client-created-root', 'history_off_approved'
 ])
 
+// Keywords that indicate reasoning/thinking content (should be filtered out)
+const REASONING_KEYWORDS = new Set([
+  'reasoning_title', 'reasoning_recap', 'reasoning_status', 'reasoning_ended',
+  'thoughts', 'thinking', 'is_reasoning', 'thinking_effort', 'skip_reasoning_title',
+  'finished_duration_sec', 'source_analysis_msg_id'
+])
+
+// Content types that should be filtered out
+const FILTERED_CONTENT_TYPES = new Set([
+  'execution_output', 'code', 'tether_browsing_display', 'tether_quote',
+  'system_error', 'stderr', 'multimodal_text'
+])
+
+// Roles that should be filtered out (not user/assistant conversation)
+const FILTERED_ROLES = new Set([
+  'tool', 'system'
+])
+
+// Keywords that indicate code execution context
+const CODE_EXECUTION_KEYWORDS = new Set([
+  'python', 'code', 'execution_output', 'aggregate_result', 'run_id',
+  'start_time', 'end_time', 'final_expression_output', 'in_kernel_exception',
+  'system_exception', 'success', 'jupyter_messages', 'jupyter_message_type'
+])
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const DOMAIN_LIST_PATTERN = /^[a-z0-9.-]+\.(com|org|net|edu|io|co|au)(,\s*[a-z0-9.-]+\.(com|org|net|edu|io|co|au))*$/i
+
+// Check if content looks like standalone code (not embedded in explanation)
+function looksLikeStandaloneCode(content: string): boolean {
+  const trimmed = content.trim()
+  const lines = trimmed.split('\n')
+  const firstLine = lines[0].trim()
+
+  // Check strong code indicators first (early exit)
+  for (const pattern of STRONG_CODE_PATTERNS) {
+    if (pattern.test(firstLine)) {
+      return true
+    }
+  }
+
+  // Check if mostly code lines
+  let codeLineCount = 0
+  let textLineCount = 0
+
+  for (const line of lines) {
+    const l = line.trim()
+    if (l.length === 0) continue
+
+    // Text-like patterns (natural language) - check first to avoid false positives
+    const isTextLine = (
+      (/^[A-Z][a-z]/.test(l) && l.includes(' ') && l.length > 30) ||  // Sentence starting with capital letter
+      /^[-*•]/.test(l) ||                                              // Bullet points
+      /^\*\*/.test(l) ||                                               // Markdown bold
+      /^#{1,6}\s/.test(l) ||                                           // Markdown headings
+      (/^\\?\[/.test(l) && l.includes('\\')) ||                        // LaTeX brackets
+      /^\\\(/.test(l) ||                                               // LaTeX inline math
+      l.includes('\\frac') || l.includes('\\text') ||                  // LaTeX commands
+      /^\([a-z]\)\s/i.test(l) ||                                       // Problem labels like (a), (b)
+      /^Problem\s+\d/i.test(l) ||                                      // "Problem 1" etc.
+      /^Question\s+\d/i.test(l) ||                                     // "Question 1" etc.
+      /^\d+\.\s+[A-Z]/i.test(l) ||                                     // Numbered lists "1. Something"
+      // English "for any..." vs Python "for x in y" - exclude if contains " in " pattern
+      (/^for\s+[a-z]+\s+[a-z]+/i.test(l) && l.includes(' ') && !/\s+in\s+/.test(l))
+    )
+
+    // Code-like patterns - only if not already classified as text
+    const isCodeLine = !isTextLine && (
+      /^[a-z_][a-z0-9_]*\s*=/i.test(l) ||                              // Variable assignment
+      /^[a-z_][a-z0-9_]*\s*\([^)]*\)\s*$/i.test(l) ||                  // Function call ending with )
+      /^(while|elif|else|return|print|try|except|with)\s/i.test(l) ||  // Python keywords
+      /^for\s+[a-z_]+\s+in\s+/i.test(l) ||                             // Python for loop "for x in y"
+      /^if\s+.+:/i.test(l) ||                                            // General Python if statement
+      /^#[^#]/.test(l) ||                                               // Python comment (not markdown heading)
+      /^\s*(def|class|import|from)\s/i.test(l) ||                       // Python definitions/imports
+      /^[a-z_][a-z0-9_]*\.[a-z]/i.test(l) ||                           // Method calls like np.mean
+      /^\[\d/.test(l) ||                                                // List starting with number
+      /^\{['"]/i.test(l) ||                                             // Dict with string key
+      (/^\([a-z_]/i.test(l) && !/^\([a-z]\)\s/i.test(l))               // Tuple (not problem label)
+    )
+
+    if (isTextLine) {
+      textLineCount++
+    } else if (isCodeLine) {
+      codeLineCount++
+    }
+  }
+
+  const totalClassified = codeLineCount + textLineCount
+  if (totalClassified > 0) {
+    const codeRatio = codeLineCount / totalClassified
+    if (codeRatio > CODE_RATIO_THRESHOLD && textLineCount <= MAX_TEXT_LINES_FOR_CODE_RATIO) {
+      return true
+    }
+  }
+
+  // Short content that looks like code output or expression
+  if (trimmed.length < SHORT_CONTENT_THRESHOLD) {
+    if (/^[\d\.e\-\+\*\/\(\)\s,\[\]]+$/i.test(trimmed)) {
+      return true
+    }
+    if (/^[a-z_][a-z0-9_]*\s*=/.test(trimmed) && !trimmed.includes('\n\n')) {
+      const hasNaturalText = lines.some(l => /^[A-Z][a-z]/.test(l.trim()) && l.includes(' '))
+      if (!hasNaturalText) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+
+// Check if content at index is from a filtered role or content type
+// Uses early exit pattern for better performance
+function isFilteredContent(arr: unknown[], index: number): boolean {
+  // Look backwards for context
+  for (let j = index - 1; j >= Math.max(0, index - CONTEXT_LOOKBEHIND); j--) {
+    const val = arr[j]
+    if (typeof val === 'string') {
+      // Check for filtered content_type (early exit)
+      // Note: Type assertion required because TS doesn't narrow array element types after typeof check
+      if (val === 'content_type' && typeof arr[j + 1] === 'string') {
+        const contentType = arr[j + 1] as string
+        if (FILTERED_CONTENT_TYPES.has(contentType)) {
+          return true
+        }
+      }
+      // Check for code execution keywords (early exit)
+      if (CODE_EXECUTION_KEYWORDS.has(val)) {
+        return true
+      }
+      // Check for filtered roles (early exit)
+      if (FILTERED_ROLES.has(val)) {
+        return true
+      }
+    }
+    // Stop at role boundary
+    if (val === 'user' || val === 'assistant') {
+      break
+    }
+  }
+
+  // Look forwards for code execution context
+  for (let j = index + 1; j < Math.min(arr.length, index + CONTEXT_LOOKAHEAD); j++) {
+    const val = arr[j]
+    if (typeof val === 'string') {
+      if (CODE_EXECUTION_KEYWORDS.has(val)) {
+        return true
+      }
+    }
+    if (val === 'user' || val === 'assistant') {
+      break
+    }
+  }
+
+  return false
+}
 
 function isValidMessageContent(val: unknown): val is string {
   if (typeof val !== 'string') return false
@@ -146,6 +327,20 @@ function extractFromReactRouterData(html: string): ParseResult | null {
       }
     }
 
+    // Pre-compute reasoning indices for direct exclusion
+    // Check all REASONING_KEYWORDS to ensure comprehensive filtering
+    const reasoningIndices = new Set<number>()
+    for (let i = 0; i < arr.length - 1; i++) {
+      if (typeof arr[i] === 'string' && REASONING_KEYWORDS.has(arr[i])) {
+        for (let j = i + 1; j < Math.min(arr.length, i + REASONING_CONTENT_LOOKAHEAD); j++) {
+          if (typeof arr[j] === 'string' && arr[j].length > MIN_REASONING_CONTENT_LENGTH) {
+            reasoningIndices.add(j)
+          }
+          if (arr[j] === 'user' || arr[j] === 'assistant') break
+        }
+      }
+    }
+
     // Extract raw messages by finding Array(1) followed by content
     const rawMessages: Array<{ index: number; content: string; detectedRole: 'user' | 'assistant' | null }> = []
 
@@ -153,6 +348,17 @@ function extractFromReactRouterData(html: string): ParseResult | null {
       if (Array.isArray(arr[i]) && arr[i].length === 1) {
         const next = arr[i + 1]
         if (isValidMessageContent(next)) {
+          const contentIndex = i + 1
+
+          // Skip reasoning content (pre-computed using all REASONING_KEYWORDS)
+          if (reasoningIndices.has(contentIndex)) continue
+
+          // Skip filtered content (tool outputs, code execution, etc.)
+          if (isFilteredContent(arr, contentIndex)) continue
+
+          // Skip standalone code blocks
+          if (looksLikeStandaloneCode(next)) continue
+
           // Look backwards for role within a window
           let role: 'user' | 'assistant' | null = null
           for (let j = i - 1; j >= Math.max(0, i - ROLE_LOOKBEHIND_WINDOW); j--) {
@@ -161,7 +367,7 @@ function extractFromReactRouterData(html: string): ParseResult | null {
           }
 
           rawMessages.push({
-            index: i + 1,
+            index: contentIndex,
             content: next,
             detectedRole: role
           })
@@ -171,9 +377,18 @@ function extractFromReactRouterData(html: string): ParseResult | null {
 
     if (rawMessages.length === 0) return null
 
+    // Deduplicate messages based on content prefix
+    const seenContent = new Set<string>()
+    const uniqueMessages = rawMessages.filter(m => {
+      const contentKey = m.content.substring(0, DEDUPE_PREFIX_LENGTH)
+      if (seenContent.has(contentKey)) return false
+      seenContent.add(contentKey)
+      return true
+    })
+
     // Assign roles (use detected role when available, otherwise alternate)
     let lastRole: 'user' | 'assistant' | null = null
-    const messages: ParsedMessage[] = rawMessages.map((m, idx) => {
+    const messages: ParsedMessage[] = uniqueMessages.map((m, idx) => {
       let role: 'user' | 'assistant'
       if (m.detectedRole) {
         role = m.detectedRole
