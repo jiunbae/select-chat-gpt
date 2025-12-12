@@ -3,6 +3,7 @@ import type { ChatMessage, ExportStyleType } from "~src/types"
 import { getPageTitle } from "~src/hooks/useChatGPTMessages"
 import { createShare } from "~src/utils/api"
 import { convertToMarkdown } from "~src/utils/markdown"
+import { t } from "~src/utils/i18n"
 import {
   exportToImage,
   exportToPDF,
@@ -23,19 +24,19 @@ interface ExportModalProps {
 
 type ExportMode = 'link' | 'markdown' | 'image' | 'pdf'
 
-const MODE_LABELS: Record<ExportMode, string> = {
-  link: 'Link',
-  markdown: 'MD',
-  image: 'PNG',
-  pdf: 'PDF'
-}
+const getModeLabels = (): Record<ExportMode, string> => ({
+  link: t('modeLink'),
+  markdown: t('modeMarkdown'),
+  image: t('modeImage'),
+  pdf: t('modePDF')
+})
 
-const STAGE_MESSAGES: Record<ExportProgress['stage'], string> = {
-  preparing: 'Preparing...',
-  rendering: 'Rendering...',
-  generating: 'Generating...',
-  downloading: 'Downloading...'
-}
+const getStageMessages = (): Record<ExportProgress['stage'], string> => ({
+  preparing: t('stagePreparing'),
+  rendering: t('stageRendering'),
+  generating: t('stageGenerating'),
+  downloading: t('stageDownloading')
+})
 
 // Collapsible section component
 function CollapsibleSection({
@@ -203,7 +204,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
 
       setShareUrl(response.url)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create share link')
+      setError(e instanceof Error ? e.message : t('failedToCreateShare'))
     } finally {
       setIsLoading(false)
     }
@@ -217,7 +218,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (e) {
-      setError('Failed to copy to clipboard')
+      setError(t('failedToCopy'))
     }
   }
 
@@ -228,7 +229,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (e) {
-      setError('Failed to copy markdown')
+      setError(t('failedToCopyMarkdown'))
     }
   }
 
@@ -266,23 +267,23 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
     }
   }
 
-  const handleExportImage = createExportHandler(exportToImage, 'Failed to export image')
-  const handleExportPDF = createExportHandler(exportToPDF, 'Failed to export PDF')
+  const handleExportImage = createExportHandler(exportToImage, t('failedToExportImage'))
+  const handleExportPDF = createExportHandler(exportToPDF, t('failedToExportPDF'))
 
-  const EXPORT_ACTIONS: Record<'image' | 'pdf', ExportActionConfig> = {
+  const getExportActions = (): Record<'image' | 'pdf', ExportActionConfig> => ({
     image: {
       icon: ImageIcon,
-      label: 'Download as PNG',
-      description: 'High-quality image export for sharing on social media',
+      label: t('downloadAsPNG'),
+      description: t('imageExportDesc'),
       handler: handleExportImage,
     },
     pdf: {
       icon: PdfIcon,
-      label: 'Download as PDF',
-      description: 'Multi-page PDF document for printing and archiving',
+      label: t('downloadAsPDF'),
+      description: t('pdfExportDesc'),
       handler: handleExportPDF,
     },
-  }
+  })
 
   const showStyleSelector = mode === 'image' || mode === 'pdf'
 
@@ -298,7 +299,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
         <div className="scgpt-px-6 scgpt-py-4 scgpt-border-b scgpt-border-gray-100">
           <div className="scgpt-flex scgpt-items-center scgpt-justify-between">
             <h2 className="scgpt-text-lg scgpt-font-semibold scgpt-text-gray-900">
-              Export {messages.length} message{messages.length > 1 ? 's' : ''}
+              {t('exportMessages', [String(messages.length), messages.length > 1 ? 's' : ''])}
             </h2>
             <button
               onClick={onClose}
@@ -328,7 +329,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                     : 'scgpt-bg-gray-100 scgpt-text-gray-700 scgpt-hover:bg-gray-200'
                 }`}
               >
-                {MODE_LABELS[m]}
+                {getModeLabels()[m]}
               </button>
             ))}
           </div>
@@ -337,7 +338,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
           {showStyleSelector && (
             <div className="scgpt-mb-4">
               <label className="scgpt-block scgpt-text-sm scgpt-font-medium scgpt-text-gray-700 scgpt-mb-2">
-                Style
+                {t('style')}
               </label>
               <div className="scgpt-flex scgpt-gap-2">
                 <button
@@ -350,7 +351,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                 >
                   <div className="scgpt-flex scgpt-items-center scgpt-justify-center scgpt-gap-2">
                     <div className="scgpt-w-4 scgpt-h-4 scgpt-rounded scgpt-bg-[#212121]" />
-                    <span>ChatGPT</span>
+                    <span>{t('styleChatGPT')}</span>
                   </div>
                 </button>
                 <button
@@ -363,7 +364,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                 >
                   <div className="scgpt-flex scgpt-items-center scgpt-justify-center scgpt-gap-2">
                     <div className="scgpt-w-4 scgpt-h-4 scgpt-rounded scgpt-bg-white scgpt-border scgpt-border-gray-300" />
-                    <span>Clean</span>
+                    <span>{t('styleClean')}</span>
                   </div>
                 </button>
               </div>
@@ -373,12 +374,12 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
           {/* Text Styling Options (image/pdf only) */}
           {showStyleSelector && (
             <CollapsibleSection
-              title="Text Styling"
+              title={t('textStyling')}
               isOpen={textStylingOpen}
               onToggle={() => setTextStylingOpen(!textStylingOpen)}
             >
               <SelectField
-                label="Font Size"
+                label={t('fontSize')}
                 value={fontSize}
                 options={[
                   { value: 'xs', label: '12px' },
@@ -391,7 +392,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                 onChange={setFontSize}
               />
               <SelectField
-                label="Line Height"
+                label={t('lineHeight')}
                 value={lineHeight}
                 options={[
                   { value: 'tight', label: '1.25' },
@@ -403,7 +404,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                 onChange={setLineHeight}
               />
               <SelectField
-                label="Letter Spacing"
+                label={t('letterSpacing')}
                 value={letterSpacing}
                 options={[
                   { value: 'tighter', label: '-0.05em' },
@@ -420,17 +421,17 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
           {/* Content Filtering Options (markdown/image/pdf) */}
           {mode !== 'link' && (
             <CollapsibleSection
-              title="Content"
+              title={t('content')}
               isOpen={contentOpen}
               onToggle={() => setContentOpen(!contentOpen)}
             >
               <CheckboxField
-                label="Hide user questions"
+                label={t('hideUserQuestions')}
                 checked={hideUserMessages}
                 onChange={setHideUserMessages}
               />
               <CheckboxField
-                label="Hide code blocks"
+                label={t('hideCodeBlocks')}
                 checked={hideCodeBlocks}
                 onChange={setHideCodeBlocks}
               />
@@ -440,12 +441,12 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
           {/* Layout Options (pdf only) */}
           {mode === 'pdf' && (
             <CollapsibleSection
-              title="Layout"
+              title={t('layout')}
               isOpen={layoutOpen}
               onToggle={() => setLayoutOpen(!layoutOpen)}
             >
               <SelectField
-                label="Page Size"
+                label={t('pageSize')}
                 value={pageSize}
                 options={[
                   { value: 'a4', label: 'A4' },
@@ -455,12 +456,12 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                 onChange={setPageSize}
               />
               <SelectField
-                label="Margin"
+                label={t('margin')}
                 value={margin}
                 options={[
-                  { value: 'compact', label: 'Compact' },
-                  { value: 'normal', label: 'Normal' },
-                  { value: 'wide', label: 'Wide' },
+                  { value: 'compact', label: t('marginCompact') },
+                  { value: 'normal', label: t('marginNormal') },
+                  { value: 'wide', label: t('marginWide') },
                 ]}
                 onChange={setMargin}
               />
@@ -487,10 +488,10 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                         <circle className="scgpt-opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                         <path className="scgpt-opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
-                      Creating...
+                      {t('creating')}
                     </>
                   ) : (
-                    'Generate Share Link'
+                    t('generateShareLink')
                   )}
                 </button>
               ) : (
@@ -506,7 +507,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                       onClick={handleCopyLink}
                       className="scgpt-px-3 scgpt-py-1.5 scgpt-bg-primary scgpt-text-white scgpt-rounded-md scgpt-text-sm scgpt-font-medium scgpt-hover:bg-primary-hover scgpt-transition-colors"
                     >
-                      {copied ? 'Copied!' : 'Copy'}
+                      {copied ? t('copied') : t('copy')}
                     </button>
                   </div>
                   <a
@@ -515,7 +516,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                     rel="noopener noreferrer"
                     className="scgpt-block scgpt-text-center scgpt-text-sm scgpt-text-primary scgpt-hover:underline"
                   >
-                    Open in new tab
+                    {t('openInNewTab')}
                   </a>
                 </div>
               )}
@@ -532,7 +533,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
-                {copied ? 'Copied!' : 'Copy as Markdown'}
+                {copied ? t('copied') : t('copyAsMarkdown')}
               </button>
               <button
                 onClick={handleDownloadMarkdown}
@@ -543,7 +544,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                Download .md File
+                {t('downloadMdFile')}
               </button>
             </div>
           )}
@@ -551,7 +552,7 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
           {(mode === 'image' || mode === 'pdf') && (
             <div className="scgpt-space-y-3">
               <button
-                onClick={EXPORT_ACTIONS[mode].handler}
+                onClick={getExportActions()[mode].handler}
                 disabled={isLoading}
                 className="scgpt-w-full scgpt-py-3 scgpt-bg-primary scgpt-text-white scgpt-rounded-lg scgpt-font-medium scgpt-hover:bg-primary-hover scgpt-transition-colors scgpt-disabled:opacity-50 scgpt-disabled:cursor-not-allowed scgpt-flex scgpt-items-center scgpt-justify-center scgpt-gap-2"
               >
@@ -561,24 +562,24 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                       <circle className="scgpt-opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="scgpt-opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    {exportProgress ? STAGE_MESSAGES[exportProgress.stage] : 'Exporting...'}
+                    {exportProgress ? getStageMessages()[exportProgress.stage] : t('exporting')}
                   </>
                 ) : (
                   <>
-                    {EXPORT_ACTIONS[mode].icon}
-                    {EXPORT_ACTIONS[mode].label}
+                    {getExportActions()[mode].icon}
+                    {getExportActions()[mode].label}
                   </>
                 )}
               </button>
               <p className="scgpt-text-xs scgpt-text-gray-500 scgpt-text-center">
-                {EXPORT_ACTIONS[mode].description}
+                {getExportActions()[mode].description}
               </p>
             </div>
           )}
         </div>
 
         <div className="scgpt-px-6 scgpt-py-3 scgpt-bg-gray-50 scgpt-text-xs scgpt-text-gray-500 scgpt-text-center">
-          Powered by SelectChatGPT
+          {t('poweredBy')}
         </div>
       </div>
     </div>

@@ -1,0 +1,246 @@
+{
+  "extName": {
+    "message": "SelectChatGPT",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "Share selected ChatGPT messages",
+    "description": "Extension description"
+  },
+  "shareSelectedMessages": {
+    "message": "Share selected messages",
+    "description": "Tagline"
+  },
+  "howToUse": {
+    "message": "How to use",
+    "description": "How to use section title"
+  },
+  "step1": {
+    "message": "Open a ChatGPT shared conversation",
+    "description": "Step 1 instruction"
+  },
+  "step2": {
+    "message": "Click checkboxes to select messages",
+    "description": "Step 2 instruction"
+  },
+  "step3": {
+    "message": "Click \"Create Share Link\"",
+    "description": "Step 3 instruction"
+  },
+  "openChatGPT": {
+    "message": "Open ChatGPT",
+    "description": "Button to open ChatGPT"
+  },
+  "exportMessages": {
+    "message": "Export $count$ message$plural$",
+    "description": "Export modal title",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      },
+      "plural": {
+        "content": "$2",
+        "example": "s"
+      }
+    }
+  },
+  "modeLink": {
+    "message": "Link",
+    "description": "Link export mode"
+  },
+  "modeMarkdown": {
+    "message": "MD",
+    "description": "Markdown export mode"
+  },
+  "modeImage": {
+    "message": "PNG",
+    "description": "Image export mode"
+  },
+  "modePDF": {
+    "message": "PDF",
+    "description": "PDF export mode"
+  },
+  "stagePreparing": {
+    "message": "Preparing...",
+    "description": "Export stage - preparing"
+  },
+  "stageRendering": {
+    "message": "Rendering...",
+    "description": "Export stage - rendering"
+  },
+  "stageGenerating": {
+    "message": "Generating...",
+    "description": "Export stage - generating"
+  },
+  "stageDownloading": {
+    "message": "Downloading...",
+    "description": "Export stage - downloading"
+  },
+  "style": {
+    "message": "Style",
+    "description": "Style section label"
+  },
+  "styleChatGPT": {
+    "message": "ChatGPT",
+    "description": "ChatGPT style option"
+  },
+  "styleClean": {
+    "message": "Clean",
+    "description": "Clean style option"
+  },
+  "textStyling": {
+    "message": "Text Styling",
+    "description": "Text styling section"
+  },
+  "fontSize": {
+    "message": "Font Size",
+    "description": "Font size label"
+  },
+  "lineHeight": {
+    "message": "Line Height",
+    "description": "Line height label"
+  },
+  "letterSpacing": {
+    "message": "Letter Spacing",
+    "description": "Letter spacing label"
+  },
+  "content": {
+    "message": "Content",
+    "description": "Content section"
+  },
+  "hideUserQuestions": {
+    "message": "Hide user questions",
+    "description": "Hide user questions option"
+  },
+  "hideCodeBlocks": {
+    "message": "Hide code blocks",
+    "description": "Hide code blocks option"
+  },
+  "layout": {
+    "message": "Layout",
+    "description": "Layout section"
+  },
+  "pageSize": {
+    "message": "Page Size",
+    "description": "Page size label"
+  },
+  "margin": {
+    "message": "Margin",
+    "description": "Margin label"
+  },
+  "marginCompact": {
+    "message": "Compact",
+    "description": "Compact margin option"
+  },
+  "marginNormal": {
+    "message": "Normal",
+    "description": "Normal margin option"
+  },
+  "marginWide": {
+    "message": "Wide",
+    "description": "Wide margin option"
+  },
+  "generateShareLink": {
+    "message": "Generate Share Link",
+    "description": "Generate share link button"
+  },
+  "creating": {
+    "message": "Creating...",
+    "description": "Creating state"
+  },
+  "copied": {
+    "message": "Copied!",
+    "description": "Copied confirmation"
+  },
+  "copy": {
+    "message": "Copy",
+    "description": "Copy button"
+  },
+  "openInNewTab": {
+    "message": "Open in new tab",
+    "description": "Open in new tab link"
+  },
+  "copyAsMarkdown": {
+    "message": "Copy as Markdown",
+    "description": "Copy as markdown button"
+  },
+  "downloadMdFile": {
+    "message": "Download .md File",
+    "description": "Download markdown file button"
+  },
+  "downloadAsPNG": {
+    "message": "Download as PNG",
+    "description": "Download as PNG button"
+  },
+  "downloadAsPDF": {
+    "message": "Download as PDF",
+    "description": "Download as PDF button"
+  },
+  "exporting": {
+    "message": "Exporting...",
+    "description": "Exporting state"
+  },
+  "imageExportDesc": {
+    "message": "High-quality image export for sharing on social media",
+    "description": "Image export description"
+  },
+  "pdfExportDesc": {
+    "message": "Multi-page PDF document for printing and archiving",
+    "description": "PDF export description"
+  },
+  "poweredBy": {
+    "message": "Powered by SelectChatGPT",
+    "description": "Footer text"
+  },
+  "selected": {
+    "message": "$count$ / $total$ selected",
+    "description": "Selection count",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "10"
+      }
+    }
+  },
+  "selectAll": {
+    "message": "Select All",
+    "description": "Select all button"
+  },
+  "deselectAll": {
+    "message": "Deselect All",
+    "description": "Deselect all button"
+  },
+  "clear": {
+    "message": "Clear",
+    "description": "Clear button"
+  },
+  "createShareLink": {
+    "message": "Create Share Link",
+    "description": "Create share link button"
+  },
+  "failedToCreateShare": {
+    "message": "Failed to create share link",
+    "description": "Error message"
+  },
+  "failedToCopy": {
+    "message": "Failed to copy to clipboard",
+    "description": "Copy error message"
+  },
+  "failedToCopyMarkdown": {
+    "message": "Failed to copy markdown",
+    "description": "Markdown copy error"
+  },
+  "failedToExportImage": {
+    "message": "Failed to export image",
+    "description": "Image export error"
+  },
+  "failedToExportPDF": {
+    "message": "Failed to export PDF",
+    "description": "PDF export error"
+  }
+}

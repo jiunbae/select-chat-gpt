@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "title": "SelectChatGPT - 分享选定的ChatGPT消息",
+    "description": "查看和分享ChatGPT对话中选定的消息"
+  },
+  "common": {
+    "retry": "重试",
+    "home": "返回首页",
+    "export": "导出",
+    "copy": "复制",
+    "copied": "已复制!",
+    "download": "下载"
+  },
+  "home": {
+    "title": "SelectChatGPT",
+    "subtitle": "从ChatGPT对话中选择并分享特定消息",
+    "urlSectionTitle": "使用ChatGPT分享链接开始",
+    "urlSectionDesc": "无需扩展，只需分享链接即可查看对话",
+    "orUseExtension": "或使用扩展进行更多控制",
+    "howItWorks": "扩展使用方法",
+    "step1": "安装SelectChatGPT Chrome扩展",
+    "step2": "打开任意ChatGPT分享对话链接",
+    "step3": "点击复选框选择要分享的消息",
+    "step4": "生成仅包含所选消息的新分享链接",
+    "installExtension": "安装扩展",
+    "viewOnGitHub": "在GitHub查看",
+    "footerText": "为ChatGPT社区倾心打造"
+  },
+  "urlInput": {
+    "placeholder": "https://chatgpt.com/share/...",
+    "load": "加载对话",
+    "loading": "加载中...",
+    "example": "例如: https://chatgpt.com/share/abc123-def456-...",
+    "errorEmpty": "请输入URL",
+    "errorInvalid": "请输入有效的ChatGPT分享URL (例如: https://chatgpt.com/share/...)"
+  },
+  "styleControls": {
+    "style": "样式",
+    "chatgpt": "ChatGPT",
+    "clean": "简洁",
+    "text": "文本",
+    "spacing": "间距",
+    "filters": "过滤",
+    "font": "字体",
+    "fontSize": "大小",
+    "lineHeight": "行高",
+    "letterSpacing": "字间距",
+    "gap": "间隔",
+    "padding": "内边距",
+    "hideQuestions": "隐藏提问",
+    "hideCode": "隐藏代码",
+    "systemDefault": "系统默认"
+  },
+  "exportButton": {
+    "exportAs": "导出为",
+    "png": "PNG",
+    "pdf": "PDF",
+    "exporting": "导出中...",
+    "preparing": "准备中...",
+    "rendering": "渲染中...",
+    "generating": "生成中...",
+    "downloading": "下载中..."
+  },
+  "error": {
+    "notFound": "未找到分享",
+    "notFoundDesc": "您查找的分享不存在或已被删除。",
+    "backHome": "返回首页",
+    "invalidUrl": "无效的URL",
+    "failedToLoad": "加载对话失败",
+    "offline": "无网络连接",
+    "serverUnreachable": "无法连接服务器",
+    "timeout": "连接超时",
+    "serverError": "服务器错误",
+    "unknown": "发生错误",
+    "tipOffline": "请检查您的Wi-Fi或移动数据连接。",
+    "tipServer": "服务器可能正在维护或存在网络问题，请稍后重试。"
+  },
+  "message": {
+    "you": "用户",
+    "assistant": "助手"
+  },
+  "footer": {
+    "poweredBy": "Powered by SelectChatGPT"
+  }
+}

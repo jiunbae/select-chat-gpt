@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { parseUrl, getErrorMessage } from "@/lib/api";
 import { Analytics } from "@/lib/analytics";
 
 export function UrlInput() {
+  const t = useTranslations('urlInput');
+  const tHome = useTranslations('home');
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,13 +19,13 @@ export function UrlInput() {
 
     const trimmedUrl = url.trim();
     if (!trimmedUrl) {
-      setError("URL을 입력해주세요");
+      setError(t('errorEmpty'));
       return;
     }
 
     // Validate ChatGPT share URL pattern
     if (!trimmedUrl.startsWith("https://chatgpt.com/share/") && !trimmedUrl.startsWith("https://chat.openai.com/share/")) {
-      setError("올바른 ChatGPT Share URL을 입력해주세요 (예: https://chatgpt.com/share/...)");
+      setError(t('errorInvalid'));
       return;
     }
 
@@ -51,10 +54,10 @@ export function UrlInput() {
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
       <div className="text-center mb-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          ChatGPT Share URL로 바로 시작하기
+          {tHome('urlSectionTitle')}
         </h2>
         <p className="text-gray-600 dark:text-gray-400 text-sm">
-          Extension 없이 Share 링크만으로 대화를 확인하세요
+          {tHome('urlSectionDesc')}
         </p>
       </div>
 
@@ -67,7 +70,7 @@ export function UrlInput() {
               setUrl(e.target.value);
               setError(null);
             }}
-            placeholder="https://chatgpt.com/share/..."
+            placeholder={t('placeholder')}
             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
             disabled={isLoading}
           />
@@ -105,7 +108,7 @@ export function UrlInput() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              불러오는 중...
+              {t('loading')}
             </>
           ) : (
             <>
@@ -120,14 +123,14 @@ export function UrlInput() {
                 <path d="M5 12h14" />
                 <path d="M12 5l7 7-7 7" />
               </svg>
-              대화 불러오기
+              {t('load')}
             </>
           )}
         </button>
       </form>
 
       <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
-        예: https://chatgpt.com/share/abc123-def456-...
+        {t('example')}
       </p>
     </div>
   );

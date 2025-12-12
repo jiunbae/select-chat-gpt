@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import "~style.css"
 import { Analytics } from "~src/utils/analytics"
+import { t } from "~src/utils/i18n"
 
 function IndexPopup() {
   useEffect(() => {
@@ -23,17 +24,17 @@ function IndexPopup() {
           </svg>
         </div>
         <div>
-          <h1 className="scgpt-text-lg scgpt-font-bold scgpt-text-gray-900">SelectChatGPT</h1>
-          <p className="scgpt-text-xs scgpt-text-gray-500">Share selected messages</p>
+          <h1 className="scgpt-text-lg scgpt-font-bold scgpt-text-gray-900">{t('extName')}</h1>
+          <p className="scgpt-text-xs scgpt-text-gray-500">{t('shareSelectedMessages')}</p>
         </div>
       </div>
 
       <div className="scgpt-bg-gray-50 scgpt-rounded-lg scgpt-p-3 scgpt-mb-4">
-        <h2 className="scgpt-text-sm scgpt-font-medium scgpt-text-gray-700 scgpt-mb-2">How to use</h2>
+        <h2 className="scgpt-text-sm scgpt-font-medium scgpt-text-gray-700 scgpt-mb-2">{t('howToUse')}</h2>
         <ol className="scgpt-text-xs scgpt-text-gray-600 scgpt-space-y-1 scgpt-list-decimal scgpt-list-inside">
-          <li>Open a ChatGPT shared conversation</li>
-          <li>Click checkboxes to select messages</li>
-          <li>Click "Create Share Link"</li>
+          <li>{t('step1')}</li>
+          <li>{t('step2')}</li>
+          <li>{t('step3')}</li>
         </ol>
       </div>
 
@@ -41,7 +42,7 @@ function IndexPopup() {
         onClick={handleOpenChatGPT}
         className="scgpt-w-full scgpt-py-2 scgpt-bg-primary scgpt-text-white scgpt-rounded-lg scgpt-text-sm scgpt-font-medium scgpt-hover:bg-primary-hover scgpt-transition-colors"
       >
-        Open ChatGPT
+        {t('openChatGPT')}
       </button>
 
       <div className="scgpt-mt-3 scgpt-text-center">

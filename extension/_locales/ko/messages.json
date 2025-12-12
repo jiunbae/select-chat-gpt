@@ -1,0 +1,246 @@
+{
+  "extName": {
+    "message": "SelectChatGPT",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "선택한 ChatGPT 메시지를 공유하세요",
+    "description": "Extension description"
+  },
+  "shareSelectedMessages": {
+    "message": "선택한 메시지 공유",
+    "description": "Tagline"
+  },
+  "howToUse": {
+    "message": "사용 방법",
+    "description": "How to use section title"
+  },
+  "step1": {
+    "message": "ChatGPT 공유 대화를 열어주세요",
+    "description": "Step 1 instruction"
+  },
+  "step2": {
+    "message": "체크박스를 클릭하여 메시지를 선택하세요",
+    "description": "Step 2 instruction"
+  },
+  "step3": {
+    "message": "\"공유 링크 생성\"을 클릭하세요",
+    "description": "Step 3 instruction"
+  },
+  "openChatGPT": {
+    "message": "ChatGPT 열기",
+    "description": "Button to open ChatGPT"
+  },
+  "exportMessages": {
+    "message": "$count$개 메시지 내보내기",
+    "description": "Export modal title",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      },
+      "plural": {
+        "content": "$2",
+        "example": ""
+      }
+    }
+  },
+  "modeLink": {
+    "message": "링크",
+    "description": "Link export mode"
+  },
+  "modeMarkdown": {
+    "message": "MD",
+    "description": "Markdown export mode"
+  },
+  "modeImage": {
+    "message": "PNG",
+    "description": "Image export mode"
+  },
+  "modePDF": {
+    "message": "PDF",
+    "description": "PDF export mode"
+  },
+  "stagePreparing": {
+    "message": "준비 중...",
+    "description": "Export stage - preparing"
+  },
+  "stageRendering": {
+    "message": "렌더링 중...",
+    "description": "Export stage - rendering"
+  },
+  "stageGenerating": {
+    "message": "생성 중...",
+    "description": "Export stage - generating"
+  },
+  "stageDownloading": {
+    "message": "다운로드 중...",
+    "description": "Export stage - downloading"
+  },
+  "style": {
+    "message": "스타일",
+    "description": "Style section label"
+  },
+  "styleChatGPT": {
+    "message": "ChatGPT",
+    "description": "ChatGPT style option"
+  },
+  "styleClean": {
+    "message": "깔끔함",
+    "description": "Clean style option"
+  },
+  "textStyling": {
+    "message": "텍스트 스타일",
+    "description": "Text styling section"
+  },
+  "fontSize": {
+    "message": "글꼴 크기",
+    "description": "Font size label"
+  },
+  "lineHeight": {
+    "message": "줄 높이",
+    "description": "Line height label"
+  },
+  "letterSpacing": {
+    "message": "자간",
+    "description": "Letter spacing label"
+  },
+  "content": {
+    "message": "내용",
+    "description": "Content section"
+  },
+  "hideUserQuestions": {
+    "message": "사용자 질문 숨기기",
+    "description": "Hide user questions option"
+  },
+  "hideCodeBlocks": {
+    "message": "코드 블록 숨기기",
+    "description": "Hide code blocks option"
+  },
+  "layout": {
+    "message": "레이아웃",
+    "description": "Layout section"
+  },
+  "pageSize": {
+    "message": "페이지 크기",
+    "description": "Page size label"
+  },
+  "margin": {
+    "message": "여백",
+    "description": "Margin label"
+  },
+  "marginCompact": {
+    "message": "좁게",
+    "description": "Compact margin option"
+  },
+  "marginNormal": {
+    "message": "보통",
+    "description": "Normal margin option"
+  },
+  "marginWide": {
+    "message": "넓게",
+    "description": "Wide margin option"
+  },
+  "generateShareLink": {
+    "message": "공유 링크 생성",
+    "description": "Generate share link button"
+  },
+  "creating": {
+    "message": "생성 중...",
+    "description": "Creating state"
+  },
+  "copied": {
+    "message": "복사됨!",
+    "description": "Copied confirmation"
+  },
+  "copy": {
+    "message": "복사",
+    "description": "Copy button"
+  },
+  "openInNewTab": {
+    "message": "새 탭에서 열기",
+    "description": "Open in new tab link"
+  },
+  "copyAsMarkdown": {
+    "message": "마크다운으로 복사",
+    "description": "Copy as markdown button"
+  },
+  "downloadMdFile": {
+    "message": ".md 파일 다운로드",
+    "description": "Download markdown file button"
+  },
+  "downloadAsPNG": {
+    "message": "PNG로 다운로드",
+    "description": "Download as PNG button"
+  },
+  "downloadAsPDF": {
+    "message": "PDF로 다운로드",
+    "description": "Download as PDF button"
+  },
+  "exporting": {
+    "message": "내보내는 중...",
+    "description": "Exporting state"
+  },
+  "imageExportDesc": {
+    "message": "소셜 미디어 공유를 위한 고품질 이미지",
+    "description": "Image export description"
+  },
+  "pdfExportDesc": {
+    "message": "인쇄 및 보관용 다중 페이지 PDF 문서",
+    "description": "PDF export description"
+  },
+  "poweredBy": {
+    "message": "Powered by SelectChatGPT",
+    "description": "Footer text"
+  },
+  "selected": {
+    "message": "$count$ / $total$ 선택됨",
+    "description": "Selection count",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "10"
+      }
+    }
+  },
+  "selectAll": {
+    "message": "전체 선택",
+    "description": "Select all button"
+  },
+  "deselectAll": {
+    "message": "전체 해제",
+    "description": "Deselect all button"
+  },
+  "clear": {
+    "message": "초기화",
+    "description": "Clear button"
+  },
+  "createShareLink": {
+    "message": "공유 링크 생성",
+    "description": "Create share link button"
+  },
+  "failedToCreateShare": {
+    "message": "공유 링크 생성에 실패했습니다",
+    "description": "Error message"
+  },
+  "failedToCopy": {
+    "message": "클립보드 복사에 실패했습니다",
+    "description": "Copy error message"
+  },
+  "failedToCopyMarkdown": {
+    "message": "마크다운 복사에 실패했습니다",
+    "description": "Markdown copy error"
+  },
+  "failedToExportImage": {
+    "message": "이미지 내보내기에 실패했습니다",
+    "description": "Image export error"
+  },
+  "failedToExportPDF": {
+    "message": "PDF 내보내기에 실패했습니다",
+    "description": "PDF export error"
+  }
+}
