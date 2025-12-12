@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -109,7 +109,7 @@ function convertLatexDelimiters(content: string): string {
   return parts.join('');
 }
 
-export function Message({
+export const Message = memo(function Message({
   message,
   styleType = 'chatgpt',
   fontSize = 'base',
@@ -255,4 +255,4 @@ export function Message({
       </div>
     </div>
   );
-}
+});
