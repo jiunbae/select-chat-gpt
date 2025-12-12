@@ -40,6 +40,18 @@ export class InvalidUrlError extends Error {
 const MIN_REACT_ROUTER_DATA_LENGTH = 1000
 const ROLE_LOOKBEHIND_WINDOW = 30
 
+// Constants for code detection heuristics
+const CODE_RATIO_THRESHOLD = 0.7
+const MAX_TEXT_LINES_FOR_CODE_RATIO = 2
+const SHORT_CONTENT_THRESHOLD = 300
+
+// Constants for reasoning content detection
+const REASONING_CONTENT_LOOKAHEAD = 100
+const MIN_REASONING_CONTENT_LENGTH = 20
+
+// Constants for message deduplication
+const DEDUPE_PREFIX_LENGTH = 200
+
 const CHATGPT_URL_PATTERNS = [
   /^https:\/\/chatgpt\.com\/share\/[a-zA-Z0-9-]+$/,
   /^https:\/\/chat\.openai\.com\/share\/[a-zA-Z0-9-]+$/
@@ -165,13 +177,13 @@ function looksLikeStandaloneCode(content: string): boolean {
   const totalClassified = codeLineCount + textLineCount
   if (totalClassified > 0) {
     const codeRatio = codeLineCount / totalClassified
-    if (codeRatio > 0.7 && textLineCount < 3) {
+    if (codeRatio > CODE_RATIO_THRESHOLD && textLineCount <= MAX_TEXT_LINES_FOR_CODE_RATIO) {
       return true
     }
   }
 
   // Short content that looks like code output or expression
-  if (trimmed.length < 300) {
+  if (trimmed.length < SHORT_CONTENT_THRESHOLD) {
     if (/^[\d\.e\-\+\*\/\(\)\s,\[\]]+$/i.test(trimmed)) {
       return true
     }
@@ -228,11 +240,6 @@ function isFilteredContent(arr: unknown[], index: number): boolean {
       }
       if (FILTERED_ROLES.has(val)) {
         role = val
-      }
-      if (val === 'tool' || val === 'system') {
-        if (j > 0 && typeof arr[j - 1] === 'object') {
-          role = val
-        }
       }
     }
     if (val === 'user' || val === 'assistant') {
@@ -351,8 +358,8 @@ function extractFromReactRouterData(html: string): ParseResult | null {
     const reasoningIndices = new Set<number>()
     for (let i = 0; i < arr.length - 1; i++) {
       if (arr[i] === 'reasoning_title' || arr[i] === 'reasoning_recap') {
-        for (let j = i + 1; j < Math.min(arr.length, i + 100); j++) {
-          if (typeof arr[j] === 'string' && arr[j].length > 20) {
+        for (let j = i + 1; j < Math.min(arr.length, i + REASONING_CONTENT_LOOKAHEAD); j++) {
+          if (typeof arr[j] === 'string' && arr[j].length > MIN_REASONING_CONTENT_LENGTH) {
             reasoningIndices.add(j)
           }
           if (arr[j] === 'user' || arr[j] === 'assistant') break
@@ -400,7 +407,7 @@ function extractFromReactRouterData(html: string): ParseResult | null {
     // Deduplicate messages based on content prefix
     const seenContent = new Set<string>()
     const uniqueMessages = rawMessages.filter(m => {
-      const contentKey = m.content.substring(0, 200)
+      const contentKey = m.content.substring(0, DEDUPE_PREFIX_LENGTH)
       if (seenContent.has(contentKey)) return false
       seenContent.add(contentKey)
       return true
