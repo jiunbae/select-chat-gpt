@@ -11,6 +11,29 @@
     "copied": "복사됨!",
     "download": "다운로드"
   },
+  "home": {
+    "title": "SelectChatGPT",
+    "subtitle": "ChatGPT 대화에서 원하는 메시지만 선택하여 공유하세요",
+    "urlSectionTitle": "ChatGPT Share URL로 바로 시작하기",
+    "urlSectionDesc": "Extension 없이 Share 링크만으로 대화를 확인하세요",
+    "orUseExtension": "또는 Extension으로 더 세밀하게 제어하기",
+    "howItWorks": "Extension 사용 방법",
+    "step1": "SelectChatGPT Chrome 확장 프로그램 설치",
+    "step2": "ChatGPT 공유 대화 링크 열기",
+    "step3": "체크박스로 공유할 메시지 선택",
+    "step4": "선택한 메시지만 포함된 새 공유 링크 생성",
+    "installExtension": "Extension 설치",
+    "viewOnGitHub": "GitHub에서 보기",
+    "footerText": "ChatGPT 커뮤니티를 위해 만들었습니다"
+  },
+  "urlInput": {
+    "placeholder": "https://chatgpt.com/share/...",
+    "load": "대화 불러오기",
+    "loading": "불러오는 중...",
+    "example": "예: https://chatgpt.com/share/abc123-def456-...",
+    "errorEmpty": "URL을 입력해주세요",
+    "errorInvalid": "올바른 ChatGPT Share URL을 입력해주세요 (예: https://chatgpt.com/share/...)"
+  },
   "styleControls": {
     "style": "스타일",
     "chatgpt": "ChatGPT",
@@ -38,26 +61,23 @@
     "generating": "생성 중...",
     "downloading": "다운로드 중..."
   },
-  "urlInput": {
-    "placeholder": "ChatGPT 공유 URL을 붙여넣으세요",
-    "load": "불러오기",
-    "loading": "불러오는 중..."
-  },
   "error": {
     "notFound": "공유를 찾을 수 없음",
     "notFoundDesc": "찾으시는 공유가 존재하지 않거나 삭제되었습니다.",
     "backHome": "홈으로 돌아가기",
     "invalidUrl": "잘못된 URL",
-    "failedToLoad": "대화를 불러오는데 실패했습니다"
+    "failedToLoad": "대화를 불러오는데 실패했습니다",
+    "offline": "인터넷 연결 없음",
+    "serverUnreachable": "서버에 연결할 수 없음",
+    "timeout": "연결 시간 초과",
+    "serverError": "서버 오류",
+    "unknown": "오류 발생",
+    "tipOffline": "Wi-Fi나 모바일 데이터가 연결되어 있는지 확인해주세요.",
+    "tipServer": "서버가 일시적으로 점검 중이거나 네트워크 문제일 수 있습니다. 잠시 후 다시 시도해주세요."
   },
   "message": {
     "you": "사용자",
     "assistant": "어시스턴트"
-  },
-  "home": {
-    "title": "SelectChatGPT",
-    "subtitle": "스타일리시하게 ChatGPT 메시지를 공유하세요",
-    "getExtension": "Chrome 확장 프로그램 설치"
   },
   "footer": {
     "poweredBy": "Powered by SelectChatGPT"

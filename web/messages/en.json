@@ -11,6 +11,29 @@
     "copied": "Copied!",
     "download": "Download"
   },
+  "home": {
+    "title": "SelectChatGPT",
+    "subtitle": "Select and share specific messages from ChatGPT conversations",
+    "urlSectionTitle": "Start with ChatGPT Share URL",
+    "urlSectionDesc": "View conversations with just a Share link, no extension needed",
+    "orUseExtension": "or use the extension for more control",
+    "howItWorks": "How it works with Extension",
+    "step1": "Install the SelectChatGPT Chrome extension",
+    "step2": "Open any ChatGPT shared conversation link",
+    "step3": "Click checkboxes to select the messages you want to share",
+    "step4": "Generate a new share link with only your selected messages",
+    "installExtension": "Install Extension",
+    "viewOnGitHub": "View on GitHub",
+    "footerText": "Made with love for the ChatGPT community"
+  },
+  "urlInput": {
+    "placeholder": "https://chatgpt.com/share/...",
+    "load": "Load Conversation",
+    "loading": "Loading...",
+    "example": "e.g. https://chatgpt.com/share/abc123-def456-...",
+    "errorEmpty": "Please enter a URL",
+    "errorInvalid": "Please enter a valid ChatGPT Share URL (e.g. https://chatgpt.com/share/...)"
+  },
   "styleControls": {
     "style": "Style",
     "chatgpt": "ChatGPT",
@@ -38,26 +61,23 @@
     "generating": "Generating...",
     "downloading": "Downloading..."
   },
-  "urlInput": {
-    "placeholder": "Paste ChatGPT share URL",
-    "load": "Load",
-    "loading": "Loading..."
-  },
   "error": {
     "notFound": "Share not found",
     "notFoundDesc": "The share you're looking for doesn't exist or has been deleted.",
     "backHome": "Back to Home",
     "invalidUrl": "Invalid URL",
-    "failedToLoad": "Failed to load conversation"
+    "failedToLoad": "Failed to load conversation",
+    "offline": "No internet connection",
+    "serverUnreachable": "Cannot connect to server",
+    "timeout": "Connection timed out",
+    "serverError": "Server error",
+    "unknown": "An error occurred",
+    "tipOffline": "Please check your Wi-Fi or mobile data connection.",
+    "tipServer": "The server may be temporarily down or there may be a network issue. Please try again later."
   },
   "message": {
     "you": "You",
     "assistant": "Assistant"
-  },
-  "home": {
-    "title": "SelectChatGPT",
-    "subtitle": "Share selected ChatGPT messages with style",
-    "getExtension": "Get Chrome Extension"
   },
   "footer": {
     "poweredBy": "Powered by SelectChatGPT"
