@@ -67,20 +67,17 @@ function SharePageContent({ share }: SharePageClientProps) {
   const handleSelectAll = useCallback(() => {
     setSelectedIds(prev => {
       const filteredIds = filteredMessages.map(m => m.id);
-      const filteredSelectedCount = filteredIds.filter(id => prev.has(id)).length;
-      const allSelected = filteredMessages.length > 0 && filteredSelectedCount === filteredMessages.length;
+      const allSelected = filteredMessages.length > 0 && filteredIds.every(id => prev.has(id));
 
+      const next = new Set(prev);
       if (allSelected) {
         // Deselect all filtered messages, keep others
-        const next = new Set(prev);
         filteredIds.forEach(id => next.delete(id));
-        return next;
       } else {
         // Select all filtered messages, keep others
-        const next = new Set(prev);
         filteredIds.forEach(id => next.add(id));
-        return next;
       }
+      return next;
     });
   }, [filteredMessages]);
 
@@ -163,7 +160,7 @@ function SharePageContent({ share }: SharePageClientProps) {
               sourceUrl={share.sourceUrl}
               styleType={styleType}
               exportOptions={getExportOptions()}
-              disabled={selectedIds.size === 0}
+              disabled={filteredSelectedCount === 0}
             />
             <a
               href={share.sourceUrl}
