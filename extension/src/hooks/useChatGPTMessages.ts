@@ -18,6 +18,17 @@ const ASSISTANT_ROLE_INDICATORS = [
   '.agent-turn.model-slug-gpt'
 ]
 
+// Selectors for thinking/reasoning blocks that should be excluded from content
+const THINKING_BLOCK_SELECTORS = [
+  'details[data-thinking]',
+  '[data-message-content-type="thinking"]',
+  '.thinking-block',
+  '.reasoning-block',
+  '[class*="thinking"]',
+  '[class*="reasoning"]',
+  'details:has(summary)'  // ChatGPT uses collapsible details for thinking
+]
+
 function findMessageElements(): HTMLElement[] {
   for (const selector of MESSAGE_SELECTORS) {
     try {
@@ -87,7 +98,19 @@ function extractContent(element: HTMLElement): { content: string; html: string }
   }
 
   const cloned = contentElement.cloneNode(true) as HTMLElement
+
+  // Remove UI elements
   cloned.querySelectorAll('button, [role="button"], .copy-button').forEach(el => el.remove())
+
+  // Remove thinking/reasoning blocks from content
+  for (const selector of THINKING_BLOCK_SELECTORS) {
+    try {
+      cloned.querySelectorAll(selector).forEach(el => el.remove())
+    } catch (e) {
+      // Some selectors like :has() might not be supported in all browsers
+      console.warn(`Selector failed: ${selector}`, e)
+    }
+  }
 
   return {
     content: cloned.textContent?.trim() || '',

@@ -38,7 +38,7 @@ export class InvalidUrlError extends Error {
 
 // Constants for magic numbers
 const MIN_REACT_ROUTER_DATA_LENGTH = 1000
-const ROLE_LOOKBEHIND_WINDOW = 30
+const CONTENT_TYPE_LOOKBEHIND_WINDOW = 15
 
 const CHATGPT_URL_PATTERNS = [
   /^https:\/\/chatgpt\.com\/share\/[a-zA-Z0-9-]+$/,
@@ -64,8 +64,12 @@ const METADATA_KEYWORDS = new Set([
   'loaderData', 'root', 'dd', 'traceId', 'traceTime', 'disablePrefetch',
   'shouldPrefetchAccount', 'shouldPrefetchUser', 'shouldPrefetchSystemHints',
   'promoteCss', 'disableSSR', 'statsigGateEvaluationsPromise', 'sharedConversationId',
-  'serverResponse', 'type', 'data', 'client-created-root', 'history_off_approved'
+  'serverResponse', 'type', 'data', 'client-created-root', 'history_off_approved',
+  'thinking', 'reasoning', 'summary', 'model_switcher_deny'
 ])
+
+// Content types that should be skipped (like thinking/reasoning blocks)
+const SKIP_CONTENT_TYPES = new Set(['thinking', 'reasoning'])
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const DOMAIN_LIST_PATTERN = /^[a-z0-9.-]+\.(com|org|net|edu|io|co|au)(,\s*[a-z0-9.-]+\.(com|org|net|edu|io|co|au))*$/i
@@ -110,6 +114,32 @@ function isValidMessageContent(val: unknown): val is string {
   return hasSpaces || hasNewlines || hasKorean || looksLikeCode
 }
 
+// Check if content at given index is part of a thinking/reasoning block
+function isThinkingContent(arr: unknown[], contentIndex: number): boolean {
+  // Look backwards for content_type field followed by "thinking" or "reasoning"
+  for (let j = contentIndex - 1; j >= Math.max(0, contentIndex - CONTENT_TYPE_LOOKBEHIND_WINDOW); j--) {
+    if (arr[j] === 'content_type') {
+      // Check if the next value after content_type is a skip type
+      const nextVal = arr[j + 1]
+      if (j + 1 < arr.length && typeof nextVal === 'string') {
+        if (SKIP_CONTENT_TYPES.has(nextVal)) {
+          return true
+        }
+      }
+    }
+    // Also check for direct "thinking" marker near the content
+    if (arr[j] === 'thinking' || arr[j] === 'reasoning') {
+      // Verify this is a content_type context, not just a word
+      for (let k = j - 1; k >= Math.max(0, j - 5); k--) {
+        if (arr[k] === 'content_type') {
+          return true
+        }
+      }
+    }
+  }
+  return false
+}
+
 // Extract data from ChatGPT's React Router streaming format
 function extractFromReactRouterData(html: string): ParseResult | null {
   try {
@@ -146,6 +176,14 @@ function extractFromReactRouterData(html: string): ParseResult | null {
       }
     }
 
+    // First, find all role marker positions and build a map from index to role
+    const roleIndexMap = new Map<number, 'user' | 'assistant'>()
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i] === 'user' || arr[i] === 'assistant') {
+        roleIndexMap.set(i, arr[i] as 'user' | 'assistant')
+      }
+    }
+
     // Extract raw messages by finding Array(1) followed by content
     const rawMessages: Array<{ index: number; content: string; detectedRole: 'user' | 'assistant' | null }> = []
 
@@ -153,11 +191,37 @@ function extractFromReactRouterData(html: string): ParseResult | null {
       if (Array.isArray(arr[i]) && arr[i].length === 1) {
         const next = arr[i + 1]
         if (isValidMessageContent(next)) {
-          // Look backwards for role within a window
+          // Skip thinking/reasoning content blocks
+          if (isThinkingContent(arr, i + 1)) {
+            continue
+          }
+
+          // Find the role by looking for {"_49": <role_index>} pattern in preceding elements
           let role: 'user' | 'assistant' | null = null
-          for (let j = i - 1; j >= Math.max(0, i - ROLE_LOOKBEHIND_WINDOW); j--) {
-            if (arr[j] === 'user') { role = 'user'; break }
-            if (arr[j] === 'assistant') { role = 'assistant'; break }
+
+          // Look backwards for an object with _49 field that references a role index
+          for (let j = i - 1; j >= Math.max(0, i - 20); j--) {
+            const elem = arr[j]
+            if (typeof elem === 'object' && elem !== null && !Array.isArray(elem)) {
+              const obj = elem as Record<string, unknown>
+              if ('_49' in obj && typeof obj._49 === 'number') {
+                const referencedRole = roleIndexMap.get(obj._49)
+                if (referencedRole) {
+                  role = referencedRole
+                  break
+                }
+              }
+            }
+          }
+
+          // Fallback: find the most recent role marker before this content
+          if (!role) {
+            for (const [idx, r] of Array.from(roleIndexMap.entries()).sort((a, b) => b[0] - a[0])) {
+              if (idx < i) {
+                role = r
+                break
+              }
+            }
           }
 
           rawMessages.push({
@@ -171,16 +235,18 @@ function extractFromReactRouterData(html: string): ParseResult | null {
 
     if (rawMessages.length === 0) return null
 
-    // Assign roles (use detected role when available, otherwise alternate)
-    let lastRole: 'user' | 'assistant' | null = null
+    // Assign roles based on detected role (no alternation fallback)
+    // Messages without a detected role keep the last known role
+    let lastRole: 'user' | 'assistant' = 'user' // default to user for first message
     const messages: ParsedMessage[] = rawMessages.map((m, idx) => {
       let role: 'user' | 'assistant'
       if (m.detectedRole) {
         role = m.detectedRole
+        lastRole = role
       } else {
-        role = lastRole === 'user' ? 'assistant' : 'user'
+        // Keep the last known role instead of alternating
+        role = lastRole
       }
-      lastRole = role
 
       return {
         id: `msg-${idx}`,
