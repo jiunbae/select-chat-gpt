@@ -54,11 +54,11 @@ function SharePageContent({ share }: SharePageClientProps) {
 
   // Select all / Deselect all
   const handleSelectAll = useCallback(() => {
-    const allIds = share.messages.map(m => m.id);
-    const allSelected = allIds.every(id => selectedIds.has(id));
+    const allSelected = share.messages.length > 0 && selectedIds.size === share.messages.length;
     if (allSelected) {
       setSelectedIds(new Set());
     } else {
+      const allIds = share.messages.map(m => m.id);
       setSelectedIds(new Set(allIds));
     }
   }, [share.messages, selectedIds]);
