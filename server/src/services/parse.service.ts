@@ -164,7 +164,7 @@ function looksLikeStandaloneCode(content: string): boolean {
       /^[a-z_][a-z0-9_]*\s*\([^)]*\)\s*$/i.test(l) ||                  // Function call ending with )
       /^(while|elif|else|return|print|try|except|with)\s/i.test(l) ||  // Python keywords
       /^for\s+[a-z_]+\s+in\s+/i.test(l) ||                             // Python for loop "for x in y"
-      /^if\s+[a-z_]+\s*(==|!=|<|>|in|not)/i.test(l) ||                 // Python if with comparison
+      /^if\s+.+:/i.test(l) ||                                            // General Python if statement
       /^#[^#]/.test(l) ||                                               // Python comment (not markdown heading)
       /^\s*(def|class|import|from)\s/i.test(l) ||                       // Python definitions/imports
       /^[a-z_][a-z0-9_]*\.[a-z]/i.test(l) ||                           // Method calls like np.mean
@@ -231,6 +231,7 @@ function isFilteredContent(arr: unknown[], index: number): boolean {
     const val = arr[j]
     if (typeof val === 'string') {
       // Only detect content_type through explicit key-value structure to avoid false positives
+      // Note: Type assertion required because TS doesn't narrow array element types after typeof check
       if (val === 'content_type' && typeof arr[j + 1] === 'string') {
         contentType = arr[j + 1] as string
       }
