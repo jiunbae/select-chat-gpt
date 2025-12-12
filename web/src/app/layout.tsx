@@ -107,7 +107,7 @@ export default async function RootLayout({
       </head>
       <body className="antialiased">
         <NextIntlClientProvider messages={messages}>
-          <div className="fixed top-4 right-4 z-50">
+          <div className="fixed top-4 right-4 z-[100]">
             <LanguageSelector />
           </div>
           {children}
