@@ -54,14 +54,16 @@ function SharePageContent({ share }: SharePageClientProps) {
 
   // Select all / Deselect all
   const handleSelectAll = useCallback(() => {
-    const allSelected = share.messages.length > 0 && selectedIds.size === share.messages.length;
-    if (allSelected) {
-      setSelectedIds(new Set());
-    } else {
-      const allIds = share.messages.map(m => m.id);
-      setSelectedIds(new Set(allIds));
-    }
-  }, [share.messages, selectedIds]);
+    setSelectedIds(prev => {
+      const allSelected = share.messages.length > 0 && prev.size === share.messages.length;
+      if (allSelected) {
+        return new Set();
+      } else {
+        const allIds = share.messages.map(m => m.id);
+        return new Set(allIds);
+      }
+    });
+  }, [share.messages]);
 
   // Get selected messages for export
   const selectedMessages = useMemo(() =>

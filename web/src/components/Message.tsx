@@ -175,6 +175,8 @@ export function Message({
             <div className="flex-shrink-0 flex items-start pt-1">
               <button
                 onClick={() => onToggleSelect?.(message.id)}
+                role="checkbox"
+                aria-checked={isSelected}
                 className="w-6 h-6 rounded border-2 flex items-center justify-center transition-all cursor-pointer"
                 style={{
                   borderColor: isSelected ? '#10a37f' : (isCleanStyle ? '#d1d5db' : '#6b7280'),
