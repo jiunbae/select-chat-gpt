@@ -1,12 +1,5 @@
 import { JSDOM } from 'jsdom'
-import { marked } from 'marked'
 import { createShare, CreateShareInput, ShareOutput } from './share.service.js'
-
-// Configure marked for safe HTML output
-marked.setOptions({
-  gfm: true,        // GitHub Flavored Markdown
-  breaks: true,     // Convert \n to <br>
-})
 
 export interface ParsedMessage {
   id: string
@@ -54,14 +47,6 @@ const CHATGPT_URL_PATTERNS = [
 
 export function isValidChatGPTShareUrl(url: string): boolean {
   return CHATGPT_URL_PATTERNS.some(pattern => pattern.test(url))
-}
-
-function formatMessageHtml(content: string): string {
-  // Use marked library for robust markdown parsing
-  // marked handles code blocks, bold, italic, lists, links, etc.
-  const html = marked.parse(content)
-  // marked.parse returns string | Promise<string>, but with sync options it's always string
-  return typeof html === 'string' ? html : ''
 }
 
 // Keywords and patterns that indicate metadata, not user content
@@ -201,7 +186,7 @@ function extractFromReactRouterData(html: string): ParseResult | null {
         id: `msg-${idx}`,
         role,
         content: m.content,
-        html: formatMessageHtml(m.content)
+        html: '' // HTML rendering is done client-side
       }
     })
 

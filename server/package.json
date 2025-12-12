@@ -16,7 +16,6 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "jsdom": "^25.0.1",
-    "marked": "^17.0.1",
     "mongoose": "^8.9.2",
     "nanoid": "^5.0.9"
   },

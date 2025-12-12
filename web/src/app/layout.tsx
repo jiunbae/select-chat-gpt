@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Noto_Sans_KR, Noto_Serif_KR, IBM_Plex_Sans_KR } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 
 // Pretendard - 인기 있는 한글 산세리프 폰트 (Variable Font)
 const pretendard = localFont({

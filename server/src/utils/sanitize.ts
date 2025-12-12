@@ -4,6 +4,7 @@ import DOMPurify from 'dompurify'
 const jsdomWindow = new JSDOM('').window
 const purify = DOMPurify(jsdomWindow as unknown as typeof globalThis & typeof window)
 
+// Note: KaTeX rendering is done client-side, so no KaTeX-specific tags/attrs needed here
 purify.setConfig({
   ALLOWED_TAGS: [
     'p', 'br', 'strong', 'em', 'u', 's', 'code', 'pre',
