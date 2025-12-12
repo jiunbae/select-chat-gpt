@@ -1,4 +1,4 @@
-import type { ExportStyle, ExportStyleType, ExportOptions, LetterSpacing, LineHeight, FontSize, MessageGap, ContentPadding, Margin } from './types';
+import type { ExportStyle, ExportStyleType, ExportOptions, LetterSpacing, LineHeight, FontSize, FontFamily, MessageGap, ContentPadding, Margin } from './types';
 
 // Helper functions for style values
 export function getLetterSpacingValue(spacing: LetterSpacing): string {
@@ -33,6 +33,23 @@ export function getFontSizeValue(size: FontSize): string {
     '2xl': '24px',
   };
   return values[size];
+}
+
+// Fallback font stacks
+const SANS_SERIF_FALLBACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+const SERIF_FALLBACK = 'Georgia, "Times New Roman", Times, serif';
+
+export function getFontFamilyValue(family: FontFamily, styleType: ExportStyleType = 'clean'): string {
+  const values: Record<FontFamily, string> = {
+    'system': styleType === 'chatgpt'
+      ? `"Söhne", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`
+      : SERIF_FALLBACK,
+    'pretendard': `Pretendard, ${SANS_SERIF_FALLBACK}`,
+    'noto-sans-kr': `"Noto Sans KR", ${SANS_SERIF_FALLBACK}`,
+    'noto-serif-kr': `"Noto Serif KR", ${SERIF_FALLBACK}`,
+    'ibm-plex-sans-kr': `"IBM Plex Sans KR", ${SANS_SERIF_FALLBACK}`,
+  };
+  return values[family];
 }
 
 export function getMessageGapValue(gap: MessageGap): string {
@@ -211,6 +228,11 @@ export function getExportStyle(styleType: ExportStyleType, options?: ExportOptio
   }
   if (options.fontSize) {
     baseStyle.content.fontSize = getFontSizeValue(options.fontSize);
+  }
+  if (options.fontFamily) {
+    const fontValue = getFontFamilyValue(options.fontFamily, styleType);
+    baseStyle.container.fontFamily = fontValue;
+    baseStyle.content.fontFamily = fontValue;
   }
 
   return baseStyle;

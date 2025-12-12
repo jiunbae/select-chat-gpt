@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useStyleContext } from './StyleContext';
-import type { LetterSpacing, LineHeight, FontSize, MessageGap, ContentPadding } from '@/lib/export';
+import type { LetterSpacing, LineHeight, FontSize, FontFamily, MessageGap, ContentPadding } from '@/lib/export';
 
 // Chevron icon component
 function ChevronIcon({ isOpen, className = '' }: { isOpen: boolean; className?: string }) {
@@ -129,6 +129,8 @@ export function StyleControls() {
     setLineHeight,
     fontSize,
     setFontSize,
+    fontFamily,
+    setFontFamily,
     messageGap,
     setMessageGap,
     contentPadding,
@@ -229,7 +231,20 @@ export function StyleControls() {
             {openSection === 'text' && (
               <div className="flex flex-wrap items-center gap-4">
                 <SelectControl
-                  label="Font"
+                  label="글꼴"
+                  value={fontFamily}
+                  options={[
+                    { value: 'pretendard', label: 'Pretendard' },
+                    { value: 'noto-sans-kr', label: 'Noto Sans KR' },
+                    { value: 'noto-serif-kr', label: 'Noto Serif KR' },
+                    { value: 'ibm-plex-sans-kr', label: 'IBM Plex Sans KR' },
+                    { value: 'system', label: '시스템 기본' },
+                  ]}
+                  onChange={(v) => setFontFamily(v as FontFamily)}
+                  isCleanStyle={isCleanStyle}
+                />
+                <SelectControl
+                  label="크기"
                   value={fontSize}
                   options={[
                     { value: 'xs', label: '12px' },
@@ -243,7 +258,7 @@ export function StyleControls() {
                   isCleanStyle={isCleanStyle}
                 />
                 <SelectControl
-                  label="Line"
+                  label="줄 높이"
                   value={lineHeight}
                   options={[
                     { value: 'tight', label: '1.25' },
@@ -256,7 +271,7 @@ export function StyleControls() {
                   isCleanStyle={isCleanStyle}
                 />
                 <SelectControl
-                  label="Letter"
+                  label="자간"
                   value={letterSpacing}
                   options={[
                     { value: 'tighter', label: '-0.05em' },

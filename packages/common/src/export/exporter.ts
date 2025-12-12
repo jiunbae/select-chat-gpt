@@ -5,6 +5,7 @@ import { ExportError } from './types';
 import { createExportableElement, filterMessages } from './renderer';
 import {
   getFontSizeValue,
+  getFontFamilyValue,
   getLineHeightValue,
   getLetterSpacingValue,
   getMessageGapValue,
@@ -58,9 +59,48 @@ export interface RenderOptions {
   backgroundColor?: string | null;
 }
 
+// Font name mapping for preloading
+const FONT_NAME_MAP: Record<string, string> = {
+  'pretendard': 'Pretendard',
+  'noto-sans-kr': 'Noto Sans KR',
+  'noto-serif-kr': 'Noto Serif KR',
+  'ibm-plex-sans-kr': 'IBM Plex Sans KR',
+};
+
+// Preload fonts for html2canvas rendering
+async function preloadFonts(fontFamily?: string): Promise<void> {
+  // Wait for document fonts to be ready
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
+
+  // Get font name to preload
+  const fontName = fontFamily ? FONT_NAME_MAP[fontFamily] : undefined;
+
+  // Force font loading by checking each font
+  if (document.fonts && fontName) {
+    const weights = ['400', '500', '600', '700'];
+    const loadPromises: Promise<FontFace[]>[] = [];
+
+    for (const weight of weights) {
+      try {
+        loadPromises.push(document.fonts.load(`${weight} 16px "${fontName}"`));
+      } catch (err) {
+        console.warn(`Failed to load font: ${fontName} (weight: ${weight})`, err);
+      }
+    }
+
+    await Promise.allSettled(loadPromises);
+  }
+
+  // Wait for next frame to ensure fonts are applied to DOM
+  await new Promise(resolve => requestAnimationFrame(resolve));
+}
+
 export async function renderToCanvas(
   element: HTMLElement,
-  options: RenderOptions = {}
+  options: RenderOptions = {},
+  fontFamily?: string
 ): Promise<HTMLCanvasElement> {
   const {
     scale = 2, // High resolution, large images will be split into multiple files
@@ -72,10 +112,8 @@ export async function renderToCanvas(
   document.body.appendChild(element);
 
   try {
-    // Wait for fonts to load
-    if (document.fonts && document.fonts.ready) {
-      await document.fonts.ready;
-    }
+    // Preload fonts before rendering
+    await preloadFonts(fontFamily);
 
     // Wait for images to load
     const images = element.querySelectorAll('img');
@@ -220,9 +258,12 @@ function generatePrintStyles(options?: ExportOptions, styleType?: ExportStyleTyp
   const roleLabelColor = isClean ? '#374151' : '#ececec';
   const borderColor = isClean ? '#e5e7eb' : '#444444';
   const linkColor = '#10a37f';
-  const fontFamily = isClean
-    ? 'Georgia, "Times New Roman", serif'
-    : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  // Use selected font family or default based on style type
+  const fontFamily = options?.fontFamily
+    ? getFontFamilyValue(options.fontFamily, styleType)
+    : (isClean
+      ? 'Georgia, "Times New Roman", serif'
+      : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
 
   return `
     @media print {
@@ -361,6 +402,33 @@ function generatePrintStyles(options?: ExportOptions, styleType?: ExportStyleTyp
   `;
 }
 
+// Get font links for PDF/print export
+// Google Fonts URL mapping for PDF export
+const GOOGLE_FONT_URL_MAP: Record<string, string> = {
+  'noto-sans-kr': 'Noto+Sans+KR',
+  'noto-serif-kr': 'Noto+Serif+KR',
+  'ibm-plex-sans-kr': 'IBM+Plex+Sans+KR',
+};
+
+const PRETENDARD_CDN_URL = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css';
+
+function getFontLinks(fontFamily?: string): string {
+  const links: string[] = [];
+  const googleFontName = fontFamily ? GOOGLE_FONT_URL_MAP[fontFamily] : undefined;
+
+  if (googleFontName) {
+    // Google Font가 선택된 경우 해당 폰트만 로드
+    links.push('<link rel="preconnect" href="https://fonts.googleapis.com" />');
+    links.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />');
+    links.push(`<link href="https://fonts.googleapis.com/css2?family=${googleFontName}:wght@400;500;600;700&display=swap" rel="stylesheet" />`);
+  } else {
+    // 'pretendard' 또는 'system' 글꼴인 경우 Pretendard를 폴백으로 로드
+    links.push(`<link rel="stylesheet" href="${PRETENDARD_CDN_URL}" />`);
+  }
+
+  return links.join('\n    ');
+}
+
 function generatePrintHTML(
   messages: ExportMessage[],
   title: string,
@@ -395,12 +463,15 @@ function generatePrintHTML(
     `;
   }).join('');
 
+  const fontLinks = getFontLinks(options?.fontFamily);
+
   return `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
       <title>${title}</title>
+      ${fontLinks}
       <style>${generatePrintStyles(options, styleType)}</style>
     </head>
     <body>
@@ -461,7 +532,7 @@ export async function exportToImage(
   onProgress?.({ stage: 'rendering', progress: 30 });
 
   const backgroundColor = getBackgroundColor(styleType);
-  const canvas = await renderToCanvas(element, { backgroundColor });
+  const canvas = await renderToCanvas(element, { backgroundColor }, options?.fontFamily);
 
   onProgress?.({ stage: 'downloading', progress: 90 });
 

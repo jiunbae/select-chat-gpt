@@ -23,6 +23,7 @@ function SharePageContent({ share }: SharePageClientProps) {
   const {
     styleType,
     fontSize,
+    fontFamily,
     lineHeight,
     letterSpacing,
     messageGap,
@@ -161,6 +162,7 @@ function SharePageContent({ share }: SharePageClientProps) {
               message={message}
               styleType={styleType}
               fontSize={fontSize}
+              fontFamily={fontFamily}
               lineHeight={lineHeight}
               letterSpacing={letterSpacing}
               messageGap={messageGap}
