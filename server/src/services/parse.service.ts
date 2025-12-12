@@ -6,6 +6,8 @@ export interface ParsedMessage {
   role: 'user' | 'assistant'
   content: string
   html: string
+  messageType?: 'text' | 'code' | 'thinking'
+  thinkingSummary?: string  // e.g., "8s 동안 생각함"
 }
 
 export interface ParseResult {
@@ -70,6 +72,41 @@ const METADATA_KEYWORDS = new Set([
 
 // Content types that should be skipped (like thinking/reasoning blocks)
 const SKIP_CONTENT_TYPES = new Set(['thinking', 'reasoning'])
+
+// Patterns that indicate Python code
+const PYTHON_CODE_PATTERNS = [
+  /^import\s+\w+/m,           // import statements
+  /^from\s+\w+\s+import/m,    // from X import Y
+  /^def\s+\w+\s*\(/m,         // function definitions
+  /^class\s+\w+/m,            // class definitions
+  /^for\s+\w+\s+in\s+/m,      // for loops
+  /^while\s+.+:/m,            // while loops
+  /^if\s+.+:/m,               // if statements
+  /^\s{4,}(return|print|self\.)/m,  // indented code
+  /^[a-z_]\w*\s*=\s*.+$/m,    // variable assignments
+  /^print\s*\(/m,             // print statements
+]
+
+function looksLikePythonCode(content: string): boolean {
+  // Skip if content has significant Korean/CJK characters (not code)
+  const koreanChars = content.match(/[\u3131-\uD79D\u4E00-\u9FFF]/g)
+  if (koreanChars && koreanChars.length > 5) {
+    return false
+  }
+
+  // Check if content matches common Python patterns
+  const lines = content.split('\n').slice(0, 5) // Check first 5 lines
+  const firstLines = lines.join('\n')
+
+  // Must start with a code pattern (not just contain it)
+  for (const pattern of PYTHON_CODE_PATTERNS) {
+    if (pattern.test(firstLines)) {
+      return true
+    }
+  }
+
+  return false
+}
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const DOMAIN_LIST_PATTERN = /^[a-z0-9.-]+\.(com|org|net|edu|io|co|au)(,\s*[a-z0-9.-]+\.(com|org|net|edu|io|co|au))*$/i
@@ -184,14 +221,43 @@ function extractFromReactRouterData(html: string): ParseResult | null {
       }
     }
 
+    // Find thinking summaries (e.g., "8s 동안 생각함", "1m 12s 동안 생각함")
+    const thinkingSummaries = new Map<number, string>()
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i] === 'reasoning_recap' && typeof arr[i + 1] === 'string') {
+        const summary = arr[i + 1] as string
+        // Find the next message content after this summary
+        thinkingSummaries.set(i, summary)
+      }
+    }
+
+    // Find code block markers (python keyword)
+    // Code content typically appears shortly after the python marker
+    const codeBlockIndices = new Set<number>()
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i] === 'python') {
+        // Mark content indices shortly before this python marker as code
+        // Code content is usually within 10 elements before the marker
+        for (let j = i - 10; j <= i + 5; j++) {
+          codeBlockIndices.add(j)
+        }
+      }
+    }
+
     // Extract raw messages by finding Array(1) followed by content
-    const rawMessages: Array<{ index: number; content: string; detectedRole: 'user' | 'assistant' | null }> = []
+    const rawMessages: Array<{
+      index: number
+      content: string
+      detectedRole: 'user' | 'assistant' | null
+      messageType: 'text' | 'code' | 'thinking'
+      thinkingSummary?: string
+    }> = []
 
     for (let i = 0; i < arr.length - 1; i++) {
       if (Array.isArray(arr[i]) && arr[i].length === 1) {
         const next = arr[i + 1]
         if (isValidMessageContent(next)) {
-          // Skip thinking/reasoning content blocks
+          // Skip thinking/reasoning content blocks (internal reasoning, not summaries)
           if (isThinkingContent(arr, i + 1)) {
             continue
           }
@@ -224,10 +290,30 @@ function extractFromReactRouterData(html: string): ParseResult | null {
             }
           }
 
+          // Determine message type
+          let messageType: 'text' | 'code' | 'thinking' = 'text'
+          let thinkingSummary: string | undefined
+
+          // Check if this is a code block (by index marker or content analysis)
+          if (codeBlockIndices.has(i) || codeBlockIndices.has(i + 1) || looksLikePythonCode(next)) {
+            messageType = 'code'
+          }
+
+          // Check if there's a thinking summary before this message
+          for (const [summaryIdx, summary] of thinkingSummaries) {
+            // If summary is within 30 elements before this content
+            if (summaryIdx < i && summaryIdx > i - 30) {
+              thinkingSummary = summary
+              break
+            }
+          }
+
           rawMessages.push({
             index: i + 1,
             content: next,
-            detectedRole: role
+            detectedRole: role,
+            messageType,
+            thinkingSummary
           })
         }
       }
@@ -252,7 +338,9 @@ function extractFromReactRouterData(html: string): ParseResult | null {
         id: `msg-${idx}`,
         role,
         content: m.content,
-        html: '' // HTML rendering is done client-side
+        html: '', // HTML rendering is done client-side
+        messageType: m.messageType,
+        thinkingSummary: m.thinkingSummary
       }
     })
 

@@ -3,6 +3,8 @@ export interface Message {
   role: "user" | "assistant";
   content: string;
   html: string;
+  messageType?: "text" | "code" | "thinking";
+  thinkingSummary?: string;  // e.g., "8s 동안 생각함"
 }
 
 export interface ShareData {
