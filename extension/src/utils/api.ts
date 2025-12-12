@@ -1,6 +1,6 @@
 import type { ShareRequest, ShareResponse } from "~src/types"
 
-const API_BASE_URL = process.env.PLASMO_PUBLIC_API_URL || 'https://api.selectchatgpt.jiun.dev'
+const API_BASE_URL = process.env.PLASMO_PUBLIC_API_URL || 'https://api.selectchatgpt.im-si.org'
 
 // 네트워크 에러 타입 정의
 export type NetworkErrorType = 'offline' | 'server_unreachable' | 'timeout' | 'server_error' | 'unknown'

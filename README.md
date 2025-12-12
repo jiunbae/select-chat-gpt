@@ -83,7 +83,7 @@ pnpm docker:down
 | 환경 | Extension API URL | 설정 파일 |
 |------|-------------------|-----------|
 | 개발 (`pnpm dev:ext`) | `http://localhost:3001` | `extension/.env.development` |
-| 프로덕션 (`pnpm build:ext`) | `https://api.selectchatgpt.jiun.dev` | `extension/.env.production` |
+| 프로덕션 (`pnpm build:ext`) | `https://api.selectchatgpt.im-si.org` | `extension/.env.production` |
 
 ### pnpm 명령어
 
@@ -159,7 +159,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
 │  NAS (Synology)              VMM K3s Cluster           │
-│  ├── registry.jiun.dev       ├── selectchatgpt.jiun.dev│
+│  ├── registry.im-si.org      ├── selectchatgpt.im-si.org│
 │  └── Docker Registry         ├── api.selectchatgpt...  │
 │                              ├── MongoDB                │
 │                              ├── Server                 │
@@ -228,7 +228,7 @@ kubectl get pods -n selectchatgpt -w
 #### Extension 배포
 
 ```bash
-# 프로덕션 빌드 (api.selectchatgpt.jiun.dev 사용)
+# 프로덕션 빌드 (api.selectchatgpt.im-si.org 사용)
 pnpm build:ext
 
 # 결과물: extension/build/chrome-mv3-prod/
