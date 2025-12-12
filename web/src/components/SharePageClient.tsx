@@ -52,25 +52,6 @@ function SharePageContent({ share }: SharePageClientProps) {
     });
   }, []);
 
-  // Select all / Deselect all
-  const handleSelectAll = useCallback(() => {
-    setSelectedIds(prev => {
-      const allSelected = share.messages.length > 0 && prev.size === share.messages.length;
-      if (allSelected) {
-        return new Set();
-      } else {
-        const allIds = share.messages.map(m => m.id);
-        return new Set(allIds);
-      }
-    });
-  }, [share.messages]);
-
-  // Get selected messages for export
-  const selectedMessages = useMemo(() =>
-    share.messages.filter(m => selectedIds.has(m.id)),
-    [share.messages, selectedIds]
-  );
-
   const formattedDate = new Date(share.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -82,7 +63,40 @@ function SharePageContent({ share }: SharePageClientProps) {
     ? share.messages.filter((m) => m.role !== 'user')
     : share.messages;
 
-  const allSelected = share.messages.length > 0 && selectedIds.size === share.messages.length;
+  // Select all / Deselect all (based on filtered messages)
+  const handleSelectAll = useCallback(() => {
+    setSelectedIds(prev => {
+      const filteredIds = filteredMessages.map(m => m.id);
+      const filteredSelectedCount = filteredIds.filter(id => prev.has(id)).length;
+      const allSelected = filteredMessages.length > 0 && filteredSelectedCount === filteredMessages.length;
+
+      if (allSelected) {
+        // Deselect all filtered messages, keep others
+        const next = new Set(prev);
+        filteredIds.forEach(id => next.delete(id));
+        return next;
+      } else {
+        // Select all filtered messages, keep others
+        const next = new Set(prev);
+        filteredIds.forEach(id => next.add(id));
+        return next;
+      }
+    });
+  }, [filteredMessages]);
+
+  // Get selected messages for export (based on filtered messages)
+  const selectedMessages = useMemo(() =>
+    filteredMessages.filter(m => selectedIds.has(m.id)),
+    [filteredMessages, selectedIds]
+  );
+
+  // Calculate selected count based on filtered messages
+  const filteredSelectedCount = useMemo(() =>
+    filteredMessages.filter(m => selectedIds.has(m.id)).length,
+    [filteredMessages, selectedIds]
+  );
+
+  const allSelected = filteredMessages.length > 0 && filteredSelectedCount === filteredMessages.length;
 
   const isCleanStyle = styleType === 'clean';
 
@@ -131,7 +145,7 @@ function SharePageContent({ share }: SharePageClientProps) {
                 className="text-sm"
                 style={{ color: isCleanStyle ? '#6b7280' : '#9ca3af' }}
               >
-                {selectedIds.size} / {share.messages.length}
+                {filteredSelectedCount} / {filteredMessages.length}
               </span>
               <button
                 onClick={handleSelectAll}
