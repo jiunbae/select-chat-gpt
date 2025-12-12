@@ -229,11 +229,9 @@ function isFilteredContent(arr: unknown[], index: number): boolean {
   for (let j = index - 1; j >= Math.max(0, index - CONTEXT_LOOKBEHIND); j--) {
     const val = arr[j]
     if (typeof val === 'string') {
+      // Only detect content_type through explicit key-value structure to avoid false positives
       if (val === 'content_type' && typeof arr[j + 1] === 'string') {
         contentType = arr[j + 1] as string
-      }
-      if (FILTERED_CONTENT_TYPES.has(val)) {
-        contentType = val
       }
       if (CODE_EXECUTION_KEYWORDS.has(val)) {
         hasCodeExecutionContext = true
@@ -253,10 +251,6 @@ function isFilteredContent(arr: unknown[], index: number): boolean {
     if (typeof val === 'string') {
       if (CODE_EXECUTION_KEYWORDS.has(val)) {
         hasCodeExecutionContext = true
-        break
-      }
-      if (FILTERED_CONTENT_TYPES.has(val)) {
-        contentType = val
         break
       }
     }
