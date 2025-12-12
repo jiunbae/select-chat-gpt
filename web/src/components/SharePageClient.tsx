@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import type { Message as MessageType } from '@/lib/api';
 import { Message } from './Message';
@@ -33,6 +34,41 @@ function SharePageContent({ share }: SharePageClientProps) {
     getExportOptions,
   } = useStyleContext();
 
+  // Initialize selectedIds with all message IDs (all selected by default)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() =>
+    new Set(share.messages.map(m => m.id))
+  );
+
+  // Toggle selection for a single message
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  // Select all / Deselect all
+  const handleSelectAll = useCallback(() => {
+    const allIds = share.messages.map(m => m.id);
+    const allSelected = allIds.every(id => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allIds));
+    }
+  }, [share.messages, selectedIds]);
+
+  // Get selected messages for export
+  const selectedMessages = useMemo(() =>
+    share.messages.filter(m => selectedIds.has(m.id)),
+    [share.messages, selectedIds]
+  );
+
   const formattedDate = new Date(share.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -43,6 +79,8 @@ function SharePageContent({ share }: SharePageClientProps) {
   const filteredMessages = hideUserMessages
     ? share.messages.filter((m) => m.role !== 'user')
     : share.messages;
+
+  const allSelected = share.messages.length > 0 && selectedIds.size === share.messages.length;
 
   const isCleanStyle = styleType === 'clean';
 
@@ -85,12 +123,36 @@ function SharePageContent({ share }: SharePageClientProps) {
           </Link>
 
           <div className="flex items-center gap-3">
+            {/* Selection controls */}
+            <div className="flex items-center gap-2">
+              <span
+                className="text-sm"
+                style={{ color: isCleanStyle ? '#6b7280' : '#9ca3af' }}
+              >
+                {selectedIds.size} / {share.messages.length}
+              </span>
+              <button
+                onClick={handleSelectAll}
+                className="px-2 py-1 text-sm rounded transition-colors"
+                style={{
+                  color: isCleanStyle ? '#374151' : '#d1d5db',
+                  backgroundColor: isCleanStyle ? '#f3f4f6' : '#374151',
+                }}
+              >
+                {allSelected ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+            <div
+              className="h-6 w-px"
+              style={{ backgroundColor: isCleanStyle ? '#e5e7eb' : '#444444' }}
+            />
             <ExportButton
-              messages={share.messages}
+              messages={selectedMessages}
               title={share.title}
               sourceUrl={share.sourceUrl}
               styleType={styleType}
               exportOptions={getExportOptions()}
+              disabled={selectedIds.size === 0}
             />
             <a
               href={share.sourceUrl}
@@ -168,6 +230,9 @@ function SharePageContent({ share }: SharePageClientProps) {
               messageGap={messageGap}
               contentPadding={contentPadding}
               hideCodeBlocks={hideCodeBlocks}
+              showCheckbox={true}
+              isSelected={selectedIds.has(message.id)}
+              onToggleSelect={handleToggleSelect}
             />
           ))
         )}

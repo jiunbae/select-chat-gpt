@@ -26,6 +26,7 @@ interface ExportButtonProps {
   // External style control (optional - for SharePage integration)
   styleType?: ExportStyleType;
   exportOptions?: ExportOptions;
+  disabled?: boolean;
 }
 
 type ExportMode = 'markdown' | 'image' | 'pdf';
@@ -158,6 +159,7 @@ export function ExportButton({
   sourceUrl,
   styleType: externalStyleType,
   exportOptions: externalExportOptions,
+  disabled = false,
 }: ExportButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<ExportMode>('markdown');
@@ -300,8 +302,11 @@ export function ExportButton({
   return (
     <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium transition-colors ${
+          disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary-hover'
+        }`}
       >
         <svg
           width="16"

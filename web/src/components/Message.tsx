@@ -60,6 +60,9 @@ interface MessageProps {
   messageGap?: MessageGap;
   contentPadding?: ContentPadding;
   hideCodeBlocks?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
+  showCheckbox?: boolean;
 }
 
 // Remove code blocks from markdown content
@@ -116,6 +119,9 @@ export function Message({
   messageGap = 'md',
   contentPadding = 'md',
   hideCodeBlocks = false,
+  isSelected = true,
+  onToggleSelect,
+  showCheckbox = false,
 }: MessageProps) {
   const isUser = message.role === "user";
   const isCleanStyle = styleType === 'clean';
@@ -164,6 +170,26 @@ export function Message({
     <div style={containerStyle}>
       <div className="max-w-3xl mx-auto px-4" style={innerStyle}>
         <div className="flex gap-4">
+          {/* Checkbox for message selection */}
+          {showCheckbox && (
+            <div className="flex-shrink-0 flex items-start pt-1">
+              <button
+                onClick={() => onToggleSelect?.(message.id)}
+                className="w-6 h-6 rounded border-2 flex items-center justify-center transition-all cursor-pointer"
+                style={{
+                  borderColor: isSelected ? '#10a37f' : (isCleanStyle ? '#d1d5db' : '#6b7280'),
+                  backgroundColor: isSelected ? '#e6f7f2' : 'transparent',
+                }}
+                aria-label={isSelected ? 'Deselect message' : 'Select message'}
+              >
+                {isSelected && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10a37f" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          )}
           <div
             className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white"
             style={{
