@@ -16,8 +16,6 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "jsdom": "^25.0.1",
-    "katex": "^0.16.27",
-    "marked": "^17.0.1",
     "mongoose": "^8.9.2",
     "nanoid": "^5.0.9"
   },
@@ -26,7 +24,6 @@
     "@types/dompurify": "^3.0.5",
     "@types/express": "^5.0.0",
     "@types/jsdom": "^21.1.7",
-    "@types/katex": "^0.16.7",
     "@types/node": "^22.10.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"

@@ -1,6 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import rehypeRaw from "rehype-raw";
+import "katex/dist/katex.min.css";
 import type { Message as MessageType } from "@/lib/api";
 import {
   type ExportStyleType,
@@ -27,12 +33,34 @@ interface MessageProps {
   hideCodeBlocks?: boolean;
 }
 
-// Remove code blocks from HTML
-function removeCodeBlocks(html: string): string {
-  const temp = document.createElement('div');
-  temp.innerHTML = html;
-  temp.querySelectorAll('pre').forEach(el => el.remove());
-  return temp.innerHTML;
+// Remove code blocks from markdown content
+function removeCodeBlocks(content: string): string {
+  // Remove fenced code blocks (```...```)
+  return content.replace(/```[\s\S]*?```/g, '');
+}
+
+// Decode HTML entities that may have been encoded during sanitization
+function decodeHtmlEntities(content: string): string {
+  return content
+    .replace(/&#x27;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
+// Convert LaTeX delimiters from ChatGPT format to standard format
+// ChatGPT uses \[...\] and \(...\), remark-math expects $$...$$ and $...$
+function convertLatexDelimiters(content: string): string {
+  let result = content;
+
+  // Convert display math: \[...\] -> $$...$$
+  result = result.replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => `$$${math}$$`);
+
+  // Convert inline math: \(...\) -> $...$
+  result = result.replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => `$${math}$`);
+
+  return result;
 }
 
 export function Message({
@@ -71,14 +99,18 @@ export function Message({
     paddingRight: getContentPaddingValue(contentPadding),
   }), [contentPadding]);
 
-  // Process HTML content
-  const processedHtml = useMemo(() => {
-    const html = message.html || message.content;
-    if (hideCodeBlocks && typeof window !== 'undefined') {
-      return removeCodeBlocks(html);
+  // Process content (use raw content for react-markdown)
+  const processedContent = useMemo(() => {
+    let content = message.content || '';
+    // Decode HTML entities first (for backward compatibility with sanitized data)
+    content = decodeHtmlEntities(content);
+    // Convert LaTeX delimiters for remark-math compatibility
+    content = convertLatexDelimiters(content);
+    if (hideCodeBlocks) {
+      content = removeCodeBlocks(content);
     }
-    return html;
-  }, [message.html, message.content, hideCodeBlocks]);
+    return content;
+  }, [message.content, hideCodeBlocks]);
 
   // Style-specific text colors (using inline styles instead of dark: classes)
   const textColor = isCleanStyle ? '#1f2937' : '#ffffff';
@@ -130,8 +162,14 @@ export function Message({
             <div
               className="markdown-content prose prose-sm max-w-none"
               style={{ ...contentStyle, color: contentColor }}
-              dangerouslySetInnerHTML={{ __html: processedHtml }}
-            />
+            >
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[[rehypeKatex, { strict: 'ignore' }], rehypeRaw]}
+              >
+                {processedContent}
+              </ReactMarkdown>
+            </div>
           </div>
         </div>
       </div>

@@ -1,77 +1,5 @@
 import { JSDOM } from 'jsdom'
-import { marked } from 'marked'
-import katex from 'katex'
 import { createShare, CreateShareInput, ShareOutput } from './share.service.js'
-
-// Configure marked for safe HTML output
-marked.setOptions({
-  gfm: true,        // GitHub Flavored Markdown
-  breaks: true,     // Convert \n to <br>
-})
-
-// Render LaTeX math expressions using KaTeX
-function renderMath(content: string): string {
-  // Process display math first: \[...\] and $$...$$
-  // Use a placeholder approach to avoid nested replacements
-  let result = content
-
-  // Replace \[...\] display math
-  result = result.replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => {
-    try {
-      return katex.renderToString(math.trim(), {
-        displayMode: true,
-        throwOnError: false,
-        output: 'html'
-      })
-    } catch {
-      return `<span class="katex-error">[Math Error: ${math.trim()}]</span>`
-    }
-  })
-
-  // Replace $$...$$ display math (not already processed)
-  result = result.replace(/\$\$([\s\S]*?)\$\$/g, (_, math) => {
-    try {
-      return katex.renderToString(math.trim(), {
-        displayMode: true,
-        throwOnError: false,
-        output: 'html'
-      })
-    } catch {
-      return `<span class="katex-error">[Math Error: ${math.trim()}]</span>`
-    }
-  })
-
-  // Replace \(...\) inline math
-  result = result.replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => {
-    try {
-      return katex.renderToString(math.trim(), {
-        displayMode: false,
-        throwOnError: false,
-        output: 'html'
-      })
-    } catch {
-      return `<span class="katex-error">[Math Error: ${math.trim()}]</span>`
-    }
-  })
-
-  // Replace $...$ inline math (be careful not to match currency like $100)
-  // Only match if not preceded/followed by digit or space+digit pattern
-  result = result.replace(/(?<!\$)\$(?!\$)([^\$\n]+?)\$(?!\d)/g, (match, math) => {
-    // Skip if it looks like currency (e.g., $100, $ 50)
-    if (/^\s*\d/.test(math)) return match
-    try {
-      return katex.renderToString(math.trim(), {
-        displayMode: false,
-        throwOnError: false,
-        output: 'html'
-      })
-    } catch {
-      return match // Return original if KaTeX fails (might be currency)
-    }
-  })
-
-  return result
-}
 
 export interface ParsedMessage {
   id: string
@@ -119,16 +47,6 @@ const CHATGPT_URL_PATTERNS = [
 
 export function isValidChatGPTShareUrl(url: string): boolean {
   return CHATGPT_URL_PATTERNS.some(pattern => pattern.test(url))
-}
-
-function formatMessageHtml(content: string): string {
-  // First render LaTeX math expressions to HTML
-  const withMath = renderMath(content)
-  // Then use marked library for robust markdown parsing
-  // marked handles code blocks, bold, italic, lists, links, etc.
-  const html = marked.parse(withMath)
-  // marked.parse returns string | Promise<string>, but with sync options it's always string
-  return typeof html === 'string' ? html : ''
 }
 
 // Keywords and patterns that indicate metadata, not user content
@@ -268,7 +186,7 @@ function extractFromReactRouterData(html: string): ParseResult | null {
         id: `msg-${idx}`,
         role,
         content: m.content,
-        html: formatMessageHtml(m.content)
+        html: '' // HTML rendering is done client-side
       }
     })
 

@@ -80,7 +80,7 @@ export async function createShare(input: CreateShareInput): Promise<ShareOutput>
     return {
       id: sanitizeText(messageId),
       role: msg.role as 'user' | 'assistant',
-      content: sanitizeText(content),
+      content: content.trim(), // Keep raw content for client-side markdown rendering
       html: sanitizeHtml(html)
     }
   })

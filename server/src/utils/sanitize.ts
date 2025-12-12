@@ -4,6 +4,7 @@ import DOMPurify from 'dompurify'
 const jsdomWindow = new JSDOM('').window
 const purify = DOMPurify(jsdomWindow as unknown as typeof globalThis & typeof window)
 
+// Note: KaTeX rendering is done client-side, so no KaTeX-specific tags/attrs needed here
 purify.setConfig({
   ALLOWED_TAGS: [
     'p', 'br', 'strong', 'em', 'u', 's', 'code', 'pre',
@@ -12,19 +13,11 @@ purify.setConfig({
     'blockquote', 'a', 'img',
     'table', 'thead', 'tbody', 'tr', 'th', 'td',
     'div', 'span', 'hr',
-    'sup', 'sub', 'mark',
-    // KaTeX math rendering tags
-    'math', 'semantics', 'mrow', 'mi', 'mn', 'mo', 'msup', 'msub',
-    'mfrac', 'mroot', 'msqrt', 'mtext', 'mspace', 'mtable', 'mtr', 'mtd',
-    'annotation', 'svg', 'path', 'line', 'rect', 'g', 'use', 'defs'
+    'sup', 'sub', 'mark'
   ],
   ALLOWED_ATTR: [
     'href', 'src', 'alt', 'title', 'class', 'id',
-    'target', 'rel', 'data-*',
-    // KaTeX math rendering attributes
-    'style', 'aria-hidden', 'encoding', 'xmlns', 'mathvariant',
-    'd', 'viewBox', 'preserveAspectRatio', 'fill', 'stroke', 'width', 'height',
-    'x', 'y', 'x1', 'y1', 'x2', 'y2', 'transform', 'xlink:href'
+    'target', 'rel', 'data-*'
   ],
   ALLOW_DATA_ATTR: true
 })
