@@ -49,6 +49,7 @@
     "padding": "内边距",
     "hideQuestions": "隐藏提问",
     "hideCode": "隐藏代码",
+    "hideDeselected": "隐藏未选中",
     "systemDefault": "系统默认"
   },
   "exportButton": {

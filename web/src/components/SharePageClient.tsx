@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import type { Message as MessageType } from '@/lib/api';
 import { Message } from './Message';
@@ -30,8 +31,27 @@ function SharePageContent({ share }: SharePageClientProps) {
     contentPadding,
     hideUserMessages,
     hideCodeBlocks,
+    hideDeselected,
     getExportOptions,
   } = useStyleContext();
+
+  // Initialize selectedIds with all message IDs (all selected by default)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() =>
+    new Set(share.messages.map(m => m.id))
+  );
+
+  // Toggle selection for a single message
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
 
   const formattedDate = new Date(share.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -39,10 +59,51 @@ function SharePageContent({ share }: SharePageClientProps) {
     day: 'numeric',
   });
 
-  // Filter messages if hideUserMessages is enabled
-  const filteredMessages = hideUserMessages
-    ? share.messages.filter((m) => m.role !== 'user')
-    : share.messages;
+  // Filter messages based on hideUserMessages and hideDeselected options (memoized)
+  const filteredMessages = useMemo(() => {
+    let messages = share.messages;
+    if (hideUserMessages) {
+      messages = messages.filter((m) => m.role !== 'user');
+    }
+    if (hideDeselected) {
+      messages = messages.filter((m) => selectedIds.has(m.id));
+    }
+    return messages;
+  }, [share.messages, hideUserMessages, hideDeselected, selectedIds]);
+
+  // Select all / Deselect all (based on filtered messages)
+  const handleSelectAll = useCallback(() => {
+    setSelectedIds(prev => {
+      const filteredIds = filteredMessages.map(m => m.id);
+      const allSelected = filteredMessages.length > 0 && filteredIds.every(id => prev.has(id));
+
+      if (allSelected) {
+        // Deselect all filtered messages, keep others
+        const next = new Set(prev);
+        filteredIds.forEach(id => next.delete(id));
+        return next;
+      } else {
+        // Select all filtered messages, keep others
+        const next = new Set(prev);
+        filteredIds.forEach(id => next.add(id));
+        return next;
+      }
+    });
+  }, [filteredMessages]);
+
+  // Get selected messages for export (based on filtered messages)
+  // When hideDeselected is true, filteredMessages already contains only selected messages
+  const selectedMessages = useMemo(() => {
+    if (hideDeselected) {
+      return filteredMessages;
+    }
+    return filteredMessages.filter(m => selectedIds.has(m.id));
+  }, [filteredMessages, selectedIds, hideDeselected]);
+
+  // Calculate selected count based on filtered messages (reuse selectedMessages)
+  const filteredSelectedCount = selectedMessages.length;
+
+  const allSelected = filteredMessages.length > 0 && filteredSelectedCount === filteredMessages.length;
 
   const isCleanStyle = styleType === 'clean';
 
@@ -85,12 +146,34 @@ function SharePageContent({ share }: SharePageClientProps) {
           </Link>
 
           <div className="flex items-center gap-3">
+            {/* Selection controls */}
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-sm ${isCleanStyle ? 'text-gray-500' : 'text-gray-400'}`}
+              >
+                {filteredSelectedCount} / {filteredMessages.length}
+              </span>
+              <button
+                onClick={handleSelectAll}
+                className={`px-2 py-1 text-sm rounded transition-colors ${
+                  isCleanStyle
+                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                {allSelected ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+            <div
+              className={`h-6 w-px ${isCleanStyle ? 'bg-gray-200' : 'bg-gray-700'}`}
+            />
             <ExportButton
-              messages={share.messages}
+              messages={selectedMessages}
               title={share.title}
               sourceUrl={share.sourceUrl}
               styleType={styleType}
               exportOptions={getExportOptions()}
+              disabled={filteredSelectedCount === 0}
             />
             <a
               href={share.sourceUrl}
@@ -168,6 +251,9 @@ function SharePageContent({ share }: SharePageClientProps) {
               messageGap={messageGap}
               contentPadding={contentPadding}
               hideCodeBlocks={hideCodeBlocks}
+              showCheckbox={true}
+              isSelected={selectedIds.has(message.id)}
+              onToggleSelect={handleToggleSelect}
             />
           ))
         )}

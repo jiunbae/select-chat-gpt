@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -60,6 +60,9 @@ interface MessageProps {
   messageGap?: MessageGap;
   contentPadding?: ContentPadding;
   hideCodeBlocks?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
+  showCheckbox?: boolean;
 }
 
 // Remove code blocks from markdown content
@@ -106,7 +109,7 @@ function convertLatexDelimiters(content: string): string {
   return parts.join('');
 }
 
-export function Message({
+export const Message = memo(function Message({
   message,
   styleType = 'chatgpt',
   fontSize = 'base',
@@ -116,6 +119,9 @@ export function Message({
   messageGap = 'md',
   contentPadding = 'md',
   hideCodeBlocks = false,
+  isSelected = true,
+  onToggleSelect,
+  showCheckbox = false,
 }: MessageProps) {
   const isUser = message.role === "user";
   const isCleanStyle = styleType === 'clean';
@@ -160,10 +166,36 @@ export function Message({
   const textColor = isCleanStyle ? '#1f2937' : '#ffffff';
   const contentColor = isCleanStyle ? '#374151' : '#e5e7eb';
 
+  // Checkbox style classes (extracted for readability)
+  const checkboxClasses = useMemo(() => {
+    const base = 'w-6 h-6 rounded border-2 flex items-center justify-center transition-all cursor-pointer';
+    if (isSelected) return `${base} border-primary bg-primary/10`;
+    if (isCleanStyle) return `${base} border-gray-300`;
+    return `${base} border-gray-500`;
+  }, [isSelected, isCleanStyle]);
+
   return (
     <div style={containerStyle}>
       <div className="max-w-3xl mx-auto px-4" style={innerStyle}>
         <div className="flex gap-4">
+          {/* Checkbox for message selection */}
+          {showCheckbox && (
+            <div className="flex-shrink-0 flex items-start pt-1">
+              <button
+                onClick={() => onToggleSelect?.(message.id)}
+                role="checkbox"
+                aria-checked={isSelected}
+                className={checkboxClasses}
+                aria-label={isSelected ? 'Deselect message' : 'Select message'}
+              >
+                {isSelected && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-primary">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          )}
           <div
             className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white"
             style={{
@@ -223,4 +255,4 @@ export function Message({
       </div>
     </div>
   );
-}
+});

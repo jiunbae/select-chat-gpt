@@ -41,6 +41,8 @@ interface StyleContextValue {
   setHideUserMessages: (hide: boolean) => void;
   hideCodeBlocks: boolean;
   setHideCodeBlocks: (hide: boolean) => void;
+  hideDeselected: boolean;
+  setHideDeselected: (hide: boolean) => void;
 
   // Layout (PDF)
   pageSize: PageSize;
@@ -64,6 +66,7 @@ export function StyleProvider({ children }: { children: React.ReactNode }) {
   const [contentPadding, setContentPadding] = useState<ContentPadding>('md');
   const [hideUserMessages, setHideUserMessages] = useState(false);
   const [hideCodeBlocks, setHideCodeBlocks] = useState(false);
+  const [hideDeselected, setHideDeselected] = useState(false);
   const [pageSize, setPageSize] = useState<PageSize>('a4');
   const [margin, setMargin] = useState<Margin>('normal');
 
@@ -101,6 +104,8 @@ export function StyleProvider({ children }: { children: React.ReactNode }) {
         setHideUserMessages,
         hideCodeBlocks,
         setHideCodeBlocks,
+        hideDeselected,
+        setHideDeselected,
         pageSize,
         setPageSize,
         margin,

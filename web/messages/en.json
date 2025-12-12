@@ -49,6 +49,7 @@
     "padding": "Padding",
     "hideQuestions": "Hide questions",
     "hideCode": "Hide code",
+    "hideDeselected": "Hide deselected",
     "systemDefault": "System Default"
   },
   "exportButton": {

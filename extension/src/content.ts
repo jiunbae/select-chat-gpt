@@ -225,6 +225,9 @@ function createUI() {
     `
     updateActionBar()
   })
+
+  // 초기 상태: 모든 메시지가 선택된 상태로 시작
+  updateSelectedCount()
 }
 
 function findMessageContainers(): NodeListOf<Element> | Element[] {
@@ -323,6 +326,7 @@ function createCheckboxes() {
 
     const checkbox = document.createElement('input')
     checkbox.type = 'checkbox'
+    checkbox.checked = true // 기본적으로 모든 메시지 선택
     checkbox.dataset.messageIndex = String(index)
     checkbox.dataset.role = role || 'unknown'
     checkbox.style.cssText = `
