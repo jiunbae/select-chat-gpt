@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import "katex/dist/katex.min.css";
 import type { Message as MessageType } from "@/lib/api";
 import {
@@ -21,6 +22,31 @@ import {
   getMessageGapValue,
   getContentPaddingValue,
 } from "@/lib/export";
+
+// Extended sanitize schema to allow KaTeX-generated elements
+const sanitizeSchema = {
+  ...defaultSchema,
+  tagNames: [
+    ...(defaultSchema.tagNames || []),
+    // KaTeX math rendering tags
+    'math', 'semantics', 'mrow', 'mi', 'mn', 'mo', 'msup', 'msub',
+    'mfrac', 'mroot', 'msqrt', 'mtext', 'mspace', 'mtable', 'mtr', 'mtd',
+    'annotation', 'svg', 'path', 'line', 'rect', 'g', 'use', 'defs',
+    'span', 'div'
+  ],
+  attributes: {
+    ...defaultSchema.attributes,
+    '*': [...(defaultSchema.attributes?.['*'] || []), 'className', 'class', 'style'],
+    'math': ['xmlns', 'display'],
+    'annotation': ['encoding'],
+    'svg': ['viewBox', 'width', 'height', 'preserveAspectRatio', 'xmlns'],
+    'path': ['d', 'fill', 'stroke'],
+    'line': ['x1', 'y1', 'x2', 'y2', 'stroke'],
+    'rect': ['x', 'y', 'width', 'height', 'fill', 'stroke'],
+    'g': ['transform'],
+    'use': ['href', 'xlink:href']
+  }
+};
 
 interface MessageProps {
   message: MessageType;
@@ -41,26 +67,40 @@ function removeCodeBlocks(content: string): string {
 
 // Decode HTML entities that may have been encoded during sanitization
 function decodeHtmlEntities(content: string): string {
-  return content
-    .replace(/&#x27;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
+  if (typeof window === 'undefined') {
+    // Server-side: use basic replacement
+    return content
+      .replace(/&#x27;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&');
+  }
+  // Client-side: use textarea for complete HTML entity decoding
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = content;
+  return textarea.value;
 }
 
 // Convert LaTeX delimiters from ChatGPT format to standard format
 // ChatGPT uses \[...\] and \(...\), remark-math expects $$...$$ and $...$
+// Only process content outside of code blocks to avoid corrupting code
 function convertLatexDelimiters(content: string): string {
-  let result = content;
+  // Split by fenced code blocks, keeping the delimiters
+  const parts = content.split(/(```[\s\S]*?```)/g);
 
-  // Convert display math: \[...\] -> $$...$$
-  result = result.replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => `$$${math}$$`);
+  for (let i = 0; i < parts.length; i++) {
+    // Only process parts outside of code blocks (even indices)
+    if (i % 2 === 0) {
+      parts[i] = parts[i]
+        // Convert display math: \[...\] -> $$...$$ (require non-empty content with +?)
+        .replace(/\\\[([\s\S]+?)\\\]/g, (_, math) => `$$${math}$$`)
+        // Convert inline math: \(...\) -> $...$ (require non-empty content with +?)
+        .replace(/\\\(([\s\S]+?)\\\)/g, (_, math) => `$${math}$`);
+    }
+  }
 
-  // Convert inline math: \(...\) -> $...$
-  result = result.replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => `$${math}$`);
-
-  return result;
+  return parts.join('');
 }
 
 export function Message({
@@ -165,7 +205,11 @@ export function Message({
             >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
-                rehypePlugins={[[rehypeKatex, { strict: 'ignore' }], rehypeRaw]}
+                rehypePlugins={[
+                  [rehypeKatex, { strict: 'ignore' }],
+                  rehypeRaw,
+                  [rehypeSanitize, sanitizeSchema]
+                ]}
               >
                 {processedContent}
               </ReactMarkdown>
