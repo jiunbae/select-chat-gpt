@@ -21,7 +21,7 @@ const MessageSchema = new Schema<IMessage>({
   id: { type: String, required: true },
   role: { type: String, enum: ['user', 'assistant'], required: true },
   content: { type: String, required: true },
-  html: { type: String, required: true }
+  html: { type: String, default: '' } // HTML rendering is done client-side
 }, { _id: false })
 
 const ShareSchema = new Schema<IShare>({

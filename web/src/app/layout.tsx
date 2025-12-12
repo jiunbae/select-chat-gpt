@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { LanguageSelector } from "@/components/LanguageSelector";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 
 // Pretendard - 인기 있는 한글 산세리프 폰트 (Variable Font)
 const pretendard = localFont({
