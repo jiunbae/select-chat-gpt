@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "title": "SelectChatGPT - Share Selected ChatGPT Messages",
+    "description": "View and share selected messages from ChatGPT conversations"
+  },
+  "common": {
+    "retry": "Retry",
+    "home": "Home",
+    "export": "Export",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "download": "Download"
+  },
+  "styleControls": {
+    "style": "Style",
+    "chatgpt": "ChatGPT",
+    "clean": "Clean",
+    "text": "Text",
+    "spacing": "Spacing",
+    "filters": "Filters",
+    "font": "Font",
+    "fontSize": "Size",
+    "lineHeight": "Line Height",
+    "letterSpacing": "Letter Spacing",
+    "gap": "Gap",
+    "padding": "Padding",
+    "hideQuestions": "Hide questions",
+    "hideCode": "Hide code",
+    "systemDefault": "System Default"
+  },
+  "exportButton": {
+    "exportAs": "Export as",
+    "png": "PNG",
+    "pdf": "PDF",
+    "exporting": "Exporting...",
+    "preparing": "Preparing...",
+    "rendering": "Rendering...",
+    "generating": "Generating...",
+    "downloading": "Downloading..."
+  },
+  "urlInput": {
+    "placeholder": "Paste ChatGPT share URL",
+    "load": "Load",
+    "loading": "Loading..."
+  },
+  "error": {
+    "notFound": "Share not found",
+    "notFoundDesc": "The share you're looking for doesn't exist or has been deleted.",
+    "backHome": "Back to Home",
+    "invalidUrl": "Invalid URL",
+    "failedToLoad": "Failed to load conversation"
+  },
+  "message": {
+    "you": "You",
+    "assistant": "Assistant"
+  },
+  "home": {
+    "title": "SelectChatGPT",
+    "subtitle": "Share selected ChatGPT messages with style",
+    "getExtension": "Get Chrome Extension"
+  },
+  "footer": {
+    "poweredBy": "Powered by SelectChatGPT"
+  }
+}

@@ -1,0 +1,246 @@
+{
+  "extName": {
+    "message": "SelectChatGPT",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "分享选定的ChatGPT消息",
+    "description": "Extension description"
+  },
+  "shareSelectedMessages": {
+    "message": "分享选定消息",
+    "description": "Tagline"
+  },
+  "howToUse": {
+    "message": "使用方法",
+    "description": "How to use section title"
+  },
+  "step1": {
+    "message": "打开ChatGPT分享对话",
+    "description": "Step 1 instruction"
+  },
+  "step2": {
+    "message": "点击复选框选择消息",
+    "description": "Step 2 instruction"
+  },
+  "step3": {
+    "message": "点击"创建分享链接"",
+    "description": "Step 3 instruction"
+  },
+  "openChatGPT": {
+    "message": "打开ChatGPT",
+    "description": "Button to open ChatGPT"
+  },
+  "exportMessages": {
+    "message": "导出 $count$ 条消息",
+    "description": "Export modal title",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      },
+      "plural": {
+        "content": "$2",
+        "example": ""
+      }
+    }
+  },
+  "modeLink": {
+    "message": "链接",
+    "description": "Link export mode"
+  },
+  "modeMarkdown": {
+    "message": "MD",
+    "description": "Markdown export mode"
+  },
+  "modeImage": {
+    "message": "PNG",
+    "description": "Image export mode"
+  },
+  "modePDF": {
+    "message": "PDF",
+    "description": "PDF export mode"
+  },
+  "stagePreparing": {
+    "message": "准备中...",
+    "description": "Export stage - preparing"
+  },
+  "stageRendering": {
+    "message": "渲染中...",
+    "description": "Export stage - rendering"
+  },
+  "stageGenerating": {
+    "message": "生成中...",
+    "description": "Export stage - generating"
+  },
+  "stageDownloading": {
+    "message": "下载中...",
+    "description": "Export stage - downloading"
+  },
+  "style": {
+    "message": "样式",
+    "description": "Style section label"
+  },
+  "styleChatGPT": {
+    "message": "ChatGPT",
+    "description": "ChatGPT style option"
+  },
+  "styleClean": {
+    "message": "简洁",
+    "description": "Clean style option"
+  },
+  "textStyling": {
+    "message": "文本样式",
+    "description": "Text styling section"
+  },
+  "fontSize": {
+    "message": "字体大小",
+    "description": "Font size label"
+  },
+  "lineHeight": {
+    "message": "行高",
+    "description": "Line height label"
+  },
+  "letterSpacing": {
+    "message": "字间距",
+    "description": "Letter spacing label"
+  },
+  "content": {
+    "message": "内容",
+    "description": "Content section"
+  },
+  "hideUserQuestions": {
+    "message": "隐藏用户提问",
+    "description": "Hide user questions option"
+  },
+  "hideCodeBlocks": {
+    "message": "隐藏代码块",
+    "description": "Hide code blocks option"
+  },
+  "layout": {
+    "message": "布局",
+    "description": "Layout section"
+  },
+  "pageSize": {
+    "message": "页面大小",
+    "description": "Page size label"
+  },
+  "margin": {
+    "message": "边距",
+    "description": "Margin label"
+  },
+  "marginCompact": {
+    "message": "紧凑",
+    "description": "Compact margin option"
+  },
+  "marginNormal": {
+    "message": "正常",
+    "description": "Normal margin option"
+  },
+  "marginWide": {
+    "message": "宽松",
+    "description": "Wide margin option"
+  },
+  "generateShareLink": {
+    "message": "生成分享链接",
+    "description": "Generate share link button"
+  },
+  "creating": {
+    "message": "创建中...",
+    "description": "Creating state"
+  },
+  "copied": {
+    "message": "已复制!",
+    "description": "Copied confirmation"
+  },
+  "copy": {
+    "message": "复制",
+    "description": "Copy button"
+  },
+  "openInNewTab": {
+    "message": "在新标签页打开",
+    "description": "Open in new tab link"
+  },
+  "copyAsMarkdown": {
+    "message": "复制为Markdown",
+    "description": "Copy as markdown button"
+  },
+  "downloadMdFile": {
+    "message": "下载 .md 文件",
+    "description": "Download markdown file button"
+  },
+  "downloadAsPNG": {
+    "message": "下载为PNG",
+    "description": "Download as PNG button"
+  },
+  "downloadAsPDF": {
+    "message": "下载为PDF",
+    "description": "Download as PDF button"
+  },
+  "exporting": {
+    "message": "导出中...",
+    "description": "Exporting state"
+  },
+  "imageExportDesc": {
+    "message": "适合社交媒体分享的高质量图片",
+    "description": "Image export description"
+  },
+  "pdfExportDesc": {
+    "message": "用于打印和存档的多页PDF文档",
+    "description": "PDF export description"
+  },
+  "poweredBy": {
+    "message": "Powered by SelectChatGPT",
+    "description": "Footer text"
+  },
+  "selected": {
+    "message": "已选择 $count$ / $total$",
+    "description": "Selection count",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "10"
+      }
+    }
+  },
+  "selectAll": {
+    "message": "全选",
+    "description": "Select all button"
+  },
+  "deselectAll": {
+    "message": "取消全选",
+    "description": "Deselect all button"
+  },
+  "clear": {
+    "message": "清除",
+    "description": "Clear button"
+  },
+  "createShareLink": {
+    "message": "创建分享链接",
+    "description": "Create share link button"
+  },
+  "failedToCreateShare": {
+    "message": "创建分享链接失败",
+    "description": "Error message"
+  },
+  "failedToCopy": {
+    "message": "复制到剪贴板失败",
+    "description": "Copy error message"
+  },
+  "failedToCopyMarkdown": {
+    "message": "复制Markdown失败",
+    "description": "Markdown copy error"
+  },
+  "failedToExportImage": {
+    "message": "导出图片失败",
+    "description": "Image export error"
+  },
+  "failedToExportPDF": {
+    "message": "导出PDF失败",
+    "description": "PDF export error"
+  }
+}

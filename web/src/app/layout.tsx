@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Noto_Sans_KR, Noto_Serif_KR, IBM_Plex_Sans_KR } from "next/font/google";
 import localFont from "next/font/local";
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import "./globals.css";
 
 // Pretendard - 인기 있는 한글 산세리프 폰트 (Variable Font)
@@ -62,13 +64,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="ko" className={`${pretendard.variable} ${notoSansKR.variable} ${notoSerifKR.variable} ${ibmPlexSansKR.variable}`}>
+    <html lang={locale} className={`${pretendard.variable} ${notoSansKR.variable} ${notoSerifKR.variable} ${ibmPlexSansKR.variable}`}>
       <head>
         {/* Google Analytics 4 */}
         {GA_ID && (
@@ -100,7 +105,9 @@ export default function RootLayout({
         )}
       </head>
       <body className="antialiased">
-        {children}
+        <NextIntlClientProvider messages={messages}>
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useStyleContext } from './StyleContext';
 import type { LetterSpacing, LineHeight, FontSize, FontFamily, MessageGap, ContentPadding } from '@/lib/export';
 
@@ -120,6 +121,7 @@ function CheckboxControl({
 type OpenSection = 'text' | 'spacing' | 'filters' | null;
 
 export function StyleControls() {
+  const t = useTranslations('styleControls');
   const {
     styleType,
     setStyleType,
@@ -165,7 +167,7 @@ export function StyleControls() {
               className="text-sm font-medium"
               style={{ color: isCleanStyle ? '#374151' : '#d1d5db' }}
             >
-              Style:
+              {t('style')}:
             </span>
             <div className="flex gap-1">
               <button
@@ -178,7 +180,7 @@ export function StyleControls() {
                 }}
               >
                 <div className="w-2.5 h-2.5 rounded bg-[#212121]" />
-                ChatGPT
+                {t('chatgpt')}
               </button>
               <button
                 onClick={() => setStyleType('clean')}
@@ -190,7 +192,7 @@ export function StyleControls() {
                 }}
               >
                 <div className="w-2.5 h-2.5 rounded bg-white border border-gray-300" />
-                Clean
+                {t('clean')}
               </button>
             </div>
           </div>
@@ -203,19 +205,19 @@ export function StyleControls() {
 
           {/* Dropdown Toggles */}
           <DropdownToggle
-            label="Text"
+            label={t('text')}
             isOpen={openSection === 'text'}
             onToggle={() => toggleSection('text')}
             isCleanStyle={isCleanStyle}
           />
           <DropdownToggle
-            label="Spacing"
+            label={t('spacing')}
             isOpen={openSection === 'spacing'}
             onToggle={() => toggleSection('spacing')}
             isCleanStyle={isCleanStyle}
           />
           <DropdownToggle
-            label="Filters"
+            label={t('filters')}
             isOpen={openSection === 'filters'}
             onToggle={() => toggleSection('filters')}
             isCleanStyle={isCleanStyle}
@@ -231,20 +233,20 @@ export function StyleControls() {
             {openSection === 'text' && (
               <div className="flex flex-wrap items-center gap-4">
                 <SelectControl
-                  label="글꼴"
+                  label={t('font')}
                   value={fontFamily}
                   options={[
                     { value: 'pretendard', label: 'Pretendard' },
                     { value: 'noto-sans-kr', label: 'Noto Sans KR' },
                     { value: 'noto-serif-kr', label: 'Noto Serif KR' },
                     { value: 'ibm-plex-sans-kr', label: 'IBM Plex Sans KR' },
-                    { value: 'system', label: '시스템 기본' },
+                    { value: 'system', label: t('systemDefault') },
                   ]}
                   onChange={(v) => setFontFamily(v as FontFamily)}
                   isCleanStyle={isCleanStyle}
                 />
                 <SelectControl
-                  label="크기"
+                  label={t('fontSize')}
                   value={fontSize}
                   options={[
                     { value: 'xs', label: '12px' },
@@ -258,7 +260,7 @@ export function StyleControls() {
                   isCleanStyle={isCleanStyle}
                 />
                 <SelectControl
-                  label="줄 높이"
+                  label={t('lineHeight')}
                   value={lineHeight}
                   options={[
                     { value: 'tight', label: '1.25' },
@@ -271,7 +273,7 @@ export function StyleControls() {
                   isCleanStyle={isCleanStyle}
                 />
                 <SelectControl
-                  label="자간"
+                  label={t('letterSpacing')}
                   value={letterSpacing}
                   options={[
                     { value: 'tighter', label: '-0.05em' },
@@ -289,7 +291,7 @@ export function StyleControls() {
             {openSection === 'spacing' && (
               <div className="flex flex-wrap items-center gap-4">
                 <SelectControl
-                  label="Gap"
+                  label={t('gap')}
                   value={messageGap}
                   options={[
                     { value: 'none', label: 'None' },
@@ -302,7 +304,7 @@ export function StyleControls() {
                   isCleanStyle={isCleanStyle}
                 />
                 <SelectControl
-                  label="Padding"
+                  label={t('padding')}
                   value={contentPadding}
                   options={[
                     { value: 'none', label: 'None' },
@@ -320,13 +322,13 @@ export function StyleControls() {
             {openSection === 'filters' && (
               <div className="flex flex-wrap items-center gap-4">
                 <CheckboxControl
-                  label="Hide questions"
+                  label={t('hideQuestions')}
                   checked={hideUserMessages}
                   onChange={setHideUserMessages}
                   isCleanStyle={isCleanStyle}
                 />
                 <CheckboxControl
-                  label="Hide code"
+                  label={t('hideCode')}
                   checked={hideCodeBlocks}
                   onChange={setHideCodeBlocks}
                   isCleanStyle={isCleanStyle}

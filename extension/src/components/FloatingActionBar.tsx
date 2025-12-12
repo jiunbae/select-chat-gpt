@@ -1,3 +1,5 @@
+import { t } from "~src/utils/i18n"
+
 interface FloatingActionBarProps {
   selectedCount: number
   totalCount: number
@@ -19,7 +21,7 @@ export function FloatingActionBar({
     <div className="scgpt-fixed scgpt-bottom-6 scgpt-left-1/2 scgpt-transform scgpt--translate-x-1/2 scgpt-z-[10000]">
       <div className="scgpt-bg-white scgpt-rounded-full scgpt-shadow-2xl scgpt-border scgpt-border-gray-200 scgpt-px-4 scgpt-py-3 scgpt-flex scgpt-items-center scgpt-gap-4">
         <span className="scgpt-text-sm scgpt-text-gray-600 scgpt-font-medium scgpt-min-w-[100px]">
-          {selectedCount} / {totalCount} selected
+          {t('selected', [String(selectedCount), String(totalCount)])}
         </span>
 
         <div className="scgpt-h-6 scgpt-w-px scgpt-bg-gray-200" />
@@ -28,14 +30,14 @@ export function FloatingActionBar({
           onClick={onSelectAll}
           className="scgpt-px-3 scgpt-py-1.5 scgpt-text-sm scgpt-text-gray-700 scgpt-hover:bg-gray-100 scgpt-rounded-md scgpt-transition-colors"
         >
-          {isAllSelected ? 'Deselect All' : 'Select All'}
+          {isAllSelected ? t('deselectAll') : t('selectAll')}
         </button>
 
         <button
           onClick={onClearSelection}
           className="scgpt-px-3 scgpt-py-1.5 scgpt-text-sm scgpt-text-gray-700 scgpt-hover:bg-gray-100 scgpt-rounded-md scgpt-transition-colors"
         >
-          Clear
+          {t('clear')}
         </button>
 
         <div className="scgpt-h-6 scgpt-w-px scgpt-bg-gray-200" />
@@ -49,7 +51,7 @@ export function FloatingActionBar({
             <polyline points="16 6 12 2 8 6" />
             <line x1="12" y1="2" x2="12" y2="15" />
           </svg>
-          Create Share Link
+          {t('createShareLink')}
         </button>
       </div>
     </div>

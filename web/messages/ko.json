@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "title": "SelectChatGPT - ChatGPT 메시지 선택 공유",
+    "description": "ChatGPT 대화에서 선택한 메시지를 보고 공유하세요"
+  },
+  "common": {
+    "retry": "다시 시도",
+    "home": "홈으로",
+    "export": "내보내기",
+    "copy": "복사",
+    "copied": "복사됨!",
+    "download": "다운로드"
+  },
+  "styleControls": {
+    "style": "스타일",
+    "chatgpt": "ChatGPT",
+    "clean": "깔끔함",
+    "text": "텍스트",
+    "spacing": "간격",
+    "filters": "필터",
+    "font": "글꼴",
+    "fontSize": "크기",
+    "lineHeight": "줄 높이",
+    "letterSpacing": "자간",
+    "gap": "간격",
+    "padding": "패딩",
+    "hideQuestions": "질문 숨기기",
+    "hideCode": "코드 숨기기",
+    "systemDefault": "시스템 기본"
+  },
+  "exportButton": {
+    "exportAs": "내보내기",
+    "png": "PNG",
+    "pdf": "PDF",
+    "exporting": "내보내는 중...",
+    "preparing": "준비 중...",
+    "rendering": "렌더링 중...",
+    "generating": "생성 중...",
+    "downloading": "다운로드 중..."
+  },
+  "urlInput": {
+    "placeholder": "ChatGPT 공유 URL을 붙여넣으세요",
+    "load": "불러오기",
+    "loading": "불러오는 중..."
+  },
+  "error": {
+    "notFound": "공유를 찾을 수 없음",
+    "notFoundDesc": "찾으시는 공유가 존재하지 않거나 삭제되었습니다.",
+    "backHome": "홈으로 돌아가기",
+    "invalidUrl": "잘못된 URL",
+    "failedToLoad": "대화를 불러오는데 실패했습니다"
+  },
+  "message": {
+    "you": "사용자",
+    "assistant": "어시스턴트"
+  },
+  "home": {
+    "title": "SelectChatGPT",
+    "subtitle": "스타일리시하게 ChatGPT 메시지를 공유하세요",
+    "getExtension": "Chrome 확장 프로그램 설치"
+  },
+  "footer": {
+    "poweredBy": "Powered by SelectChatGPT"
+  }
+}

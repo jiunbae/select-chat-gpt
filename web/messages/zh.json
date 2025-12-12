@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "title": "SelectChatGPT - 分享选定的ChatGPT消息",
+    "description": "查看和分享ChatGPT对话中选定的消息"
+  },
+  "common": {
+    "retry": "重试",
+    "home": "返回首页",
+    "export": "导出",
+    "copy": "复制",
+    "copied": "已复制!",
+    "download": "下载"
+  },
+  "styleControls": {
+    "style": "样式",
+    "chatgpt": "ChatGPT",
+    "clean": "简洁",
+    "text": "文本",
+    "spacing": "间距",
+    "filters": "过滤",
+    "font": "字体",
+    "fontSize": "大小",
+    "lineHeight": "行高",
+    "letterSpacing": "字间距",
+    "gap": "间隔",
+    "padding": "内边距",
+    "hideQuestions": "隐藏提问",
+    "hideCode": "隐藏代码",
+    "systemDefault": "系统默认"
+  },
+  "exportButton": {
+    "exportAs": "导出为",
+    "png": "PNG",
+    "pdf": "PDF",
+    "exporting": "导出中...",
+    "preparing": "准备中...",
+    "rendering": "渲染中...",
+    "generating": "生成中...",
+    "downloading": "下载中..."
+  },
+  "urlInput": {
+    "placeholder": "粘贴ChatGPT分享链接",
+    "load": "加载",
+    "loading": "加载中..."
+  },
+  "error": {
+    "notFound": "未找到分享",
+    "notFoundDesc": "您查找的分享不存在或已被删除。",
+    "backHome": "返回首页",
+    "invalidUrl": "无效的URL",
+    "failedToLoad": "加载对话失败"
+  },
+  "message": {
+    "you": "用户",
+    "assistant": "助手"
+  },
+  "home": {
+    "title": "SelectChatGPT",
+    "subtitle": "时尚地分享ChatGPT消息",
+    "getExtension": "获取Chrome扩展"
+  },
+  "footer": {
+    "poweredBy": "Powered by SelectChatGPT"
+  }
+}
