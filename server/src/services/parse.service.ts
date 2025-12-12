@@ -351,9 +351,10 @@ function extractFromReactRouterData(html: string): ParseResult | null {
     }
 
     // Pre-compute reasoning indices for direct exclusion
+    // Check all REASONING_KEYWORDS to ensure comprehensive filtering
     const reasoningIndices = new Set<number>()
     for (let i = 0; i < arr.length - 1; i++) {
-      if (arr[i] === 'reasoning_title' || arr[i] === 'reasoning_recap') {
+      if (typeof arr[i] === 'string' && REASONING_KEYWORDS.has(arr[i])) {
         for (let j = i + 1; j < Math.min(arr.length, i + REASONING_CONTENT_LOOKAHEAD); j++) {
           if (typeof arr[j] === 'string' && arr[j].length > MIN_REASONING_CONTENT_LENGTH) {
             reasoningIndices.add(j)
@@ -372,9 +373,8 @@ function extractFromReactRouterData(html: string): ParseResult | null {
         if (isValidMessageContent(next)) {
           const contentIndex = i + 1
 
-          // Skip reasoning content
+          // Skip reasoning content (pre-computed using all REASONING_KEYWORDS)
           if (reasoningIndices.has(contentIndex)) continue
-          if (isReasoningContent(arr, contentIndex)) continue
 
           // Skip filtered content (tool outputs, code execution, etc.)
           if (isFilteredContent(arr, contentIndex)) continue
