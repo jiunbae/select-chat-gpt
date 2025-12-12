@@ -84,16 +84,21 @@ function SharePageContent({ share }: SharePageClientProps) {
         return next;
       } else {
         // Select all filtered messages, keep others
-        return new Set([...prev, ...filteredIds]);
+        const next = new Set(prev);
+        filteredIds.forEach(id => next.add(id));
+        return next;
       }
     });
   }, [filteredMessages]);
 
   // Get selected messages for export (based on filtered messages)
-  const selectedMessages = useMemo(() =>
-    filteredMessages.filter(m => selectedIds.has(m.id)),
-    [filteredMessages, selectedIds]
-  );
+  // When hideDeselected is true, filteredMessages already contains only selected messages
+  const selectedMessages = useMemo(() => {
+    if (hideDeselected) {
+      return filteredMessages;
+    }
+    return filteredMessages.filter(m => selectedIds.has(m.id));
+  }, [filteredMessages, selectedIds, hideDeselected]);
 
   // Calculate selected count based on filtered messages (reuse selectedMessages)
   const filteredSelectedCount = selectedMessages.length;
