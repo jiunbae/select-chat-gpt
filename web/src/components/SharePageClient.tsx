@@ -58,10 +58,13 @@ function SharePageContent({ share }: SharePageClientProps) {
     day: 'numeric',
   });
 
-  // Filter messages if hideUserMessages is enabled
-  const filteredMessages = hideUserMessages
-    ? share.messages.filter((m) => m.role !== 'user')
-    : share.messages;
+  // Filter messages if hideUserMessages is enabled (memoized)
+  const filteredMessages = useMemo(() =>
+    hideUserMessages
+      ? share.messages.filter((m) => m.role !== 'user')
+      : share.messages,
+    [share.messages, hideUserMessages]
+  );
 
   // Select all / Deselect all (based on filtered messages)
   const handleSelectAll = useCallback(() => {
@@ -69,15 +72,15 @@ function SharePageContent({ share }: SharePageClientProps) {
       const filteredIds = filteredMessages.map(m => m.id);
       const allSelected = filteredMessages.length > 0 && filteredIds.every(id => prev.has(id));
 
-      const next = new Set(prev);
       if (allSelected) {
         // Deselect all filtered messages, keep others
+        const next = new Set(prev);
         filteredIds.forEach(id => next.delete(id));
+        return next;
       } else {
         // Select all filtered messages, keep others
-        filteredIds.forEach(id => next.add(id));
+        return new Set([...prev, ...filteredIds]);
       }
-      return next;
     });
   }, [filteredMessages]);
 

@@ -166,6 +166,14 @@ export function Message({
   const textColor = isCleanStyle ? '#1f2937' : '#ffffff';
   const contentColor = isCleanStyle ? '#374151' : '#e5e7eb';
 
+  // Checkbox style classes (extracted for readability)
+  const checkboxClasses = useMemo(() => {
+    const base = 'w-6 h-6 rounded border-2 flex items-center justify-center transition-all cursor-pointer';
+    if (isSelected) return `${base} border-primary bg-primary/10`;
+    if (isCleanStyle) return `${base} border-gray-300`;
+    return `${base} border-gray-500`;
+  }, [isSelected, isCleanStyle]);
+
   return (
     <div style={containerStyle}>
       <div className="max-w-3xl mx-auto px-4" style={innerStyle}>
@@ -177,13 +185,7 @@ export function Message({
                 onClick={() => onToggleSelect?.(message.id)}
                 role="checkbox"
                 aria-checked={isSelected}
-                className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${
-                  isSelected
-                    ? 'border-primary bg-primary/10'
-                    : isCleanStyle
-                    ? 'border-gray-300'
-                    : 'border-gray-500'
-                }`}
+                className={checkboxClasses}
                 aria-label={isSelected ? 'Deselect message' : 'Select message'}
               >
                 {isSelected && (
