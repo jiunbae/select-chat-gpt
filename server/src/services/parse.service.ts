@@ -57,6 +57,15 @@ const REASONING_LOOKBEHIND = 50
 const CONTEXT_LOOKBEHIND = 50
 const CONTEXT_LOOKAHEAD = 30
 
+// Strong code indicator patterns - if first line matches, it's definitely code
+const STRONG_CODE_PATTERNS = [
+  /^import\s+[a-z]/i,           // import statements
+  /^from\s+[a-z]/i,             // from ... import
+  /^def\s+[a-z_]/i,             // function definitions
+  /^class\s+[A-Z]/i,            // class definitions
+  /^@[a-z]/i,                   // decorators
+]
+
 const CHATGPT_URL_PATTERNS = [
   /^https:\/\/chatgpt\.com\/share\/[a-zA-Z0-9-]+$/,
   /^https:\/\/chat\.openai\.com\/share\/[a-zA-Z0-9-]+$/
@@ -118,16 +127,8 @@ function looksLikeStandaloneCode(content: string): boolean {
   const lines = trimmed.split('\n')
   const firstLine = lines[0].trim()
 
-  // Strong code indicators - if starts with these, it's definitely code
-  const strongCodePatterns = [
-    /^import\s+[a-z]/i,
-    /^from\s+[a-z]/i,
-    /^def\s+[a-z_]/i,
-    /^class\s+[A-Z]/i,
-    /^@[a-z]/i,
-  ]
-
-  for (const pattern of strongCodePatterns) {
+  // Check strong code indicators first (early exit)
+  for (const pattern of STRONG_CODE_PATTERNS) {
     if (pattern.test(firstLine)) {
       return true
     }
@@ -204,71 +205,47 @@ function looksLikeStandaloneCode(content: string): boolean {
   return false
 }
 
-// Check if content at index is part of reasoning/thinking section
-function isReasoningContent(arr: unknown[], index: number): boolean {
-  for (let j = index - 1; j >= Math.max(0, index - REASONING_LOOKBEHIND); j--) {
-    const val = arr[j]
-    if (typeof val === 'string') {
-      if (REASONING_KEYWORDS.has(val)) {
-        return true
-      }
-      if (val === 'user' || val === 'assistant') {
-        break
-      }
-    }
-  }
-  return false
-}
-
 // Check if content at index is from a filtered role or content type
+// Uses early exit pattern for better performance
 function isFilteredContent(arr: unknown[], index: number): boolean {
-  let contentType: string | null = null
-  let role: string | null = null
-  let hasCodeExecutionContext = false
-
-  // Look backwards
+  // Look backwards for context
   for (let j = index - 1; j >= Math.max(0, index - CONTEXT_LOOKBEHIND); j--) {
     const val = arr[j]
     if (typeof val === 'string') {
-      // Only detect content_type through explicit key-value structure to avoid false positives
+      // Check for filtered content_type (early exit)
       // Note: Type assertion required because TS doesn't narrow array element types after typeof check
       if (val === 'content_type' && typeof arr[j + 1] === 'string') {
-        contentType = arr[j + 1] as string
+        const contentType = arr[j + 1] as string
+        if (FILTERED_CONTENT_TYPES.has(contentType)) {
+          return true
+        }
       }
+      // Check for code execution keywords (early exit)
       if (CODE_EXECUTION_KEYWORDS.has(val)) {
-        hasCodeExecutionContext = true
+        return true
       }
+      // Check for filtered roles (early exit)
       if (FILTERED_ROLES.has(val)) {
-        role = val
+        return true
       }
     }
+    // Stop at role boundary
     if (val === 'user' || val === 'assistant') {
       break
     }
   }
 
-  // Look forwards
+  // Look forwards for code execution context
   for (let j = index + 1; j < Math.min(arr.length, index + CONTEXT_LOOKAHEAD); j++) {
     const val = arr[j]
     if (typeof val === 'string') {
       if (CODE_EXECUTION_KEYWORDS.has(val)) {
-        hasCodeExecutionContext = true
-        break
+        return true
       }
     }
     if (val === 'user' || val === 'assistant') {
       break
     }
-  }
-
-  if (contentType && FILTERED_CONTENT_TYPES.has(contentType)) {
-    return true
-  }
-  if (role && FILTERED_ROLES.has(role)) {
-    return true
-  }
-  if (hasCodeExecutionContext) {
-    return true
   }
 
   return false
