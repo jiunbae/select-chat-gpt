@@ -141,6 +141,8 @@ export function StyleControls() {
     setHideUserMessages,
     hideCodeBlocks,
     setHideCodeBlocks,
+    hideDeselected,
+    setHideDeselected,
   } = useStyleContext();
 
   const [openSection, setOpenSection] = useState<OpenSection>(null);
@@ -331,6 +333,12 @@ export function StyleControls() {
                   label={t('hideCode')}
                   checked={hideCodeBlocks}
                   onChange={setHideCodeBlocks}
+                  isCleanStyle={isCleanStyle}
+                />
+                <CheckboxControl
+                  label={t('hideDeselected')}
+                  checked={hideDeselected}
+                  onChange={setHideDeselected}
                   isCleanStyle={isCleanStyle}
                 />
               </div>

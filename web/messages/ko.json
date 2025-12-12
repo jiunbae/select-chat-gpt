@@ -49,6 +49,7 @@
     "padding": "패딩",
     "hideQuestions": "질문 숨기기",
     "hideCode": "코드 숨기기",
+    "hideDeselected": "해제된 메시지 숨기기",
     "systemDefault": "시스템 기본"
   },
   "exportButton": {

@@ -31,6 +31,7 @@ function SharePageContent({ share }: SharePageClientProps) {
     contentPadding,
     hideUserMessages,
     hideCodeBlocks,
+    hideDeselected,
     getExportOptions,
   } = useStyleContext();
 
@@ -58,13 +59,17 @@ function SharePageContent({ share }: SharePageClientProps) {
     day: 'numeric',
   });
 
-  // Filter messages if hideUserMessages is enabled (memoized)
-  const filteredMessages = useMemo(() =>
-    hideUserMessages
-      ? share.messages.filter((m) => m.role !== 'user')
-      : share.messages,
-    [share.messages, hideUserMessages]
-  );
+  // Filter messages based on hideUserMessages and hideDeselected options (memoized)
+  const filteredMessages = useMemo(() => {
+    let messages = share.messages;
+    if (hideUserMessages) {
+      messages = messages.filter((m) => m.role !== 'user');
+    }
+    if (hideDeselected) {
+      messages = messages.filter((m) => selectedIds.has(m.id));
+    }
+    return messages;
+  }, [share.messages, hideUserMessages, hideDeselected, selectedIds]);
 
   // Select all / Deselect all (based on filtered messages)
   const handleSelectAll = useCallback(() => {
