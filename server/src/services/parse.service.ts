@@ -244,6 +244,41 @@ function extractFromReactRouterData(html: string): ParseResult | null {
       }
     }
 
+    // Find indices that are part of internal reasoning blocks (_303 pattern)
+    // These are ChatGPT's internal thinking steps and should be skipped
+    const reasoningBlockIndices = new Set<number>()
+    for (let i = 0; i < arr.length; i++) {
+      const elem = arr[i]
+      if (typeof elem === 'object' && elem !== null && !Array.isArray(elem)) {
+        const obj = elem as Record<string, unknown>
+        if ('_303' in obj || '_53' in obj || '_306' in obj) {
+          // This is a reasoning block header - mark referenced content indices
+          if (typeof obj._303 === 'number') reasoningBlockIndices.add(obj._303)
+          if (typeof obj._53 === 'number') reasoningBlockIndices.add(obj._53)
+          if (typeof obj._306 === 'number') {
+            // _306 usually points to an array of content indices
+            const arr306 = arr[obj._306]
+            if (Array.isArray(arr306)) {
+              for (const idx of arr306) {
+                if (typeof idx === 'number') reasoningBlockIndices.add(idx)
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Find code interpreter output indices (near execution_output)
+    const executionOutputIndices = new Set<number>()
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i] === 'execution_output') {
+        // Mark content indices near this marker as execution output
+        for (let j = i - 5; j <= i + 10; j++) {
+          executionOutputIndices.add(j)
+        }
+      }
+    }
+
     // Extract raw messages by finding Array(1) followed by content
     const rawMessages: Array<{
       index: number
@@ -259,6 +294,16 @@ function extractFromReactRouterData(html: string): ParseResult | null {
         if (isValidMessageContent(next)) {
           // Skip thinking/reasoning content blocks (internal reasoning, not summaries)
           if (isThinkingContent(arr, i + 1)) {
+            continue
+          }
+
+          // Skip internal reasoning block content (_303 pattern)
+          if (reasoningBlockIndices.has(i) || reasoningBlockIndices.has(i + 1)) {
+            continue
+          }
+
+          // Skip code interpreter execution output
+          if (executionOutputIndices.has(i) || executionOutputIndices.has(i + 1)) {
             continue
           }
 

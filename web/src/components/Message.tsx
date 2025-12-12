@@ -127,6 +127,71 @@ function ThinkingSummary({ summary, isCleanStyle }: ThinkingSummaryProps) {
   );
 }
 
+// Code block component (collapsible like ChatGPT code interpreter)
+interface CollapsibleCodeBlockProps {
+  content: string;
+  isCleanStyle: boolean;
+}
+
+function CollapsibleCodeBlock({ content, isCleanStyle }: CollapsibleCodeBlockProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Count lines of code
+  const lineCount = content.split('\n').length;
+
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer w-full text-left"
+        style={{
+          backgroundColor: isCleanStyle ? '#f3f4f6' : '#2d2d2d',
+          color: isCleanStyle ? '#6b7280' : '#9ca3af',
+        }}
+      >
+        {/* Code icon */}
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+        <span className="text-sm font-medium">Python ({lineCount} lines)</span>
+        {/* Chevron icon */}
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className={`transition-transform ml-auto ${isExpanded ? 'rotate-180' : ''}`}
+        >
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      {isExpanded && (
+        <pre
+          className="mt-2 p-3 rounded-lg overflow-x-auto text-sm"
+          style={{
+            backgroundColor: isCleanStyle ? '#1f2937' : '#0d0d0d',
+            color: '#e5e7eb',
+          }}
+        >
+          <code>{content}</code>
+        </pre>
+      )}
+    </div>
+  );
+}
+
 // Decode HTML entities that may have been encoded during sanitization
 function decodeHtmlEntities(content: string): string {
   if (typeof window === 'undefined') {
@@ -269,21 +334,29 @@ export function Message({
                 isCleanStyle={isCleanStyle}
               />
             )}
-            <div
-              className="markdown-content prose prose-sm max-w-none"
-              style={{ ...contentStyle, color: contentColor }}
-            >
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkMath]}
-                rehypePlugins={[
-                  [rehypeKatex, { strict: 'ignore' }],
-                  rehypeRaw,
-                  [rehypeSanitize, sanitizeSchema]
-                ]}
+            {/* Code block (collapsible) - for code interpreter messages */}
+            {message.messageType === 'code' ? (
+              <CollapsibleCodeBlock
+                content={message.content}
+                isCleanStyle={isCleanStyle}
+              />
+            ) : (
+              <div
+                className="markdown-content prose prose-sm max-w-none"
+                style={{ ...contentStyle, color: contentColor }}
               >
-                {processedContent}
-              </ReactMarkdown>
-            </div>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[
+                    [rehypeKatex, { strict: 'ignore' }],
+                    rehypeRaw,
+                    [rehypeSanitize, sanitizeSchema]
+                  ]}
+                >
+                  {processedContent}
+                </ReactMarkdown>
+              </div>
+            )}
           </div>
         </div>
       </div>
