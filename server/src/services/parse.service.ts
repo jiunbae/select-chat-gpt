@@ -177,6 +177,67 @@ function isThinkingContent(arr: unknown[], contentIndex: number): boolean {
   return false
 }
 
+// Helper to extract content from a message entry
+function extractMessageContent(arr: unknown[], entryIdx: number): string | null {
+  const entry = arr[entryIdx]
+  if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return null
+
+  const obj = entry as Record<string, unknown>
+  if (!('_45' in obj)) return null
+
+  const msgObj = arr[obj._45 as number]
+  if (typeof msgObj !== 'object' || msgObj === null) return null
+
+  const msg = msgObj as Record<string, unknown>
+  if (!('_53' in msg)) return null
+
+  const contentObj = arr[msg._53 as number]
+  if (typeof contentObj !== 'object' || contentObj === null) return null
+
+  const content = contentObj as Record<string, unknown>
+  if (!('_57' in content)) return null
+
+  const partsArr = arr[content._57 as number]
+  if (!Array.isArray(partsArr) || partsArr.length === 0) return null
+
+  const firstPartIdx = partsArr[0]
+  const firstPart = arr[firstPartIdx]
+
+  if (typeof firstPart === 'string' && firstPart.length > 0) {
+    return firstPart
+  }
+
+  return null
+}
+
+// Helper to extract role from a message entry
+function extractMessageRole(arr: unknown[], entryIdx: number): 'user' | 'assistant' | null {
+  const entry = arr[entryIdx]
+  if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return null
+
+  const obj = entry as Record<string, unknown>
+  if (!('_45' in obj)) return null
+
+  const msgObj = arr[obj._45 as number]
+  if (typeof msgObj !== 'object' || msgObj === null) return null
+
+  const msg = msgObj as Record<string, unknown>
+  if (!('_47' in msg)) return null
+
+  const roleObj = arr[msg._47 as number]
+  if (typeof roleObj !== 'object' || roleObj === null) return null
+
+  const role = roleObj as Record<string, unknown>
+  if (!('_49' in role)) return null
+
+  const roleValue = arr[role._49 as number]
+  if (roleValue === 'user' || roleValue === 'assistant') {
+    return roleValue
+  }
+
+  return null
+}
+
 // Extract data from ChatGPT's React Router streaming format
 function extractFromReactRouterData(html: string): ParseResult | null {
   try {
@@ -197,8 +258,6 @@ function extractFromReactRouterData(html: string): ParseResult | null {
     }
 
     // The data is a JSON-stringified string (double-encoded).
-    // First parse: unescape the outer string (handles \", \\, \u003c, \n, etc.)
-    // Second parse: parse the inner JSON array
     const unescaped = JSON.parse('"' + biggestData + '"')
     const arr = JSON.parse(unescaped)
 
@@ -213,181 +272,103 @@ function extractFromReactRouterData(html: string): ParseResult | null {
       }
     }
 
-    // First, find all role marker positions and build a map from index to role
-    const roleIndexMap = new Map<number, 'user' | 'assistant'>()
-    for (let i = 0; i < arr.length; i++) {
-      if (arr[i] === 'user' || arr[i] === 'assistant') {
-        roleIndexMap.set(i, arr[i] as 'user' | 'assistant')
-      }
-    }
-
-    // Find thinking summaries (e.g., "8s 동안 생각함", "1m 12s 동안 생각함")
-    const thinkingSummaries = new Map<number, string>()
+    // Find thinking summaries (e.g., "8s 동안 생각함")
+    const thinkingSummaries: string[] = []
     for (let i = 0; i < arr.length; i++) {
       if (arr[i] === 'reasoning_recap' && typeof arr[i + 1] === 'string') {
-        const summary = arr[i + 1] as string
-        // Find the next message content after this summary
-        thinkingSummaries.set(i, summary)
+        thinkingSummaries.push(arr[i + 1] as string)
       }
     }
 
-    // Find code block markers (python keyword)
-    // Code content typically appears shortly after the python marker
-    const codeBlockIndices = new Set<number>()
+    // Find linear_conversation array - this contains the actual message structure
+    let linearConvIdx = -1
     for (let i = 0; i < arr.length; i++) {
-      if (arr[i] === 'python') {
-        // Mark content indices shortly before this python marker as code
-        // Code content is usually within 10 elements before the marker
-        for (let j = i - 10; j <= i + 5; j++) {
-          codeBlockIndices.add(j)
-        }
+      if (arr[i] === 'linear_conversation') {
+        linearConvIdx = i
+        break
       }
     }
 
-    // Find indices that are part of internal reasoning blocks (_303 pattern)
-    // These are ChatGPT's internal thinking steps and should be skipped
-    const reasoningBlockIndices = new Set<number>()
-    for (let i = 0; i < arr.length; i++) {
-      const elem = arr[i]
-      if (typeof elem === 'object' && elem !== null && !Array.isArray(elem)) {
-        const obj = elem as Record<string, unknown>
-        if ('_303' in obj || '_53' in obj || '_306' in obj) {
-          // This is a reasoning block header - mark referenced content indices
-          if (typeof obj._303 === 'number') reasoningBlockIndices.add(obj._303)
-          if (typeof obj._53 === 'number') reasoningBlockIndices.add(obj._53)
-          if (typeof obj._306 === 'number') {
-            // _306 usually points to an array of content indices
-            const arr306 = arr[obj._306]
-            if (Array.isArray(arr306)) {
-              for (const idx of arr306) {
-                if (typeof idx === 'number') reasoningBlockIndices.add(idx)
-              }
-            }
-          }
-        }
-      }
+    if (linearConvIdx === -1 || !Array.isArray(arr[linearConvIdx + 1])) {
+      return null
     }
 
-    // Find code interpreter output indices (near execution_output)
-    const executionOutputIndices = new Set<number>()
-    for (let i = 0; i < arr.length; i++) {
-      if (arr[i] === 'execution_output') {
-        // Mark content indices near this marker as execution output
-        for (let j = i - 5; j <= i + 10; j++) {
-          executionOutputIndices.add(j)
-        }
-      }
-    }
+    const linearConv = arr[linearConvIdx + 1] as number[]
 
-    // Extract raw messages by finding Array(1) followed by content
-    const rawMessages: Array<{
-      index: number
-      content: string
-      detectedRole: 'user' | 'assistant' | null
-      messageType: 'text' | 'code' | 'thinking'
+    // Extract messages from linear_conversation
+    // Group consecutive assistant messages - only keep the last one with content
+    const messages: ParsedMessage[] = []
+    let currentTurn: {
+      role: 'user' | 'assistant'
+      contents: string[]
       thinkingSummary?: string
-    }> = []
+    } | null = null
+    let thinkingSummaryIndex = 0
 
-    for (let i = 0; i < arr.length - 1; i++) {
-      if (Array.isArray(arr[i]) && arr[i].length === 1) {
-        const next = arr[i + 1]
-        if (isValidMessageContent(next)) {
-          // Skip thinking/reasoning content blocks (internal reasoning, not summaries)
-          if (isThinkingContent(arr, i + 1)) {
-            continue
-          }
+    const seenIds = new Set<number>()
 
-          // Skip internal reasoning block content (_303 pattern)
-          if (reasoningBlockIndices.has(i) || reasoningBlockIndices.has(i + 1)) {
-            continue
-          }
+    for (const entryIdx of linearConv) {
+      const entry = arr[entryIdx]
+      if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) continue
 
-          // Skip code interpreter execution output
-          if (executionOutputIndices.has(i) || executionOutputIndices.has(i + 1)) {
-            continue
-          }
+      const obj = entry as Record<string, unknown>
+      if (!('_40' in obj)) continue
 
-          // Find the role by looking for {"_49": <role_index>} pattern in preceding elements
-          let role: 'user' | 'assistant' | null = null
+      const idIdx = obj._40 as number
+      if (seenIds.has(idIdx)) continue
+      seenIds.add(idIdx)
 
-          // Look backwards for an object with _49 field that references a role index
-          for (let j = i - 1; j >= Math.max(0, i - 20); j--) {
-            const elem = arr[j]
-            if (typeof elem === 'object' && elem !== null && !Array.isArray(elem)) {
-              const obj = elem as Record<string, unknown>
-              if ('_49' in obj && typeof obj._49 === 'number') {
-                const referencedRole = roleIndexMap.get(obj._49)
-                if (referencedRole) {
-                  role = referencedRole
-                  break
-                }
-              }
-            }
-          }
+      const role = extractMessageRole(arr, entryIdx)
+      const content = extractMessageContent(arr, entryIdx)
 
-          // Fallback: find the most recent role marker before this content
-          if (!role) {
-            for (const [idx, r] of Array.from(roleIndexMap.entries()).sort((a, b) => b[0] - a[0])) {
-              if (idx < i) {
-                role = r
-                break
-              }
-            }
-          }
+      // Skip system messages and messages without role
+      if (!role) continue
 
-          // Determine message type
-          let messageType: 'text' | 'code' | 'thinking' = 'text'
-          let thinkingSummary: string | undefined
-
-          // Check if this is a code block (by index marker or content analysis)
-          if (codeBlockIndices.has(i) || codeBlockIndices.has(i + 1) || looksLikePythonCode(next)) {
-            messageType = 'code'
-          }
-
-          // Check if there's a thinking summary before this message
-          for (const [summaryIdx, summary] of thinkingSummaries) {
-            // If summary is within 30 elements before this content
-            if (summaryIdx < i && summaryIdx > i - 30) {
-              thinkingSummary = summary
-              break
-            }
-          }
-
-          rawMessages.push({
-            index: i + 1,
-            content: next,
-            detectedRole: role,
-            messageType,
-            thinkingSummary
+      // If role changes, save the previous turn
+      if (currentTurn && currentTurn.role !== role) {
+        if (currentTurn.contents.length > 0) {
+          // For assistant turns, only keep the last meaningful content
+          const lastContent = currentTurn.contents[currentTurn.contents.length - 1]
+          messages.push({
+            id: `msg-${messages.length}`,
+            role: currentTurn.role,
+            content: lastContent,
+            html: '',
+            thinkingSummary: currentTurn.thinkingSummary
           })
         }
+        currentTurn = null
+      }
+
+      // Start new turn or add to current
+      if (!currentTurn) {
+        currentTurn = {
+          role,
+          contents: [],
+          thinkingSummary: role === 'assistant' && thinkingSummaryIndex < thinkingSummaries.length
+            ? thinkingSummaries[thinkingSummaryIndex++]
+            : undefined
+        }
+      }
+
+      if (content) {
+        currentTurn.contents.push(content)
       }
     }
 
-    if (rawMessages.length === 0) return null
+    // Don't forget the last turn
+    if (currentTurn && currentTurn.contents.length > 0) {
+      const lastContent = currentTurn.contents[currentTurn.contents.length - 1]
+      messages.push({
+        id: `msg-${messages.length}`,
+        role: currentTurn.role,
+        content: lastContent,
+        html: '',
+        thinkingSummary: currentTurn.thinkingSummary
+      })
+    }
 
-    // Assign roles based on detected role (no alternation fallback)
-    // Messages without a detected role keep the last known role
-    let lastRole: 'user' | 'assistant' = 'user' // default to user for first message
-    const messages: ParsedMessage[] = rawMessages.map((m, idx) => {
-      let role: 'user' | 'assistant'
-      if (m.detectedRole) {
-        role = m.detectedRole
-        lastRole = role
-      } else {
-        // Keep the last known role instead of alternating
-        role = lastRole
-      }
-
-      return {
-        id: `msg-${idx}`,
-        role,
-        content: m.content,
-        html: '', // HTML rendering is done client-side
-        messageType: m.messageType,
-        thinkingSummary: m.thinkingSummary
-      }
-    })
+    if (messages.length === 0) return null
 
     return { title, sourceUrl: '', messages }
   } catch (e) {
