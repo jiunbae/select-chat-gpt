@@ -90,11 +90,8 @@ function SharePageContent({ share }: SharePageClientProps) {
     [filteredMessages, selectedIds]
   );
 
-  // Calculate selected count based on filtered messages
-  const filteredSelectedCount = useMemo(() =>
-    filteredMessages.filter(m => selectedIds.has(m.id)).length,
-    [filteredMessages, selectedIds]
-  );
+  // Calculate selected count based on filtered messages (reuse selectedMessages)
+  const filteredSelectedCount = selectedMessages.length;
 
   const allSelected = filteredMessages.length > 0 && filteredSelectedCount === filteredMessages.length;
 
@@ -142,25 +139,23 @@ function SharePageContent({ share }: SharePageClientProps) {
             {/* Selection controls */}
             <div className="flex items-center gap-2">
               <span
-                className="text-sm"
-                style={{ color: isCleanStyle ? '#6b7280' : '#9ca3af' }}
+                className={`text-sm ${isCleanStyle ? 'text-gray-500' : 'text-gray-400'}`}
               >
                 {filteredSelectedCount} / {filteredMessages.length}
               </span>
               <button
                 onClick={handleSelectAll}
-                className="px-2 py-1 text-sm rounded transition-colors"
-                style={{
-                  color: isCleanStyle ? '#374151' : '#d1d5db',
-                  backgroundColor: isCleanStyle ? '#f3f4f6' : '#374151',
-                }}
+                className={`px-2 py-1 text-sm rounded transition-colors ${
+                  isCleanStyle
+                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
               >
                 {allSelected ? 'Deselect All' : 'Select All'}
               </button>
             </div>
             <div
-              className="h-6 w-px"
-              style={{ backgroundColor: isCleanStyle ? '#e5e7eb' : '#444444' }}
+              className={`h-6 w-px ${isCleanStyle ? 'bg-gray-200' : 'bg-gray-700'}`}
             />
             <ExportButton
               messages={selectedMessages}

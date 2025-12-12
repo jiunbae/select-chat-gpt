@@ -177,15 +177,17 @@ export function Message({
                 onClick={() => onToggleSelect?.(message.id)}
                 role="checkbox"
                 aria-checked={isSelected}
-                className="w-6 h-6 rounded border-2 flex items-center justify-center transition-all cursor-pointer"
-                style={{
-                  borderColor: isSelected ? '#10a37f' : (isCleanStyle ? '#d1d5db' : '#6b7280'),
-                  backgroundColor: isSelected ? '#e6f7f2' : 'transparent',
-                }}
+                className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${
+                  isSelected
+                    ? 'border-primary bg-primary/10'
+                    : isCleanStyle
+                    ? 'border-gray-300'
+                    : 'border-gray-500'
+                }`}
                 aria-label={isSelected ? 'Deselect message' : 'Select message'}
               >
                 {isSelected && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10a37f" strokeWidth="3">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-primary">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 )}
