@@ -1,3 +1,5 @@
+import { cache } from 'react';
+
 export interface Message {
   id: string;
   role: "user" | "assistant";
@@ -179,7 +181,8 @@ export async function parseUrl(url: string): Promise<ApiResult<ParseResult>> {
   }
 }
 
-export async function getShare(id: string): Promise<ApiResult<ShareData>> {
+// Internal function for fetching share data
+async function getShareInternal(id: string): Promise<ApiResult<ShareData>> {
   try {
     const apiUrl = getApiBaseUrl();
     console.log(`[API] Fetching share ${id} from ${apiUrl}`);
@@ -217,3 +220,8 @@ export async function getShare(id: string): Promise<ApiResult<ShareData>> {
     };
   }
 }
+
+// Cached version of getShare - prevents duplicate API calls
+// within the same React Server Component render cycle
+// (e.g., between generateMetadata and page component)
+export const getShare = cache(getShareInternal);

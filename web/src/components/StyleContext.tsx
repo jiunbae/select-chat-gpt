@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type {
   ExportStyleType,
   ExportOptions,
@@ -14,6 +14,7 @@ import type {
   PageSize,
   Margin,
 } from '@/lib/export';
+import { loadFont, type DynamicFontFamily } from '@/lib/font-loader';
 
 interface StyleContextValue {
   // Style type
@@ -56,6 +57,9 @@ interface StyleContextValue {
 
 const StyleContext = createContext<StyleContextValue | null>(null);
 
+// Fonts that need to be dynamically loaded
+const DYNAMIC_FONTS: DynamicFontFamily[] = ['noto-sans-kr', 'noto-serif-kr', 'ibm-plex-sans-kr'];
+
 export function StyleProvider({ children }: { children: React.ReactNode }) {
   const [styleType, setStyleType] = useState<ExportStyleType>('clean');
   const [letterSpacing, setLetterSpacing] = useState<LetterSpacing>('normal');
@@ -69,8 +73,24 @@ export function StyleProvider({ children }: { children: React.ReactNode }) {
   const [hideDeselected, setHideDeselected] = useState(false);
   const [pageSize, setPageSize] = useState<PageSize>('a4');
   const [margin, setMargin] = useState<Margin>('normal');
+  const [fontLoading, setFontLoading] = useState(false);
 
-  const getExportOptions = (): ExportOptions => ({
+  // Load font dynamically when fontFamily changes
+  useEffect(() => {
+    const isDynamicFont = DYNAMIC_FONTS.includes(fontFamily as DynamicFontFamily);
+    if (!isDynamicFont) return;
+
+    setFontLoading(true);
+    loadFont(fontFamily as DynamicFontFamily)
+      .catch((err) => {
+        console.error('Failed to load font:', err);
+      })
+      .finally(() => {
+        setFontLoading(false);
+      });
+  }, [fontFamily]);
+
+  const getExportOptions = useCallback((): ExportOptions => ({
     letterSpacing,
     lineHeight,
     fontSize,
@@ -81,7 +101,7 @@ export function StyleProvider({ children }: { children: React.ReactNode }) {
     hideCodeBlocks,
     pageSize,
     margin,
-  });
+  }), [letterSpacing, lineHeight, fontSize, fontFamily, messageGap, contentPadding, hideUserMessages, hideCodeBlocks, pageSize, margin]);
 
   return (
     <StyleContext.Provider
