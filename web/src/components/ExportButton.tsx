@@ -210,7 +210,7 @@ export function ExportButton({
 
     try {
       const options = getExportOptions();
-      const markdown = exportToMarkdown(messages, title, sourceUrl, options);
+      const markdown = await exportToMarkdown(messages, title, sourceUrl, options);
       await navigator.clipboard.writeText(markdown);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -224,13 +224,13 @@ export function ExportButton({
     }
   };
 
-  const handleDownloadMarkdown = () => {
+  const handleDownloadMarkdown = async () => {
     // Track export clicked
     Analytics.exportClicked('markdown', messages.length);
 
     try {
       const options = getExportOptions();
-      const markdown = exportToMarkdown(messages, title, sourceUrl, options);
+      const markdown = await exportToMarkdown(messages, title, sourceUrl, options);
       downloadMarkdown(markdown, title);
 
       // Track export success

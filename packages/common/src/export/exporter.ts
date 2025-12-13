@@ -1,5 +1,3 @@
-import html2canvas from 'html2canvas';
-import TurndownService from 'turndown';
 import type { ExportMessage, ExportProgress, ExportStyleType, ExportOptions } from './types';
 import { ExportError } from './types';
 import { createExportableElement, filterMessages } from './renderer';
@@ -12,13 +10,36 @@ import {
   getContentPaddingValue,
 } from './styles';
 
+// Dynamic imports for heavy libraries - only loaded when actually used
+// This reduces initial bundle size by ~400KB (html2canvas) + ~50KB (turndown)
+import type TurndownServiceType from 'turndown';
+
+let html2canvasModule: typeof import('html2canvas') | null = null;
+let TurndownServiceClass: typeof TurndownServiceType | null = null;
+
+async function getHtml2Canvas(): Promise<typeof import('html2canvas')['default']> {
+  if (!html2canvasModule) {
+    html2canvasModule = await import('html2canvas');
+  }
+  return html2canvasModule.default;
+}
+
+async function getTurndownService(): Promise<typeof TurndownServiceType> {
+  if (!TurndownServiceClass) {
+    const module = await import('turndown');
+    TurndownServiceClass = module.default;
+  }
+  return TurndownServiceClass;
+}
+
 // Get background color based on style type
 function getBackgroundColor(styleType: ExportStyleType): string {
   return styleType === 'chatgpt' ? '#212121' : '#ffffff';
 }
 
 // Create a configured turndown instance for HTML to Markdown conversion
-function createTurndownService(): TurndownService {
+async function createTurndownService(): Promise<TurndownServiceType> {
+  const TurndownService = await getTurndownService();
   const turndownService = new TurndownService({
     headingStyle: 'atx',
     codeBlockStyle: 'fenced',
@@ -27,14 +48,14 @@ function createTurndownService(): TurndownService {
 
   // Preserve code blocks with language hints
   turndownService.addRule('fencedCodeBlock', {
-    filter: (node) => {
+    filter: (node: HTMLElement) => {
       return (
         node.nodeName === 'PRE' &&
         node.firstChild !== null &&
         node.firstChild.nodeName === 'CODE'
       );
     },
-    replacement: (_content, node) => {
+    replacement: (_content: string, node: HTMLElement) => {
       const codeElement = node.firstChild as HTMLElement;
       const className = codeElement.className || '';
       const languageMatch = className.match(/language-(\w+)/);
@@ -48,8 +69,8 @@ function createTurndownService(): TurndownService {
 }
 
 // Convert HTML to Markdown preserving formatting
-export function htmlToMarkdown(html: string): string {
-  const turndownService = createTurndownService();
+export async function htmlToMarkdown(html: string): Promise<string> {
+  const turndownService = await createTurndownService();
   return turndownService.turndown(html);
 }
 
@@ -107,6 +128,9 @@ export async function renderToCanvas(
     useCORS = true,
     backgroundColor = null
   } = options;
+
+  // Dynamically load html2canvas only when needed
+  const html2canvas = await getHtml2Canvas();
 
   // Temporarily add to DOM (required by html2canvas)
   document.body.appendChild(element);
@@ -589,12 +613,12 @@ export async function exportToPDF(
   onProgress?.({ stage: 'generating', progress: 100 });
 }
 
-export function exportToMarkdown(
+export async function exportToMarkdown(
   messages: ExportMessage[],
   title: string,
   sourceUrl: string,
   options?: ExportOptions
-): string {
+): Promise<string> {
   // Filter messages based on options
   const filteredMessages = filterMessages(messages, options);
 
@@ -608,12 +632,13 @@ export function exportToMarkdown(
   lines.push('---');
   lines.push('');
 
-  filteredMessages.forEach((message, index) => {
+  for (let index = 0; index < filteredMessages.length; index++) {
+    const message = filteredMessages[index];
     const roleLabel = message.role === 'user' ? '**User**' : '**ChatGPT**';
     lines.push(`## ${roleLabel}`);
     lines.push('');
     // Convert HTML to markdown to preserve formatting (bold, italic, code blocks, lists, etc.)
-    let markdownContent = htmlToMarkdown(message.html);
+    let markdownContent = await htmlToMarkdown(message.html);
 
     // Remove code blocks if requested
     if (options?.hideCodeBlocks) {
@@ -627,7 +652,7 @@ export function exportToMarkdown(
       lines.push('---');
       lines.push('');
     }
-  });
+  }
 
   return lines.join('\n');
 }
