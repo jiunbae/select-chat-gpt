@@ -495,7 +495,6 @@ function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Promise<vo
         if (win.document.fonts?.ready) {
           await win.document.fonts.ready;
         }
-        await new Promise(r => setTimeout(r, 100));
       } catch {
         // Font API might fail, we don't want to reject the promise.
       } finally {
@@ -556,16 +555,11 @@ export async function downloadAsPDF(
 
         // Additional delay for rendering
         await new Promise(r => setTimeout(r, 200));
-
-        printWindow.print();
-
-        // Close window after print dialog closes (user clicks cancel or finishes)
-        printWindow.onafterprint = () => {
-          printWindow.close();
-        };
       } catch {
         // If something fails, still try to print
+      } finally {
         printWindow.print();
+        // Close window after print dialog closes (user clicks cancel or finishes)
         printWindow.onafterprint = () => {
           printWindow.close();
         };
