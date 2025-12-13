@@ -508,14 +508,21 @@ async function waitForStylesheets(win: Window, timeoutMs: number = 2000): Promis
   const linkPromises = Array.from(win.document.querySelectorAll('link[rel="stylesheet"]')).map(link => {
     return new Promise<void>(resolve => {
       const linkEl = link as HTMLLinkElement;
-      if (linkEl.sheet) {
+
+      // Assign handlers first to prevent race condition
+      linkEl.onload = () => resolve();
+      linkEl.onerror = () => {
+        console.warn(`Stylesheet failed to load: ${linkEl.href}`);
         resolve();
-      } else {
-        linkEl.onload = () => resolve();
-        linkEl.onerror = () => {
-          console.warn(`Stylesheet failed to load: ${linkEl.href}`);
+      };
+
+      // Check if already loaded (CORS may throw SecurityError)
+      try {
+        if (linkEl.sheet) {
           resolve();
-        };
+        }
+      } catch {
+        // Cannot access .sheet due to CORS, rely on load/error events
       }
     });
   });
