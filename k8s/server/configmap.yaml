@@ -11,3 +11,4 @@ data:
   SHARE_BASE_URL: "https://selectchatgpt.im-si.org/s"
   RATE_LIMIT_WINDOW_MS: "60000"
   RATE_LIMIT_MAX_REQUESTS: "100"
+  TRUST_PROXY_HOPS: "1"
