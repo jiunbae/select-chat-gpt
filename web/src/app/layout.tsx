@@ -44,14 +44,22 @@ export default async function RootLayout({
           href="https://cdn.jsdelivr.net"
           crossOrigin="anonymous"
         />
+        {/* Preload for faster font loading */}
+        <link
+          rel="preload"
+          as="style"
+          href={PRETENDARD_CDN_URL}
+        />
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link
           rel="stylesheet"
           href={PRETENDARD_CDN_URL}
-          media="print"
-          // @ts-expect-error onLoad is valid for link elements
-          onLoad="this.media='all'"
         />
+        {/* Fallback for browsers with JavaScript disabled */}
+        <noscript>
+          {/* eslint-disable-next-line @next/next/no-css-tags */}
+          <link rel="stylesheet" href={PRETENDARD_CDN_URL} />
+        </noscript>
         {/* Google Analytics 4 */}
         {GA_ID && (
           <>

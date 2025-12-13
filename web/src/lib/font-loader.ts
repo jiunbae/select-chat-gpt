@@ -113,9 +113,10 @@ export function isFontLoaded(fontFamily: DynamicFontFamily): boolean {
 }
 
 // Base font stacks - explicitly defined for clarity and maintainability
+// These should match the CSS variables defined in globals.css
 const FONT_STACKS = {
-  // Sans-serif stack with Pretendard as primary
-  sansSerif: '"Pretendard Variable", Pretendard, system-ui, sans-serif',
+  // Sans-serif stack with Pretendard as primary (matches --font-pretendard-family in globals.css)
+  sansSerif: '"Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
   // Serif stack for fonts like Noto Serif KR
   serif: '"Pretendard Variable", Pretendard, Georgia, "Times New Roman", serif',
   // System font stack
