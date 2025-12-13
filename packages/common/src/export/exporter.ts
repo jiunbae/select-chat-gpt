@@ -485,6 +485,29 @@ function generatePrintHTML(
   `;
 }
 
+// Wait for fonts to load in a window with timeout fallback
+async function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Promise<void> {
+  const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, timeoutMs));
+
+  const fontsReadyPromise = (async () => {
+    // Never resolves, lets timeout win when Font API fails
+    const nonResolvingPromise = new Promise<void>(() => {});
+
+    if (!win.document.fonts) {
+      console.warn('Font API is not supported. Relying on timeout.');
+      return nonResolvingPromise;
+    }
+    try {
+      await win.document.fonts.ready;
+    } catch (err) {
+      console.warn('Font API failed. Relying on timeout.', err);
+      return nonResolvingPromise;
+    }
+  })();
+
+  await Promise.race([fontsReadyPromise, timeoutPromise]);
+}
+
 export async function downloadAsPDF(
   messages: ExportMessage[],
   title: string,
@@ -504,14 +527,24 @@ export async function downloadAsPDF(
     printWindow.document.close();
 
     // Wait for content to load then print
-    printWindow.onload = () => {
-      setTimeout(() => {
+    // Note: onload fires after all resources (including stylesheets) are loaded
+    printWindow.onload = async () => {
+      try {
+        // Wait for fonts to load with timeout
+        await waitForFontsInWindow(printWindow);
+
+        // Wait for next paint cycle for rendering
+        await new Promise(r => requestAnimationFrame(r));
+      } catch (e) {
+        // If something fails, still try to print
+        console.error('Error waiting for styles or fonts, proceeding to print anyway:', e);
+      } finally {
         printWindow.print();
         // Close window after print dialog closes (user clicks cancel or finishes)
         printWindow.onafterprint = () => {
           printWindow.close();
         };
-      }, 250);
+      }
     };
   } catch {
     throw new ExportError('Failed to generate PDF', 'DOWNLOAD_FAILED');
