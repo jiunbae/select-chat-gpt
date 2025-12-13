@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3001
 // Trust proxy (nginx, load balancer, etc.) for accurate client IP identification.
 // The number of hops is configured via the TRUST_PROXY_HOPS environment variable.
 const trustProxyHops = parseInt(process.env.TRUST_PROXY_HOPS || '1', 10)
-app.set('trust proxy', isNaN(trustProxyHops) || trustProxyHops < 0 ? 1 : trustProxyHops)
+app.set('trust proxy', isNaN(trustProxyHops) || trustProxyHops < 1 ? 1 : trustProxyHops)
 
 app.use(helmet())
 
