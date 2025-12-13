@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "SelectChatGPT Backend API Server",
   "main": "dist/index.js",
+  "engines": {
+    "node": "20.x || >=22.0.0"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
@@ -16,6 +19,7 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "jsdom": "^25.0.1",
+    "lru-cache": "^11.2.4",
     "mongoose": "^8.9.2",
     "nanoid": "^5.0.9"
   },

@@ -7,6 +7,7 @@ import dotenv from 'dotenv'
 
 import shareRoutes from './routes/share.js'
 import parseRoutes from './routes/parse.js'
+import { shutdownShareService } from './services/share.service.js'
 
 dotenv.config()
 
@@ -59,9 +60,49 @@ async function startServer() {
     await mongoose.connect(mongoUri)
     console.log('Connected to MongoDB')
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`)
     })
+
+    // Graceful shutdown handler
+    const SHUTDOWN_TIMEOUT_MS = 30000 // 30 seconds max wait for graceful shutdown
+
+    const gracefulShutdown = async (signal: string) => {
+      console.log(`\n${signal} received. Starting graceful shutdown...`)
+
+      try {
+        // Stop accepting new connections and wait for existing connections to close
+        // with timeout to prevent indefinite hang on keep-alive connections
+        await Promise.race([
+          new Promise<void>((resolve, reject) => {
+            server.close((err) => {
+              if (err) reject(err)
+              else resolve()
+            })
+          }),
+          new Promise<void>((_, reject) =>
+            setTimeout(() => reject(new Error('Server close timeout')), SHUTDOWN_TIMEOUT_MS)
+          )
+        ])
+        console.log('HTTP server closed')
+
+        // Flush pending viewCount updates before shutdown
+        await shutdownShareService()
+        console.log('Share service shutdown complete')
+
+        // Close MongoDB connection
+        await mongoose.connection.close()
+        console.log('MongoDB connection closed')
+
+        process.exit(0)
+      } catch (error) {
+        console.error('Error during shutdown:', error)
+        process.exit(1)
+      }
+    }
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'))
   } catch (error) {
     console.error('Failed to start server:', error)
     process.exit(1)
