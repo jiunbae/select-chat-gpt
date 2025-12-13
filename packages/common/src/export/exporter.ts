@@ -486,29 +486,22 @@ function generatePrintHTML(
 }
 
 // Wait for fonts to load in a window with timeout fallback
-function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Promise<void> {
-  return new Promise((resolve) => {
-    const timeoutId = setTimeout(resolve, timeoutMs);
+async function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Promise<void> {
+  const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, timeoutMs));
 
-    const checkFonts = async () => {
-      try {
-        if (win.document.fonts?.ready) {
-          await win.document.fonts.ready;
-        }
-      } catch {
-        // Font API might fail, we don't want to reject the promise.
-      } finally {
-        clearTimeout(timeoutId);
-        resolve();
-      }
-    };
+  const fontsReadyPromise = (async () => {
+    try {
+      await win.document.fonts?.ready;
+    } catch {
+      // Font API might fail, but we don't want to reject the promise.
+    }
+  })();
 
-    checkFonts();
-  });
+  await Promise.race([fontsReadyPromise, timeoutPromise]);
 }
 
 // Wait for stylesheets to load
-function waitForStylesheets(win: Window): Promise<void> {
+async function waitForStylesheets(win: Window): Promise<void> {
   const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 2000));
 
   const linkPromises = Array.from(win.document.querySelectorAll('link[rel="stylesheet"]')).map(link => {
@@ -523,7 +516,7 @@ function waitForStylesheets(win: Window): Promise<void> {
     });
   });
 
-  return Promise.race([Promise.all(linkPromises), timeoutPromise]).then(() => { /* return void */ });
+  await Promise.race([Promise.all(linkPromises), timeoutPromise]);
 }
 
 export async function downloadAsPDF(
@@ -555,8 +548,9 @@ export async function downloadAsPDF(
 
         // Additional delay for rendering
         await new Promise(r => setTimeout(r, 200));
-      } catch {
+      } catch (e) {
         // If something fails, still try to print
+        console.error('Error waiting for styles or fonts, proceeding to print anyway:', e);
       } finally {
         printWindow.print();
         // Close window after print dialog closes (user clicks cancel or finishes)
