@@ -501,31 +501,33 @@ async function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Prom
   await Promise.race([fontsReadyPromise, timeoutPromise]);
 }
 
+// Helper function to create a promise that resolves when a stylesheet is loaded
+function createLinkLoadPromise(linkEl: HTMLLinkElement): Promise<void> {
+  return new Promise<void>(resolve => {
+    // Assign handlers first to prevent race condition
+    linkEl.onload = () => resolve();
+    linkEl.onerror = () => {
+      console.warn(`Stylesheet failed to load: ${linkEl.href}`);
+      resolve();
+    };
+
+    // Check if already loaded (CORS may throw SecurityError)
+    try {
+      if (linkEl.sheet) {
+        resolve();
+      }
+    } catch {
+      // Cannot access .sheet due to CORS, rely on load/error events
+    }
+  });
+}
+
 // Wait for stylesheets to load
 async function waitForStylesheets(win: Window, timeoutMs: number = 2000): Promise<void> {
   const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, timeoutMs));
 
-  const linkPromises = Array.from(win.document.querySelectorAll('link[rel="stylesheet"]')).map(link => {
-    return new Promise<void>(resolve => {
-      const linkEl = link as HTMLLinkElement;
-
-      // Assign handlers first to prevent race condition
-      linkEl.onload = () => resolve();
-      linkEl.onerror = () => {
-        console.warn(`Stylesheet failed to load: ${linkEl.href}`);
-        resolve();
-      };
-
-      // Check if already loaded (CORS may throw SecurityError)
-      try {
-        if (linkEl.sheet) {
-          resolve();
-        }
-      } catch {
-        // Cannot access .sheet due to CORS, rely on load/error events
-      }
-    });
-  });
+  const links = Array.from(win.document.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[];
+  const linkPromises = links.map(createLinkLoadPromise);
 
   await Promise.race([Promise.all(linkPromises), timeoutPromise]);
 }
@@ -557,8 +559,8 @@ export async function downloadAsPDF(
         // Wait for fonts to load with timeout
         await waitForFontsInWindow(printWindow, 3000);
 
-        // Additional delay for rendering
-        await new Promise(r => setTimeout(r, 200));
+        // Wait for next paint cycle for rendering
+        await new Promise(r => requestAnimationFrame(r));
       } catch (e) {
         // If something fails, still try to print
         console.error('Error waiting for styles or fonts, proceeding to print anyway:', e);
