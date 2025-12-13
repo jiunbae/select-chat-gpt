@@ -492,8 +492,9 @@ async function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Prom
   const fontsReadyPromise = (async () => {
     try {
       await win.document.fonts?.ready;
-    } catch {
+    } catch (err) {
       // Font API might fail, but we don't want to reject the promise.
+      console.warn('Font API failed or is not supported. Relying on timeout.', err);
     }
   })();
 
@@ -501,8 +502,8 @@ async function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Prom
 }
 
 // Wait for stylesheets to load
-async function waitForStylesheets(win: Window): Promise<void> {
-  const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 2000));
+async function waitForStylesheets(win: Window, timeoutMs: number = 2000): Promise<void> {
+  const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, timeoutMs));
 
   const linkPromises = Array.from(win.document.querySelectorAll('link[rel="stylesheet"]')).map(link => {
     return new Promise<void>(resolve => {
@@ -511,7 +512,10 @@ async function waitForStylesheets(win: Window): Promise<void> {
         resolve();
       } else {
         linkEl.onload = () => resolve();
-        linkEl.onerror = () => resolve();
+        linkEl.onerror = () => {
+          console.warn(`Stylesheet failed to load: ${linkEl.href}`);
+          resolve();
+        };
       }
     });
   });
