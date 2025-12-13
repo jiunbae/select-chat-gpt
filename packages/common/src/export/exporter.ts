@@ -501,37 +501,6 @@ async function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Prom
   await Promise.race([fontsReadyPromise, timeoutPromise]);
 }
 
-// Helper function to create a promise that resolves when a stylesheet is loaded
-function createLinkLoadPromise(linkEl: HTMLLinkElement): Promise<void> {
-  return new Promise<void>(resolve => {
-    // Assign handlers first to prevent race condition
-    linkEl.onload = () => resolve();
-    linkEl.onerror = () => {
-      console.warn(`Stylesheet failed to load: ${linkEl.href}`);
-      resolve();
-    };
-
-    // Check if already loaded (CORS may throw SecurityError)
-    try {
-      if (linkEl.sheet) {
-        resolve();
-      }
-    } catch {
-      // Cannot access .sheet due to CORS, rely on load/error events
-    }
-  });
-}
-
-// Wait for stylesheets to load
-async function waitForStylesheets(win: Window, timeoutMs: number = 2000): Promise<void> {
-  const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, timeoutMs));
-
-  const links = Array.from(win.document.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[];
-  const linkPromises = links.map(createLinkLoadPromise);
-
-  await Promise.race([Promise.all(linkPromises), timeoutPromise]);
-}
-
 export async function downloadAsPDF(
   messages: ExportMessage[],
   title: string,
@@ -551,11 +520,9 @@ export async function downloadAsPDF(
     printWindow.document.close();
 
     // Wait for content to load then print
+    // Note: onload fires after all resources (including stylesheets) are loaded
     printWindow.onload = async () => {
       try {
-        // Wait for stylesheets to load
-        await waitForStylesheets(printWindow);
-
         // Wait for fonts to load with timeout
         await waitForFontsInWindow(printWindow, 3000);
 
