@@ -1,26 +1,6 @@
-import { marked } from 'marked';
 import type { ExportMessage, ExportProgress, ExportStyleType, ExportOptions } from './types';
-
-// Configure marked for safe rendering
-marked.setOptions({
-  gfm: true,
-  breaks: true,
-});
-
-// Convert markdown content to HTML
-// Used when message.html is empty (server stores content as markdown)
-function markdownToHtml(content: string): string {
-  if (!content) return '';
-
-  // Convert LaTeX delimiters from ChatGPT format to display format
-  let processed = content
-    .replace(/\\\[([\s\S]+?)\\\]/g, '<div style="text-align: center; margin: 1em 0;">$1</div>')
-    .replace(/\\\(([\s\S]+?)\\\)/g, '$1');
-
-  const html = marked.parse(processed);
-  return typeof html === 'string' ? html : '';
-}
 import { ExportError } from './types';
+import { markdownToHtml } from './markdown-utils';
 import { createExportableElement, filterMessages } from './renderer';
 import {
   getFontSizeValue,
@@ -511,6 +491,25 @@ function generatePrintHTML(
 
   const fontLinks = getFontLinks(options?.fontFamily);
 
+  // KaTeX auto-render script to render LaTeX formulas
+  const katexAutoRenderScript = `
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        if (typeof renderMathInElement === 'function') {
+          renderMathInElement(document.body, {
+            delimiters: [
+              {left: '\\\\[', right: '\\\\]', display: true},
+              {left: '\\\\(', right: '\\\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        }
+        // Signal that KaTeX rendering is complete
+        window.katexReady = true;
+      });
+    </script>
+  `;
+
   return `
     <!DOCTYPE html>
     <html>
@@ -518,6 +517,10 @@ function generatePrintHTML(
       <meta charset="utf-8">
       <title>${title}</title>
       ${fontLinks}
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+      <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+      <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+      ${katexAutoRenderScript}
       <style>${generatePrintStyles(options, styleType)}</style>
     </head>
     <body>
@@ -554,6 +557,33 @@ async function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Prom
   await Promise.race([fontsReadyPromise, timeoutPromise]);
 }
 
+// Wait for KaTeX to finish rendering in the print window
+async function waitForKatexReady(win: Window, timeoutMs: number = 5000): Promise<void> {
+  const startTime = Date.now();
+
+  return new Promise((resolve) => {
+    const checkReady = () => {
+      // Check if KaTeX has finished rendering (set by our script in the HTML)
+      if ((win as Window & { katexReady?: boolean }).katexReady) {
+        resolve();
+        return;
+      }
+
+      // Timeout fallback
+      if (Date.now() - startTime > timeoutMs) {
+        console.warn('KaTeX rendering timeout, proceeding anyway');
+        resolve();
+        return;
+      }
+
+      // Check again in 100ms
+      setTimeout(checkReady, 100);
+    };
+
+    checkReady();
+  });
+}
+
 export async function downloadAsPDF(
   messages: ExportMessage[],
   title: string,
@@ -572,26 +602,61 @@ export async function downloadAsPDF(
     printWindow.document.write(html);
     printWindow.document.close();
 
-    // Wait for content to load then print
-    // Note: onload fires after all resources (including stylesheets) are loaded
-    printWindow.onload = async () => {
+    // Use a more reliable approach than onload
+    // Wait for document to be ready, then wait for fonts and KaTeX
+    const waitAndPrint = async () => {
       try {
         // Wait for fonts to load with timeout
         await waitForFontsInWindow(printWindow);
 
+        // Wait for KaTeX to render
+        await waitForKatexReady(printWindow);
+
         // Wait for next paint cycle for rendering
-        await new Promise(r => requestAnimationFrame(r));
+        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => printWindow.requestAnimationFrame(r));
       } catch (e) {
         // If something fails, still try to print
-        console.error('Error waiting for styles or fonts, proceeding to print anyway:', e);
-      } finally {
-        printWindow.print();
-        // Close window after print dialog closes (user clicks cancel or finishes)
-        printWindow.onafterprint = () => {
-          printWindow.close();
-        };
+        console.error('Error waiting for styles, fonts, or KaTeX, proceeding to print anyway:', e);
       }
+
+      // Print the document
+      printWindow.print();
+
+      // Close window after print dialog closes (user clicks cancel or finishes)
+      printWindow.onafterprint = () => {
+        printWindow.close();
+      };
     };
+
+    // Use both onload and a fallback timer to ensure print is triggered
+    let printTriggered = false;
+
+    const triggerPrint = () => {
+      if (printTriggered) return;
+      printTriggered = true;
+      waitAndPrint();
+    };
+
+    // Try onload event
+    printWindow.onload = triggerPrint;
+
+    // Fallback: if onload doesn't fire within 1 second, trigger manually
+    // This handles the case where document.write() doesn't fire onload
+    setTimeout(() => {
+      if (!printTriggered && printWindow.document.readyState === 'complete') {
+        triggerPrint();
+      }
+    }, 1000);
+
+    // Additional fallback for slower connections
+    setTimeout(() => {
+      if (!printTriggered) {
+        console.warn('Print trigger timeout, forcing print');
+        triggerPrint();
+      }
+    }, 3000);
+
   } catch {
     throw new ExportError('Failed to generate PDF', 'DOWNLOAD_FAILED');
   }

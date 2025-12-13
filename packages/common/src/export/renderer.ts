@@ -1,30 +1,6 @@
-import { marked } from 'marked';
 import type { ExportMessage, ExportStyle, ExportStyleType, ExportOptions } from './types';
 import { getExportStyle } from './styles';
-
-// Configure marked for safe rendering
-marked.setOptions({
-  gfm: true,
-  breaks: true,
-});
-
-// Convert markdown content to HTML
-// Used when message.html is empty (server stores content as markdown)
-function markdownToHtml(content: string): string {
-  if (!content) return '';
-
-  // Convert LaTeX delimiters from ChatGPT format to display format
-  // ChatGPT uses \[...\] and \(...\) for math
-  let processed = content
-    // Convert display math: \[...\] -> centered div
-    .replace(/\\\[([\s\S]+?)\\\]/g, '<div style="text-align: center; margin: 1em 0;">$1</div>')
-    // Convert inline math: \(...\) -> just the content (simplified)
-    .replace(/\\\(([\s\S]+?)\\\)/g, '$1');
-
-  // Parse markdown to HTML
-  const html = marked.parse(processed);
-  return typeof html === 'string' ? html : '';
-}
+import { markdownToHtml } from './markdown-utils';
 
 // Filter messages based on export options
 export function filterMessages(messages: ExportMessage[], options?: ExportOptions): ExportMessage[] {
