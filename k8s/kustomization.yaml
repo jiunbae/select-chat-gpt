@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: selectchatgpt
+
+resources:
+  - namespace.yaml
+  # NOTE: secrets.yaml은 secrets.yaml.example을 복사하여 실제 값으로 생성하세요
+  # cp secrets.yaml.example secrets.yaml && vim secrets.yaml
+  # - secrets.yaml
+
+  # MongoDB
+  - mongodb/pvc.yaml
+  - mongodb/deployment.yaml
+  - mongodb/service.yaml
+
+  # Server
+  - server/configmap.yaml
+  - server/deployment.yaml
+  - server/service.yaml
+
+  # Web
+  - web/configmap.yaml
+  - web/deployment.yaml
+  - web/service.yaml
+
+  # Ingress
+  - ingress.yaml
