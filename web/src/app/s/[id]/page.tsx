@@ -1,9 +1,15 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getShare, getErrorMessage, NetworkError } from "@/lib/api";
 import { ErrorDisplay } from "@/components/ErrorDisplay";
 import { SharePageClient } from "@/components/SharePageClient";
+import { MessageSkeleton } from "@/components/MessageSkeleton";
+
+// Route segment config for caching
+export const revalidate = 60; // Revalidate every 60 seconds
+export const dynamic = 'force-static'; // Force static generation with revalidation
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -86,5 +92,52 @@ export default async function SharePage({ params }: PageProps) {
 
   const share = result.data;
 
-  return <SharePageClient share={share} />;
+  return (
+    <Suspense fallback={<SharePageSkeleton title={share.title} />}>
+      <SharePageClient share={share} />
+    </Suspense>
+  );
+}
+
+// Loading skeleton for the share page
+function SharePageSkeleton({ title }: { title?: string }) {
+  return (
+    <main className="min-h-screen bg-[#212121] text-[#ececec]">
+      <header className="sticky top-0 z-50 backdrop-blur-sm border-b bg-[rgba(33,33,33,0.8)] border-[#444444]">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <Link
+            href="/"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity text-white"
+          >
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+              >
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+            </div>
+            <span className="font-semibold">SelectChatGPT</span>
+          </Link>
+        </div>
+      </header>
+
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        {title ? (
+          <h1 className="text-2xl font-bold mb-2 text-white">{title}</h1>
+        ) : (
+          <div className="h-8 w-64 bg-gray-700 rounded animate-pulse mb-2" />
+        )}
+        <div className="h-4 w-48 bg-gray-700 rounded animate-pulse" />
+      </div>
+
+      <MessageSkeleton count={4} styleType="chatgpt" />
+    </main>
+  );
 }

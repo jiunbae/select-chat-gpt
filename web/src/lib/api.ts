@@ -1,5 +1,66 @@
 import { cache } from 'react';
 
+// Simple LRU Cache with TTL for API responses
+class LRUCache<T> {
+  private cache = new Map<string, { value: T; expiry: number }>();
+  private maxSize: number;
+  private ttl: number;
+
+  constructor(maxSize = 100, ttlMs = 60000) {
+    this.maxSize = maxSize;
+    this.ttl = ttlMs;
+  }
+
+  get(key: string): T | undefined {
+    const entry = this.cache.get(key);
+    if (!entry) return undefined;
+
+    // Check if expired
+    if (Date.now() > entry.expiry) {
+      this.cache.delete(key);
+      return undefined;
+    }
+
+    // Move to end (most recently used)
+    this.cache.delete(key);
+    this.cache.set(key, entry);
+    return entry.value;
+  }
+
+  set(key: string, value: T): void {
+    // Delete if exists to update order
+    this.cache.delete(key);
+
+    // Evict oldest if at capacity
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey) this.cache.delete(firstKey);
+    }
+
+    this.cache.set(key, {
+      value,
+      expiry: Date.now() + this.ttl,
+    });
+  }
+
+  has(key: string): boolean {
+    const entry = this.cache.get(key);
+    if (!entry) return false;
+    if (Date.now() > entry.expiry) {
+      this.cache.delete(key);
+      return false;
+    }
+    return true;
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+// Global cache instance for share data (100 entries, 5 min TTL)
+const shareCache = new LRUCache<ShareData>(100, 5 * 60 * 1000);
+
 export interface Message {
   id: string;
   role: "user" | "assistant";
@@ -181,14 +242,26 @@ export async function parseUrl(url: string): Promise<ApiResult<ParseResult>> {
   }
 }
 
-// Internal function for fetching share data
+// Internal function for fetching share data with LRU caching
 async function getShareInternal(id: string): Promise<ApiResult<ShareData>> {
+  // Check LRU cache first (server-side only, not during SSG)
+  if (typeof window === 'undefined') {
+    const cached = shareCache.get(id);
+    if (cached) {
+      console.log(`[API] Cache hit for share ${id}`);
+      return { success: true, data: cached };
+    }
+  }
+
   try {
     const apiUrl = getApiBaseUrl();
     console.log(`[API] Fetching share ${id} from ${apiUrl}`);
 
     const response = await fetchWithErrorHandling(`${apiUrl}/api/shares/${id}`, {
       next: { revalidate: 60 },
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
     } as RequestInit);
 
     if (!response.ok) {
@@ -206,6 +279,13 @@ async function getShareInternal(id: string): Promise<ApiResult<ShareData>> {
     }
 
     const data = await response.json();
+
+    // Store in LRU cache (server-side only)
+    if (typeof window === 'undefined') {
+      shareCache.set(id, data);
+      console.log(`[API] Cached share ${id}`);
+    }
+
     return { success: true, data };
   } catch (error) {
     console.error("Failed to fetch share:", error);

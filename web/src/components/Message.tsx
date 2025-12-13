@@ -1,14 +1,8 @@
 "use client";
 
 import { useMemo, memo } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import "katex/dist/katex.min.css";
 import type { Message as MessageType } from "@/lib/api";
+import { LazyMarkdown } from "./LazyMarkdown";
 import {
   type ExportStyleType,
   type FontSize,
@@ -24,31 +18,6 @@ import {
   getMessageGapValue,
   getContentPaddingValue,
 } from "@/lib/export";
-
-// Extended sanitize schema to allow KaTeX-generated elements
-const sanitizeSchema = {
-  ...defaultSchema,
-  tagNames: [
-    ...(defaultSchema.tagNames || []),
-    // KaTeX math rendering tags
-    'math', 'semantics', 'mrow', 'mi', 'mn', 'mo', 'msup', 'msub',
-    'mfrac', 'mroot', 'msqrt', 'mtext', 'mspace', 'mtable', 'mtr', 'mtd',
-    'annotation', 'svg', 'path', 'line', 'rect', 'g', 'use', 'defs',
-    'span', 'div'
-  ],
-  attributes: {
-    ...defaultSchema.attributes,
-    '*': [...(defaultSchema.attributes?.['*'] || []), 'className', 'class', 'style'],
-    'math': ['xmlns', 'display'],
-    'annotation': ['encoding'],
-    'svg': ['viewBox', 'width', 'height', 'preserveAspectRatio', 'xmlns'],
-    'path': ['d', 'fill', 'stroke'],
-    'line': ['x1', 'y1', 'x2', 'y2', 'stroke'],
-    'rect': ['x', 'y', 'width', 'height', 'fill', 'stroke'],
-    'g': ['transform'],
-    'use': ['href', 'xlink:href']
-  }
-};
 
 interface MessageProps {
   message: MessageType;
@@ -235,21 +204,11 @@ export const Message = memo(function Message({
             >
               {isUser ? "You" : "ChatGPT"}
             </div>
-            <div
+            <LazyMarkdown
+              content={processedContent}
               className="markdown-content prose prose-sm max-w-none"
               style={{ ...contentStyle, color: contentColor }}
-            >
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkMath]}
-                rehypePlugins={[
-                  [rehypeKatex, { strict: 'ignore' }],
-                  rehypeRaw,
-                  [rehypeSanitize, sanitizeSchema]
-                ]}
-              >
-                {processedContent}
-              </ReactMarkdown>
-            </div>
+            />
           </div>
         </div>
       </div>
