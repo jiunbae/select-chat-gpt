@@ -49,17 +49,13 @@ export default async function RootLayout({
           rel="preload"
           as="style"
           href={PRETENDARD_CDN_URL}
+          crossOrigin="anonymous"
         />
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link
           rel="stylesheet"
           href={PRETENDARD_CDN_URL}
         />
-        {/* Fallback for browsers with JavaScript disabled */}
-        <noscript>
-          {/* eslint-disable-next-line @next/next/no-css-tags */}
-          <link rel="stylesheet" href={PRETENDARD_CDN_URL} />
-        </noscript>
         {/* Google Analytics 4 */}
         {GA_ID && (
           <>
