@@ -490,15 +490,18 @@ async function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Prom
   const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, timeoutMs));
 
   const fontsReadyPromise = (async () => {
+    // Never resolves, lets timeout win when Font API fails
+    const nonResolvingPromise = new Promise<void>(() => {});
+
     if (!win.document.fonts) {
       console.warn('Font API is not supported. Relying on timeout.');
-      return new Promise<void>(() => {}); // Never resolves, lets timeout win
+      return nonResolvingPromise;
     }
     try {
       await win.document.fonts.ready;
     } catch (err) {
       console.warn('Font API failed. Relying on timeout.', err);
-      return new Promise<void>(() => {}); // Never resolves, lets timeout win
+      return nonResolvingPromise;
     }
   })();
 
