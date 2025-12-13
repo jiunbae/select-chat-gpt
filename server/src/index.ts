@@ -13,6 +13,9 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 3001
 
+// Trust first proxy (nginx, load balancer, etc.) for accurate client IP identification
+app.set('trust proxy', 1)
+
 app.use(helmet())
 
 app.use(cors({
