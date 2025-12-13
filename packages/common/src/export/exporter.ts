@@ -485,6 +485,70 @@ function generatePrintHTML(
   `;
 }
 
+// Wait for fonts to load in a window with timeout fallback
+async function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Promise<void> {
+  return new Promise((resolve) => {
+    const checkFonts = async () => {
+      try {
+        // Wait for document.fonts.ready if available
+        if (win.document.fonts && win.document.fonts.ready) {
+          await win.document.fonts.ready;
+        }
+
+        // Additional delay to ensure fonts are rendered
+        await new Promise(r => setTimeout(r, 100));
+        resolve();
+      } catch {
+        // If fonts API fails, just resolve after a delay
+        resolve();
+      }
+    };
+
+    // Start checking fonts
+    checkFonts();
+
+    // Timeout fallback - force resolve after timeoutMs
+    setTimeout(() => {
+      resolve();
+    }, timeoutMs);
+  });
+}
+
+// Wait for stylesheets to load
+function waitForStylesheets(win: Window): Promise<void> {
+  return new Promise((resolve) => {
+    const links = win.document.querySelectorAll('link[rel="stylesheet"]');
+    if (links.length === 0) {
+      resolve();
+      return;
+    }
+
+    let loadedCount = 0;
+    const totalLinks = links.length;
+
+    const checkComplete = () => {
+      loadedCount++;
+      if (loadedCount >= totalLinks) {
+        resolve();
+      }
+    };
+
+    links.forEach((link) => {
+      const linkEl = link as HTMLLinkElement;
+      // Check if already loaded
+      if (linkEl.sheet) {
+        checkComplete();
+      } else {
+        linkEl.onload = checkComplete;
+        linkEl.onerror = checkComplete; // Don't block on error
+      }
+    });
+
+    // Timeout fallback after 2 seconds
+    setTimeout(resolve, 2000);
+  });
+}
+
 export async function downloadAsPDF(
   messages: ExportMessage[],
   title: string,
@@ -504,14 +568,27 @@ export async function downloadAsPDF(
     printWindow.document.close();
 
     // Wait for content to load then print
-    printWindow.onload = () => {
-      setTimeout(() => {
+    printWindow.onload = async () => {
+      try {
+        // Wait for stylesheets to load
+        await waitForStylesheets(printWindow);
+
+        // Wait for fonts to load with timeout
+        await waitForFontsInWindow(printWindow, 3000);
+
+        // Additional delay for rendering
+        await new Promise(r => setTimeout(r, 200));
+
         printWindow.print();
+
         // Close window after print dialog closes (user clicks cancel or finishes)
         printWindow.onafterprint = () => {
           printWindow.close();
         };
-      }, 250);
+      } catch {
+        // If something fails, still try to print
+        printWindow.print();
+      }
     };
   } catch {
     throw new ExportError('Failed to generate PDF', 'DOWNLOAD_FAILED');
