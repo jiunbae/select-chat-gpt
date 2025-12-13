@@ -38,6 +38,13 @@ router.get('/:id', async (req: Request, res: Response) => {
       return
     }
 
+    // Set cache headers for CDN and browser caching
+    // - public: can be cached by CDN
+    // - max-age=60: browser cache for 60 seconds
+    // - s-maxage=300: CDN cache for 5 minutes
+    // - stale-while-revalidate=600: serve stale while refreshing for 10 minutes
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600')
+
     res.json(share)
   } catch (error) {
     console.error('Get share error:', error)

@@ -1,10 +1,55 @@
 import { Share, IShare, IMessage } from '../models/Share.js'
 import { generateShareId } from '../utils/id-generator.js'
 import { sanitizeHtml, sanitizeText } from '../utils/sanitize.js'
+import { LRUCache } from 'lru-cache'
 
 const MAX_MESSAGES = 100
 const MAX_CONTENT_LENGTH = 100000
 const MAX_HTML_LENGTH = 500000
+
+// LRU Cache configuration
+// - max: maximum number of items to store
+// - ttl: time-to-live in milliseconds (5 minutes)
+// - allowStale: return stale items while revalidating in background
+const shareCache = new LRUCache<string, ShareData>({
+  max: 1000,
+  ttl: 1000 * 60 * 5, // 5 minutes
+  allowStale: true,
+  updateAgeOnGet: true,
+})
+
+// Batch viewCount updates to reduce DB writes
+const viewCountBuffer = new Map<string, number>()
+let flushTimer: NodeJS.Timeout | null = null
+
+function scheduleViewCountFlush() {
+  if (flushTimer) return
+
+  flushTimer = setTimeout(async () => {
+    flushTimer = null
+    const updates = Array.from(viewCountBuffer.entries())
+    viewCountBuffer.clear()
+
+    if (updates.length === 0) return
+
+    try {
+      // Batch update all viewCounts
+      await Promise.all(
+        updates.map(([shareId, count]) =>
+          Share.updateOne({ shareId }, { $inc: { viewCount: count } })
+        )
+      )
+    } catch (error) {
+      console.error('Failed to flush viewCount updates:', error)
+    }
+  }, 5000) // Flush every 5 seconds
+}
+
+function incrementViewCount(shareId: string) {
+  const current = viewCountBuffer.get(shareId) || 0
+  viewCountBuffer.set(shareId, current + 1)
+  scheduleViewCountFlush()
+}
 
 export interface CreateShareInput {
   title: string
@@ -106,17 +151,22 @@ export async function createShare(input: CreateShareInput): Promise<ShareOutput>
 }
 
 export async function getShare(shareId: string): Promise<ShareData | null> {
-  const share = await Share.findOneAndUpdate(
-    { shareId },
-    { $inc: { viewCount: 1 } },
-    { new: true }
-  )
+  // Check cache first
+  const cached = shareCache.get(shareId)
+  if (cached) {
+    // Increment view count asynchronously (batched)
+    incrementViewCount(shareId)
+    return cached
+  }
+
+  // Cache miss - fetch from database
+  const share = await Share.findOne({ shareId }).lean()
 
   if (!share) {
     return null
   }
 
-  return {
+  const shareData: ShareData = {
     id: share.shareId,
     title: share.title,
     sourceUrl: share.sourceUrl,
@@ -124,6 +174,14 @@ export async function getShare(shareId: string): Promise<ShareData | null> {
     createdAt: share.createdAt.toISOString(),
     viewCount: share.viewCount
   }
+
+  // Store in cache
+  shareCache.set(shareId, shareData)
+
+  // Increment view count asynchronously (batched)
+  incrementViewCount(shareId)
+
+  return shareData
 }
 
 export async function deleteShare(shareId: string): Promise<boolean> {
