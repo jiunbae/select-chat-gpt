@@ -486,67 +486,45 @@ function generatePrintHTML(
 }
 
 // Wait for fonts to load in a window with timeout fallback
-async function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Promise<void> {
+function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Promise<void> {
   return new Promise((resolve) => {
+    const timeoutId = setTimeout(resolve, timeoutMs);
+
     const checkFonts = async () => {
       try {
-        // Wait for document.fonts.ready if available
-        if (win.document.fonts && win.document.fonts.ready) {
+        if (win.document.fonts?.ready) {
           await win.document.fonts.ready;
         }
-
-        // Additional delay to ensure fonts are rendered
         await new Promise(r => setTimeout(r, 100));
-        resolve();
       } catch {
-        // If fonts API fails, just resolve after a delay
+        // Font API might fail, we don't want to reject the promise.
+      } finally {
+        clearTimeout(timeoutId);
         resolve();
       }
     };
 
-    // Start checking fonts
     checkFonts();
-
-    // Timeout fallback - force resolve after timeoutMs
-    setTimeout(() => {
-      resolve();
-    }, timeoutMs);
   });
 }
 
 // Wait for stylesheets to load
 function waitForStylesheets(win: Window): Promise<void> {
-  return new Promise((resolve) => {
-    const links = win.document.querySelectorAll('link[rel="stylesheet"]');
-    if (links.length === 0) {
-      resolve();
-      return;
-    }
+  const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 2000));
 
-    let loadedCount = 0;
-    const totalLinks = links.length;
-
-    const checkComplete = () => {
-      loadedCount++;
-      if (loadedCount >= totalLinks) {
-        resolve();
-      }
-    };
-
-    links.forEach((link) => {
+  const linkPromises = Array.from(win.document.querySelectorAll('link[rel="stylesheet"]')).map(link => {
+    return new Promise<void>(resolve => {
       const linkEl = link as HTMLLinkElement;
-      // Check if already loaded
       if (linkEl.sheet) {
-        checkComplete();
+        resolve();
       } else {
-        linkEl.onload = checkComplete;
-        linkEl.onerror = checkComplete; // Don't block on error
+        linkEl.onload = () => resolve();
+        linkEl.onerror = () => resolve();
       }
     });
-
-    // Timeout fallback after 2 seconds
-    setTimeout(resolve, 2000);
   });
+
+  return Promise.race([Promise.all(linkPromises), timeoutPromise]).then(() => { /* return void */ });
 }
 
 export async function downloadAsPDF(
@@ -588,6 +566,9 @@ export async function downloadAsPDF(
       } catch {
         // If something fails, still try to print
         printWindow.print();
+        printWindow.onafterprint = () => {
+          printWindow.close();
+        };
       }
     };
   } catch {
