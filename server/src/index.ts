@@ -65,17 +65,25 @@ async function startServer() {
     })
 
     // Graceful shutdown handler
+    const SHUTDOWN_TIMEOUT_MS = 30000 // 30 seconds max wait for graceful shutdown
+
     const gracefulShutdown = async (signal: string) => {
       console.log(`\n${signal} received. Starting graceful shutdown...`)
 
       try {
         // Stop accepting new connections and wait for existing connections to close
-        await new Promise<void>((resolve, reject) => {
-          server.close((err) => {
-            if (err) reject(err)
-            else resolve()
-          })
-        })
+        // with timeout to prevent indefinite hang on keep-alive connections
+        await Promise.race([
+          new Promise<void>((resolve, reject) => {
+            server.close((err) => {
+              if (err) reject(err)
+              else resolve()
+            })
+          }),
+          new Promise<void>((_, reject) =>
+            setTimeout(() => reject(new Error('Server close timeout')), SHUTDOWN_TIMEOUT_MS)
+          )
+        ])
         console.log('HTTP server closed')
 
         // Flush pending viewCount updates before shutdown

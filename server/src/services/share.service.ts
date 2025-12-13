@@ -11,12 +11,13 @@ const MAX_HTML_LENGTH = 500000
 // - max: maximum number of items to store
 // - ttl: time-to-live in milliseconds (5 minutes)
 // - allowStale: return stale items while revalidating in background
-// Note: updateAgeOnGet is intentionally disabled to ensure cache entries
-// expire after TTL, preventing indefinitely stale data for frequently accessed items
+// - updateAgeOnGet: false - ensures cache entries expire after TTL,
+//   preventing indefinitely stale data for frequently accessed items
 const shareCache = new LRUCache<string, ShareData>({
   max: 1000,
   ttl: 1000 * 60 * 5, // 5 minutes
   allowStale: true,
+  updateAgeOnGet: false,
 })
 
 // Batch viewCount updates to reduce DB writes

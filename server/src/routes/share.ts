@@ -34,11 +34,12 @@ router.get('/:id', async (req: Request, res: Response) => {
     const share = await getShare(id)
 
     if (!share) {
+      // No caching for 404 responses - allow immediate retry
       res.status(404).json({ error: 'Share not found' })
       return
     }
 
-    // Set cache headers for CDN and browser caching
+    // Set cache headers for CDN and browser caching (only for successful responses)
     // - public: can be cached by CDN
     // - max-age=60: browser cache for 60 seconds
     // - s-maxage=300: CDN cache for 5 minutes
