@@ -490,11 +490,15 @@ async function waitForFontsInWindow(win: Window, timeoutMs: number = 3000): Prom
   const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, timeoutMs));
 
   const fontsReadyPromise = (async () => {
+    if (!win.document.fonts) {
+      console.warn('Font API is not supported. Relying on timeout.');
+      return new Promise<void>(() => {}); // Never resolves, lets timeout win
+    }
     try {
-      await win.document.fonts?.ready;
+      await win.document.fonts.ready;
     } catch (err) {
-      // Font API might fail, but we don't want to reject the promise.
-      console.warn('Font API failed or is not supported. Relying on timeout.', err);
+      console.warn('Font API failed. Relying on timeout.', err);
+      return new Promise<void>(() => {}); // Never resolves, lets timeout win
     }
   })();
 
@@ -524,7 +528,7 @@ export async function downloadAsPDF(
     printWindow.onload = async () => {
       try {
         // Wait for fonts to load with timeout
-        await waitForFontsInWindow(printWindow, 3000);
+        await waitForFontsInWindow(printWindow);
 
         // Wait for next paint cycle for rendering
         await new Promise(r => requestAnimationFrame(r));
