@@ -11,37 +11,43 @@ const MAX_HTML_LENGTH = 500000
 // - max: maximum number of items to store
 // - ttl: time-to-live in milliseconds (5 minutes)
 // - allowStale: return stale items while revalidating in background
+// Note: updateAgeOnGet is intentionally disabled to ensure cache entries
+// expire after TTL, preventing indefinitely stale data for frequently accessed items
 const shareCache = new LRUCache<string, ShareData>({
   max: 1000,
   ttl: 1000 * 60 * 5, // 5 minutes
   allowStale: true,
-  updateAgeOnGet: true,
 })
 
 // Batch viewCount updates to reduce DB writes
 const viewCountBuffer = new Map<string, number>()
 let flushTimer: NodeJS.Timeout | null = null
 
+async function flushViewCountBufferInternal(): Promise<void> {
+  const updates = Array.from(viewCountBuffer.entries())
+  if (updates.length === 0) return
+
+  try {
+    // Batch update all viewCounts
+    await Promise.all(
+      updates.map(([shareId, count]) =>
+        Share.updateOne({ shareId }, { $inc: { viewCount: count } })
+      )
+    )
+    // Only clear buffer after successful update to preserve failed increments
+    viewCountBuffer.clear()
+  } catch (error) {
+    console.error('Failed to flush viewCount updates:', error)
+    // Buffer is NOT cleared on failure, so increments will be retried on next flush
+  }
+}
+
 function scheduleViewCountFlush() {
   if (flushTimer) return
 
   flushTimer = setTimeout(async () => {
     flushTimer = null
-    const updates = Array.from(viewCountBuffer.entries())
-    viewCountBuffer.clear()
-
-    if (updates.length === 0) return
-
-    try {
-      // Batch update all viewCounts
-      await Promise.all(
-        updates.map(([shareId, count]) =>
-          Share.updateOne({ shareId }, { $inc: { viewCount: count } })
-        )
-      )
-    } catch (error) {
-      console.error('Failed to flush viewCount updates:', error)
-    }
+    await flushViewCountBufferInternal()
   }, 5000) // Flush every 5 seconds
 }
 
@@ -49,6 +55,18 @@ function incrementViewCount(shareId: string) {
   const current = viewCountBuffer.get(shareId) || 0
   viewCountBuffer.set(shareId, current + 1)
   scheduleViewCountFlush()
+}
+
+/**
+ * Flush pending viewCount updates and clean up timers.
+ * Call this during application shutdown for graceful cleanup.
+ */
+export async function shutdownShareService(): Promise<void> {
+  if (flushTimer) {
+    clearTimeout(flushTimer)
+    flushTimer = null
+  }
+  await flushViewCountBufferInternal()
 }
 
 export interface CreateShareInput {
@@ -156,6 +174,11 @@ export async function getShare(shareId: string): Promise<ShareData | null> {
   if (cached) {
     // Increment view count asynchronously (batched)
     incrementViewCount(shareId)
+    // Include pending buffered viewCount for more accurate response
+    const bufferedCount = viewCountBuffer.get(shareId) || 0
+    if (bufferedCount > 0) {
+      return { ...cached, viewCount: cached.viewCount + bufferedCount }
+    }
     return cached
   }
 
@@ -185,6 +208,11 @@ export async function getShare(shareId: string): Promise<ShareData | null> {
 }
 
 export async function deleteShare(shareId: string): Promise<boolean> {
+  // Invalidate cache entry to prevent serving deleted data
+  shareCache.delete(shareId)
+  // Remove any pending viewCount updates for deleted share
+  viewCountBuffer.delete(shareId)
+
   const result = await Share.deleteOne({ shareId })
   return result.deletedCount > 0
 }

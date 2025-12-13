@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "SelectChatGPT Backend API Server",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
