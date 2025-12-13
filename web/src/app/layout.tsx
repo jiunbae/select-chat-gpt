@@ -1,25 +1,13 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import localFont from "next/font/local";
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { LanguageSelector } from "@/components/LanguageSelector";
 import "./globals.css";
 
-// Pretendard - 기본 한글 폰트 (Variable Font)
-// 다른 폰트(Noto Sans KR, Noto Serif KR, IBM Plex Sans KR)는
-// 사용자가 선택할 때 동적으로 로드됩니다 (lib/font-loader.ts 참조)
-const pretendard = localFont({
-  src: [
-    {
-      path: "./fonts/PretendardVariable.woff2",
-      style: "normal",
-    },
-  ],
-  variable: "--font-pretendard",
-  display: "swap",
-  fallback: ["-apple-system", "BlinkMacSystemFont", "system-ui", "Roboto", "sans-serif"],
-});
+// Pretendard CDN URL - unicode-range subset이 적용되어 필요한 글자만 로드
+// 기존 로컬 폰트(2.1MB)에서 CDN으로 전환하여 초기 로드 성능 개선
+const PRETENDARD_CDN_URL = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 const ADSENSE_ID = process.env.NEXT_PUBLIC_ADSENSE_ID;
@@ -48,8 +36,26 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={pretendard.variable}>
+    <html lang={locale}>
       <head>
+        {/* Pretendard 폰트 - CDN에서 dynamic subset으로 로드 */}
+        <link
+          rel="preconnect"
+          href="https://cdn.jsdelivr.net"
+          crossOrigin="anonymous"
+        />
+        {/* Preload for faster font loading */}
+        <link
+          rel="preload"
+          as="style"
+          href={PRETENDARD_CDN_URL}
+          crossOrigin="anonymous"
+        />
+        {/* eslint-disable-next-line @next/next/no-css-tags */}
+        <link
+          rel="stylesheet"
+          href={PRETENDARD_CDN_URL}
+        />
         {/* Google Analytics 4 */}
         {GA_ID && (
           <>

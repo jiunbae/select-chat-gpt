@@ -112,6 +112,17 @@ export function isFontLoaded(fontFamily: DynamicFontFamily): boolean {
   return loadedFonts.has(fontFamily);
 }
 
+// Base font stacks - explicitly defined for clarity and maintainability
+// These should match the CSS variables defined in globals.css
+const FONT_STACKS = {
+  // Sans-serif stack with Pretendard as primary (matches --font-pretendard-family in globals.css)
+  sansSerif: '"Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
+  // Serif stack for fonts like Noto Serif KR
+  serif: '"Pretendard Variable", Pretendard, Georgia, "Times New Roman", serif',
+  // System font stack
+  system: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+} as const;
+
 /**
  * Get the CSS font-family value for a given font
  * Returns a fallback stack if the font isn't loaded yet
@@ -119,22 +130,22 @@ export function isFontLoaded(fontFamily: DynamicFontFamily): boolean {
 export function getFontFamilyStack(fontFamily: DynamicFontFamily | 'pretendard' | 'system'): string {
   switch (fontFamily) {
     case 'pretendard':
-      return 'var(--font-pretendard), system-ui, sans-serif';
+      return FONT_STACKS.sansSerif;
     case 'system':
-      return 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      return FONT_STACKS.system;
     case 'noto-sans-kr':
       return loadedFonts.has('noto-sans-kr')
-        ? '"Noto Sans KR", var(--font-pretendard), system-ui, sans-serif'
-        : 'var(--font-pretendard), system-ui, sans-serif';
+        ? `"Noto Sans KR", ${FONT_STACKS.sansSerif}`
+        : FONT_STACKS.sansSerif;
     case 'noto-serif-kr':
       return loadedFonts.has('noto-serif-kr')
-        ? '"Noto Serif KR", var(--font-pretendard), Georgia, serif'
-        : 'var(--font-pretendard), Georgia, serif';
+        ? `"Noto Serif KR", ${FONT_STACKS.serif}`
+        : FONT_STACKS.serif;
     case 'ibm-plex-sans-kr':
       return loadedFonts.has('ibm-plex-sans-kr')
-        ? '"IBM Plex Sans KR", var(--font-pretendard), system-ui, sans-serif'
-        : 'var(--font-pretendard), system-ui, sans-serif';
+        ? `"IBM Plex Sans KR", ${FONT_STACKS.sansSerif}`
+        : FONT_STACKS.sansSerif;
     default:
-      return 'var(--font-pretendard), system-ui, sans-serif';
+      return FONT_STACKS.sansSerif;
   }
 }
