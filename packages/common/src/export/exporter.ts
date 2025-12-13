@@ -1,4 +1,25 @@
+import { marked } from 'marked';
 import type { ExportMessage, ExportProgress, ExportStyleType, ExportOptions } from './types';
+
+// Configure marked for safe rendering
+marked.setOptions({
+  gfm: true,
+  breaks: true,
+});
+
+// Convert markdown content to HTML
+// Used when message.html is empty (server stores content as markdown)
+function markdownToHtml(content: string): string {
+  if (!content) return '';
+
+  // Convert LaTeX delimiters from ChatGPT format to display format
+  let processed = content
+    .replace(/\\\[([\s\S]+?)\\\]/g, '<div style="text-align: center; margin: 1em 0;">$1</div>')
+    .replace(/\\\(([\s\S]+?)\\\)/g, '$1');
+
+  const html = marked.parse(processed);
+  return typeof html === 'string' ? html : '';
+}
 import { ExportError } from './types';
 import { createExportableElement, filterMessages } from './renderer';
 import {
@@ -464,7 +485,8 @@ function generatePrintHTML(
     : messages;
 
   const messagesHTML = filteredMessages.map(msg => {
-    let content = msg.html;
+    // Use html if available, otherwise convert markdown content to HTML
+    let content = msg.html || markdownToHtml(msg.content);
 
     // Remove interactive elements
     const temp = document.createElement('div');
@@ -638,7 +660,10 @@ export async function exportToMarkdown(
     lines.push(`## ${roleLabel}`);
     lines.push('');
     // Convert HTML to markdown to preserve formatting (bold, italic, code blocks, lists, etc.)
-    let markdownContent = await htmlToMarkdown(message.html);
+    // If html is empty, use content directly (it's already in markdown format)
+    let markdownContent = message.html
+      ? await htmlToMarkdown(message.html)
+      : message.content;
 
     // Remove code blocks if requested
     if (options?.hideCodeBlocks) {
