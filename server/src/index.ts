@@ -68,12 +68,16 @@ async function startServer() {
     const gracefulShutdown = async (signal: string) => {
       console.log(`\n${signal} received. Starting graceful shutdown...`)
 
-      // Stop accepting new connections
-      server.close(() => {
-        console.log('HTTP server closed')
-      })
-
       try {
+        // Stop accepting new connections and wait for existing connections to close
+        await new Promise<void>((resolve, reject) => {
+          server.close((err) => {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
+        console.log('HTTP server closed')
+
         // Flush pending viewCount updates before shutdown
         await shutdownShareService()
         console.log('Share service shutdown complete')

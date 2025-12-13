@@ -20,8 +20,12 @@ const shareCache = new LRUCache<string, ShareData>({
 })
 
 // Batch viewCount updates to reduce DB writes
+// Max buffer size prevents unbounded memory growth during DB outages
+const MAX_BUFFER_SIZE = 10000
 const viewCountBuffer = new Map<string, number>()
 let flushTimer: NodeJS.Timeout | null = null
+let consecutiveFlushFailures = 0
+const MAX_CONSECUTIVE_FAILURES = 5
 
 async function flushViewCountBufferInternal(): Promise<void> {
   const updates = Array.from(viewCountBuffer.entries())
@@ -36,9 +40,19 @@ async function flushViewCountBufferInternal(): Promise<void> {
     )
     // Only clear buffer after successful update to preserve failed increments
     viewCountBuffer.clear()
+    consecutiveFlushFailures = 0
   } catch (error) {
-    console.error('Failed to flush viewCount updates:', error)
-    // Buffer is NOT cleared on failure, so increments will be retried on next flush
+    consecutiveFlushFailures++
+    console.error(`Failed to flush viewCount updates (attempt ${consecutiveFlushFailures}):`, error)
+
+    // If too many consecutive failures, clear buffer to prevent memory issues
+    // and log warning about lost view counts
+    if (consecutiveFlushFailures >= MAX_CONSECUTIVE_FAILURES) {
+      console.warn(`Clearing viewCount buffer after ${MAX_CONSECUTIVE_FAILURES} consecutive failures. ${viewCountBuffer.size} entries lost.`)
+      viewCountBuffer.clear()
+      consecutiveFlushFailures = 0
+    }
+    // Otherwise, buffer is NOT cleared on failure, so increments will be retried on next flush
   }
 }
 
@@ -52,6 +66,12 @@ function scheduleViewCountFlush() {
 }
 
 function incrementViewCount(shareId: string) {
+  // Check buffer size limit to prevent unbounded memory growth
+  if (viewCountBuffer.size >= MAX_BUFFER_SIZE && !viewCountBuffer.has(shareId)) {
+    console.warn(`ViewCount buffer at max size (${MAX_BUFFER_SIZE}), forcing flush`)
+    flushViewCountBufferInternal() // Fire and forget
+  }
+
   const current = viewCountBuffer.get(shareId) || 0
   viewCountBuffer.set(shareId, current + 1)
   scheduleViewCountFlush()
