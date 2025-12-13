@@ -44,9 +44,13 @@ export default async function RootLayout({
           href="https://cdn.jsdelivr.net"
           crossOrigin="anonymous"
         />
+        {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link
           rel="stylesheet"
           href={PRETENDARD_CDN_URL}
+          media="print"
+          // @ts-expect-error onLoad is valid for link elements
+          onLoad="this.media='all'"
         />
         {/* Google Analytics 4 */}
         {GA_ID && (

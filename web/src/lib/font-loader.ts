@@ -112,31 +112,39 @@ export function isFontLoaded(fontFamily: DynamicFontFamily): boolean {
   return loadedFonts.has(fontFamily);
 }
 
+// Base font stacks - explicitly defined for clarity and maintainability
+const FONT_STACKS = {
+  // Sans-serif stack with Pretendard as primary
+  sansSerif: '"Pretendard Variable", Pretendard, system-ui, sans-serif',
+  // Serif stack for fonts like Noto Serif KR
+  serif: '"Pretendard Variable", Pretendard, Georgia, "Times New Roman", serif',
+  // System font stack
+  system: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+} as const;
+
 /**
  * Get the CSS font-family value for a given font
  * Returns a fallback stack if the font isn't loaded yet
  */
 export function getFontFamilyStack(fontFamily: DynamicFontFamily | 'pretendard' | 'system'): string {
-  const pretendardStack = '"Pretendard Variable", Pretendard, system-ui, sans-serif';
-
   switch (fontFamily) {
     case 'pretendard':
-      return pretendardStack;
+      return FONT_STACKS.sansSerif;
     case 'system':
-      return 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      return FONT_STACKS.system;
     case 'noto-sans-kr':
       return loadedFonts.has('noto-sans-kr')
-        ? `"Noto Sans KR", ${pretendardStack}`
-        : pretendardStack;
+        ? `"Noto Sans KR", ${FONT_STACKS.sansSerif}`
+        : FONT_STACKS.sansSerif;
     case 'noto-serif-kr':
       return loadedFonts.has('noto-serif-kr')
-        ? `"Noto Serif KR", ${pretendardStack.replace('sans-serif', 'Georgia, serif')}`
-        : pretendardStack.replace('sans-serif', 'Georgia, serif');
+        ? `"Noto Serif KR", ${FONT_STACKS.serif}`
+        : FONT_STACKS.serif;
     case 'ibm-plex-sans-kr':
       return loadedFonts.has('ibm-plex-sans-kr')
-        ? `"IBM Plex Sans KR", ${pretendardStack}`
-        : pretendardStack;
+        ? `"IBM Plex Sans KR", ${FONT_STACKS.sansSerif}`
+        : FONT_STACKS.sansSerif;
     default:
-      return pretendardStack;
+      return FONT_STACKS.sansSerif;
   }
 }
