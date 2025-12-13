@@ -175,6 +175,9 @@ export async function getShare(shareId: string): Promise<ShareData | null> {
     // Increment view count asynchronously (batched)
     incrementViewCount(shareId)
     // Include pending buffered viewCount for more accurate response
+    // Note: There's a minor race condition where flush could occur between
+    // reading bufferedCount and returning. This is acceptable as viewCount
+    // accuracy is not critical for this use case.
     const bufferedCount = viewCountBuffer.get(shareId) || 0
     if (bufferedCount > 0) {
       return { ...cached, viewCount: cached.viewCount + bufferedCount }
@@ -189,20 +192,23 @@ export async function getShare(shareId: string): Promise<ShareData | null> {
     return null
   }
 
+  // Increment view count asynchronously (batched)
+  // Note: We increment BEFORE creating shareData so the returned viewCount
+  // reflects this view (viewCount + 1), ensuring consistency between
+  // cache miss and subsequent cache hits
+  incrementViewCount(shareId)
+
   const shareData: ShareData = {
     id: share.shareId,
     title: share.title,
     sourceUrl: share.sourceUrl,
     messages: share.messages,
     createdAt: share.createdAt.toISOString(),
-    viewCount: share.viewCount
+    viewCount: share.viewCount + 1  // Include current view in count
   }
 
-  // Store in cache
+  // Store in cache with incremented viewCount
   shareCache.set(shareId, shareData)
-
-  // Increment view count asynchronously (batched)
-  incrementViewCount(shareId)
 
   return shareData
 }
@@ -211,6 +217,9 @@ export async function deleteShare(shareId: string): Promise<boolean> {
   // Invalidate cache entry to prevent serving deleted data
   shareCache.delete(shareId)
   // Remove any pending viewCount updates for deleted share
+  // Note: If a flush is in progress, already-queued updates may still be
+  // applied to DB (MongoDB will update 0 documents). This is acceptable
+  // as it has no functional impact.
   viewCountBuffer.delete(shareId)
 
   const result = await Share.deleteOne({ shareId })

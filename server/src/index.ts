@@ -7,6 +7,7 @@ import dotenv from 'dotenv'
 
 import shareRoutes from './routes/share.js'
 import parseRoutes from './routes/parse.js'
+import { shutdownShareService } from './services/share.service.js'
 
 dotenv.config()
 
@@ -59,9 +60,37 @@ async function startServer() {
     await mongoose.connect(mongoUri)
     console.log('Connected to MongoDB')
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`)
     })
+
+    // Graceful shutdown handler
+    const gracefulShutdown = async (signal: string) => {
+      console.log(`\n${signal} received. Starting graceful shutdown...`)
+
+      // Stop accepting new connections
+      server.close(() => {
+        console.log('HTTP server closed')
+      })
+
+      try {
+        // Flush pending viewCount updates before shutdown
+        await shutdownShareService()
+        console.log('Share service shutdown complete')
+
+        // Close MongoDB connection
+        await mongoose.connection.close()
+        console.log('MongoDB connection closed')
+
+        process.exit(0)
+      } catch (error) {
+        console.error('Error during shutdown:', error)
+        process.exit(1)
+      }
+    }
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'))
   } catch (error) {
     console.error('Failed to start server:', error)
     process.exit(1)
