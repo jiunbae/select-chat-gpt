@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { LocaleProvider } from "@/providers/LocaleProvider";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import "./globals.css";
 
 // Pretendard CDN URL - unicode-range subset이 적용되어 필요한 글자만 로드
-// 기존 로컬 폰트(2.1MB)에서 CDN으로 전환하여 초기 로드 성능 개선
 const PRETENDARD_CDN_URL = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
@@ -27,16 +25,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const locale = await getLocale();
-  const messages = await getMessages();
-
   return (
-    <html lang={locale}>
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Pretendard 폰트 - CDN에서 dynamic subset으로 로드 */}
         <link
@@ -86,12 +81,12 @@ export default async function RootLayout({
         )}
       </head>
       <body className="antialiased">
-        <NextIntlClientProvider messages={messages}>
+        <LocaleProvider>
           <div className="fixed top-4 right-4 z-[100]">
             <LanguageSelector />
           </div>
           {children}
-        </NextIntlClientProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

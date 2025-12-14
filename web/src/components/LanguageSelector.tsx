@@ -1,9 +1,7 @@
 "use client";
 
-import { useTransition } from "react";
-import { useLocale } from "next-intl";
 import { locales, type Locale } from "@/i18n/config";
-import { setLocale } from "@/i18n/actions";
+import { useLocale } from "@/providers/LocaleProvider";
 
 const languageNames: Record<Locale, string> = {
   en: "English",
@@ -18,13 +16,10 @@ const languageFlags: Record<Locale, string> = {
 };
 
 export function LanguageSelector() {
-  const locale = useLocale() as Locale;
-  const [isPending, startTransition] = useTransition();
+  const { locale, setLocale, isLoading } = useLocale();
 
   const handleChange = (newLocale: Locale) => {
-    startTransition(() => {
-      setLocale(newLocale);
-    });
+    setLocale(newLocale);
   };
 
   return (
@@ -32,7 +27,7 @@ export function LanguageSelector() {
       <select
         value={locale}
         onChange={(e) => handleChange(e.target.value as Locale)}
-        disabled={isPending}
+        disabled={isLoading}
         className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 pr-8 text-sm text-gray-900 dark:text-white cursor-pointer hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:opacity-50"
       >
         {locales.map((loc) => (
