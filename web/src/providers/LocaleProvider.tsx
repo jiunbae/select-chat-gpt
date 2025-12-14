@@ -56,36 +56,42 @@ interface LocaleProviderProps {
 }
 
 export function LocaleProvider({ children }: LocaleProviderProps) {
-  const [locale, setLocaleState] = useState<Locale>(defaultLocale);
+  // Lazy initialization으로 getInitialLocale이 한 번만 실행되도록 함
+  const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
   const [messages, setMessages] = useState<Record<string, string> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 초기 locale 및 메시지 로드
+  // locale 상태가 변경될 때마다 메시지를 로드하고 <html> 태그의 lang 속성을 업데이트
   useEffect(() => {
-    const initialLocale = getInitialLocale();
-    setLocaleState(initialLocale);
+    let isMounted = true;
+    setIsLoading(true);
 
-    loadMessages(initialLocale).then((msgs) => {
-      setMessages(msgs);
-      setIsLoading(false);
+    // 접근성 및 SEO를 위해 <html> 태그의 lang 속성 업데이트
+    document.documentElement.lang = locale;
+
+    loadMessages(locale).then((msgs) => {
+      // Race condition 방지: 컴포넌트가 언마운트되었으면 상태 업데이트 안 함
+      if (isMounted) {
+        setMessages(msgs);
+        setIsLoading(false);
+      }
     });
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [locale]);
 
   const setLocale = useCallback((newLocale: Locale) => {
-    if (!locales.includes(newLocale)) return;
+    // 동일한 locale이거나 유효하지 않은 locale이면 무시
+    if (!locales.includes(newLocale) || newLocale === locale) return;
 
     // localStorage에 저장
     localStorage.setItem(LOCALE_COOKIE_NAME, newLocale);
 
-    // 상태 업데이트 및 메시지 로드
+    // 상태 업데이트를 통해 useEffect를 트리거
     setLocaleState(newLocale);
-    setIsLoading(true);
-
-    loadMessages(newLocale).then((msgs) => {
-      setMessages(msgs);
-      setIsLoading(false);
-    });
-  }, []);
+  }, [locale]);
 
   // 메시지 로딩 중이면 최소한의 UI 표시
   if (!messages) {
