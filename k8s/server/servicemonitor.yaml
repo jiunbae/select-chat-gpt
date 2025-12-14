@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: selectchatgpt-server
+  namespace: selectchatgpt
+  labels:
+    release: kube-prometheus-stack  # Required for Prometheus Operator to discover
+spec:
+  selector:
+    matchLabels:
+      app: server
+  namespaceSelector:
+    matchNames:
+      - selectchatgpt
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 60s
+      scrapeTimeout: 10s
