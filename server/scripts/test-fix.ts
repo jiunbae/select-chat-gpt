@@ -7,6 +7,7 @@ const URL_TO_TEST = process.argv[2] || 'https://chatgpt.com/share/69394e8e-4e80-
 
 const MIN_REACT_ROUTER_DATA_LENGTH = 1000
 const ROLE_LOOKBEHIND_WINDOW = 50
+const ROLE_POINTER_KEY = '_49'
 
 // Metadata keywords (copied from parse.service.ts)
 const METADATA_KEYWORDS = new Set([
@@ -105,8 +106,8 @@ async function testFix(url: string) {
       // Strategy 1: Pointer objects {"_49":IDX,...} that are actual JS objects
       if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
         const obj = val as Record<string, unknown>
-        if ('_49' in obj && typeof obj._49 === 'number') {
-          const pointerIdx = obj._49
+        if (ROLE_POINTER_KEY in obj && typeof obj[ROLE_POINTER_KEY] === 'number') {
+          const pointerIdx = obj[ROLE_POINTER_KEY]
           const role = roleIndexMap.get(pointerIdx)
           if (role) {
             return { role, method: `pointer at [${j}] -> idx ${pointerIdx} (${role})` }
