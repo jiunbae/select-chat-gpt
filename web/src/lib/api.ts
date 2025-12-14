@@ -191,10 +191,17 @@ export async function getShare(id: string): Promise<ApiResult<ShareData>> {
           error: new NetworkError('server_error', 'Server error', response.status)
         };
       }
-      // 404나 다른 클라이언트 에러
+      // 404 에러는 conversation_not_found로 처리
+      if (response.status === 404) {
+        return {
+          success: false,
+          error: new NetworkError('conversation_not_found', 'Share not found', 404)
+        };
+      }
+      // 다른 클라이언트 에러
       return {
         success: false,
-        error: new NetworkError('unknown', 'Share not found')
+        error: new NetworkError('unknown', 'Request failed', response.status)
       };
     }
 

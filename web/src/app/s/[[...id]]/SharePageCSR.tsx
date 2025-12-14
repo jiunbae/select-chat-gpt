@@ -79,7 +79,12 @@ export function SharePageCSR() {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
+    // ID가 없으면 notFound 상태로 설정
+    if (!id) {
+      setLoading(false);
+      setNotFound(true);
+      return;
+    }
 
     setLoading(true);
     setError(null);

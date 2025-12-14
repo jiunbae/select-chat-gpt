@@ -69,13 +69,26 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
     // 접근성 및 SEO를 위해 <html> 태그의 lang 속성 업데이트
     document.documentElement.lang = locale;
 
-    loadMessages(locale).then((msgs) => {
-      // Race condition 방지: 컴포넌트가 언마운트되었으면 상태 업데이트 안 함
-      if (isMounted) {
-        setMessages(msgs);
-        setIsLoading(false);
-      }
-    });
+    loadMessages(locale)
+      .then((msgs) => {
+        // Race condition 방지: 컴포넌트가 언마운트되었으면 상태 업데이트 안 함
+        if (isMounted) {
+          setMessages(msgs);
+          setIsLoading(false);
+        }
+      })
+      .catch((error) => {
+        // 에러 발생 시 기본 locale로 폴백
+        console.error('Failed to load messages:', error);
+        if (isMounted) {
+          loadMessages(defaultLocale).then((fallbackMsgs) => {
+            if (isMounted) {
+              setMessages(fallbackMsgs);
+              setIsLoading(false);
+            }
+          });
+        }
+      });
 
     return () => {
       isMounted = false;
