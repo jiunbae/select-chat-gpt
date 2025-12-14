@@ -39,17 +39,11 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net"
           crossOrigin="anonymous"
         />
-        {/* Preload for faster font loading */}
-        <link
-          rel="preload"
-          as="style"
-          href={PRETENDARD_CDN_URL}
-          crossOrigin="anonymous"
-        />
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link
           rel="stylesheet"
           href={PRETENDARD_CDN_URL}
+          crossOrigin="anonymous"
         />
         {/* Google Analytics 4 */}
         {GA_ID && (

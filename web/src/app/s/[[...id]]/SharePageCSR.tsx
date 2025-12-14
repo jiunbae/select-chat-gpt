@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { getShare, getErrorMessage, type ApiError } from '@/lib/api';
 import { ErrorDisplay } from '@/components/ErrorDisplay';
@@ -68,10 +68,10 @@ function LoadingSkeleton() {
 }
 
 export function SharePageCSR() {
-  const params = useParams();
-  // catch-all route에서 id는 string[] | undefined
-  const idArray = params.id as string[] | undefined;
-  const id = idArray?.[0];
+  const pathname = usePathname();
+  // pathname에서 ID 추출: /s/ABC123 -> ABC123
+  // Static Export에서 useParams()가 빈 값을 반환하므로 pathname에서 직접 파싱
+  const id = pathname?.startsWith('/s/') ? pathname.slice(3) : undefined;
 
   const [share, setShare] = useState<ShareData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
