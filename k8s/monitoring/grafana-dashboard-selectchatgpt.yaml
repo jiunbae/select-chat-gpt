@@ -159,7 +159,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "sum(rate(selectchatgpt_http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(selectchatgpt_http_requests_total[5m]))",
+              "expr": "(sum(rate(selectchatgpt_http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(selectchatgpt_http_requests_total[5m]))) or vector(0)",
               "legendFormat": "Error Rate",
               "refId": "A"
             }

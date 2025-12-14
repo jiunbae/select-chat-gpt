@@ -57,10 +57,8 @@ app.use((req, res, next) => {
     const duration = Number(process.hrtime.bigint() - start) / 1e9 // Convert to seconds
 
     // Normalize route path for metrics (replace dynamic params)
-    let route = req.route ? req.baseUrl + req.route.path : req.path
-    if (!req.route && res.statusCode === 404) {
-      route = 'unmatched'
-    }
+    // Use 'unmatched' for all requests without a matched route to prevent label cardinality explosion
+    const route = req.route ? req.baseUrl + req.route.path : 'unmatched'
 
     const labels = {
       method: req.method,
