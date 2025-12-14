@@ -7,6 +7,7 @@ import {
   NoMessagesFoundError,
   InvalidUrlError
 } from '../services/parse.service.js'
+import { parseOperations } from '../metrics.js'
 
 const router: RouterType = Router()
 
@@ -34,6 +35,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     const result = await parseAndCreateShare(trimmedUrl)
 
+    parseOperations.inc({ status: 'success', error_type: '' })
     res.status(201).json({
       success: true,
       shareId: result.id,
@@ -43,6 +45,7 @@ router.post('/', async (req: Request, res: Response) => {
     console.error('Parse error:', error)
 
     if (error instanceof ConversationNotFoundError) {
+      parseOperations.inc({ status: 'error', error_type: 'not_found' })
       res.status(404).json({
         success: false,
         error: 'ChatGPT conversation not found. Please check the URL.'
@@ -51,6 +54,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     if (error instanceof NoMessagesFoundError) {
+      parseOperations.inc({ status: 'error', error_type: 'no_messages' })
       res.status(400).json({
         success: false,
         error: error.message
@@ -59,6 +63,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     if (error instanceof InvalidUrlError) {
+      parseOperations.inc({ status: 'error', error_type: 'invalid_url' })
       res.status(400).json({
         success: false,
         error: 'Invalid ChatGPT share URL. Please use a URL like https://chatgpt.com/share/...'
@@ -67,6 +72,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // All other errors (including generic Error) are treated as server errors
+    parseOperations.inc({ status: 'error', error_type: 'server_error' })
     res.status(500).json({
       success: false,
       error: 'Failed to parse the conversation. Please try again.'

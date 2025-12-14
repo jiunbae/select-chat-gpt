@@ -57,9 +57,9 @@ app.use((req, res, next) => {
     const duration = Number(process.hrtime.bigint() - start) / 1e9 // Convert to seconds
 
     // Normalize route path for metrics (replace dynamic params)
-    let route = req.route?.path || req.path
-    if (req.path.startsWith('/api/shares/') && req.params.id) {
-      route = '/api/shares/:id'
+    let route = req.route ? req.baseUrl + req.route.path : req.path
+    if (!req.route && res.statusCode === 404) {
+      route = 'unmatched'
     }
 
     const labels = {
@@ -81,7 +81,7 @@ app.get('/metrics', async (req, res) => {
     res.set('Content-Type', register.contentType)
     res.end(await register.metrics())
   } catch (err) {
-    res.status(500).end(err)
+    res.status(500).end(err instanceof Error ? err.message : String(err))
   }
 })
 

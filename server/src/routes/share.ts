@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express'
 import type { Router as RouterType } from 'express'
 import { createShare, getShare } from '../services/share.service.js'
+import { shareOperations } from '../metrics.js'
 
 const router: RouterType = Router()
 
@@ -10,9 +11,11 @@ router.post('/', async (req: Request, res: Response) => {
 
     const result = await createShare({ title, sourceUrl, messages })
 
+    shareOperations.inc({ operation: 'create', status: 'success' })
     res.status(201).json(result)
   } catch (error) {
     console.error('Create share error:', error)
+    shareOperations.inc({ operation: 'create', status: 'error' })
 
     if (error instanceof Error) {
       res.status(400).json({ error: error.message })
@@ -35,6 +38,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     if (!share) {
       // No caching for 404 responses - allow immediate retry
+      shareOperations.inc({ operation: 'get', status: 'not_found' })
       res.status(404).json({ error: 'Share not found' })
       return
     }
@@ -51,9 +55,11 @@ router.get('/:id', async (req: Request, res: Response) => {
     // For real-time viewCount needs, consider a separate endpoint or WebSocket updates.
     res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600')
 
+    shareOperations.inc({ operation: 'get', status: 'success' })
     res.json(share)
   } catch (error) {
     console.error('Get share error:', error)
+    shareOperations.inc({ operation: 'get', status: 'error' })
     res.status(500).json({ error: 'Failed to get share' })
   }
 })
