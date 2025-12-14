@@ -107,6 +107,7 @@ async function startServer() {
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/selectchatgpt'
 
     // Track MongoDB connection status
+    mongodbConnected.set(0) // Initialize to disconnected state
     mongoose.connection.on('connected', () => {
       mongodbConnected.set(1)
       console.log('Connected to MongoDB')
