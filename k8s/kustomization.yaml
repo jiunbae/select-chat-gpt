@@ -18,6 +18,7 @@ resources:
   - server/configmap.yaml
   - server/deployment.yaml
   - server/service.yaml
+  - server/servicemonitor.yaml
 
   # Web
   - web/configmap.yaml

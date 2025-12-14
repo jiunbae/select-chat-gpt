@@ -1,0 +1,108 @@
+# Prometheus Stack Optimization for Low-Resource Environment (N100 + 16GB RAM)
+# Usage: helm upgrade kube-prometheus-stack prometheus-community/kube-prometheus-stack -n monitoring -f prometheus-values-override.yaml
+
+prometheus:
+  prometheusSpec:
+    # Reduce retention from 10d to 3d
+    retention: 3d
+    retentionSize: "5GB"
+
+    # Reduce scrape frequency (30s -> 60s)
+    scrapeInterval: 60s
+    evaluationInterval: 60s
+
+    # Enable WAL compression
+    walCompression: true
+
+    # Resource limits
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+
+    # Enable ServiceMonitor from all namespaces
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+    serviceMonitorSelector: {}
+
+grafana:
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 50m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+
+  # Reduce sidecar resources
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      resources:
+        limits:
+          memory: 64Mi
+          cpu: 50m
+        requests:
+          memory: 32Mi
+          cpu: 10m
+    datasources:
+      enabled: true
+      resources:
+        limits:
+          memory: 64Mi
+          cpu: 50m
+        requests:
+          memory: 32Mi
+          cpu: 10m
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        memory: 32Mi
+        cpu: 10m
+      limits:
+        memory: 64Mi
+        cpu: 50m
+
+# Disable components not needed for k3s single-node
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+
+# Reduce node-exporter resources
+nodeExporter:
+  resources:
+    requests:
+      memory: 16Mi
+      cpu: 10m
+    limits:
+      memory: 32Mi
+      cpu: 50m
+
+# Reduce kube-state-metrics resources
+kube-state-metrics:
+  resources:
+    requests:
+      memory: 32Mi
+      cpu: 10m
+    limits:
+      memory: 64Mi
+      cpu: 50m
+
+# Reduce prometheus-operator resources
+prometheusOperator:
+  resources:
+    requests:
+      memory: 64Mi
+      cpu: 50m
+    limits:
+      memory: 128Mi
+      cpu: 100m

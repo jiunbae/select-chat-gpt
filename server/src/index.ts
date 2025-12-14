@@ -8,6 +8,13 @@ import dotenv from 'dotenv'
 import shareRoutes from './routes/share.js'
 import parseRoutes from './routes/parse.js'
 import { shutdownShareService } from './services/share.service.js'
+import {
+  register,
+  httpRequestDuration,
+  httpRequestTotal,
+  mongodbConnected,
+  activeConnections,
+} from './metrics.js'
 
 dotenv.config()
 
@@ -35,6 +42,47 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }))
 
+// Metrics middleware - track request duration and count
+app.use((req, res, next) => {
+  // Skip metrics endpoint itself
+  if (req.path === '/metrics') {
+    return next()
+  }
+
+  activeConnections.inc()
+  const start = process.hrtime.bigint()
+
+  res.on('finish', () => {
+    activeConnections.dec()
+    const duration = Number(process.hrtime.bigint() - start) / 1e9 // Convert to seconds
+
+    // Normalize route path for metrics (replace dynamic params)
+    // Use 'unmatched' for all requests without a matched route to prevent label cardinality explosion
+    const route = req.route ? req.baseUrl + req.route.path : 'unmatched'
+
+    const labels = {
+      method: req.method,
+      route,
+      status_code: res.statusCode.toString(),
+    }
+
+    httpRequestDuration.observe(labels, duration)
+    httpRequestTotal.inc(labels)
+  })
+
+  next()
+})
+
+// Metrics endpoint (before rate limiter)
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType)
+    res.end(await register.metrics())
+  } catch (err) {
+    res.status(500).end(err instanceof Error ? err.message : String(err))
+  }
+})
+
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000'),
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
@@ -57,8 +105,23 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 async function startServer() {
   try {
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/selectchatgpt'
+
+    // Track MongoDB connection status
+    mongodbConnected.set(0) // Initialize to disconnected state
+    mongoose.connection.on('connected', () => {
+      mongodbConnected.set(1)
+      console.log('Connected to MongoDB')
+    })
+    mongoose.connection.on('disconnected', () => {
+      mongodbConnected.set(0)
+      console.log('Disconnected from MongoDB')
+    })
+    mongoose.connection.on('error', (err) => {
+      mongodbConnected.set(0)
+      console.error('MongoDB connection error:', err)
+    })
+
     await mongoose.connect(mongoUri)
-    console.log('Connected to MongoDB')
 
     const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`)
