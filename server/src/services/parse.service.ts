@@ -42,6 +42,7 @@ const ROLE_LOOKBEHIND_WINDOW = 50  // Increased from 30 for better role detectio
 
 // The "_49" key in pointer objects typically points to the role index
 // These are stored as actual JavaScript objects in the parsed array, not strings
+const ROLE_POINTER_KEY = '_49'
 
 // Constants for code detection heuristics
 const CODE_RATIO_THRESHOLD = 0.7
@@ -354,7 +355,7 @@ function extractFromReactRouterData(html: string): ParseResult | null {
     }
 
     // Helper function to detect role from pointer object or direct keyword
-    function detectRoleForContent(arr: unknown[], contentIndex: number, arrayIndex: number): 'user' | 'assistant' | null {
+    function detectRoleForContent(arr: unknown[], arrayIndex: number): 'user' | 'assistant' | null {
       for (let j = arrayIndex - 1; j >= Math.max(0, arrayIndex - ROLE_LOOKBEHIND_WINDOW); j--) {
         const val = arr[j]
 
@@ -362,8 +363,8 @@ function extractFromReactRouterData(html: string): ParseResult | null {
         // These are actual JavaScript objects, not strings
         if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
           const obj = val as Record<string, unknown>
-          if ('_49' in obj && typeof obj._49 === 'number') {
-            const pointerIdx = obj._49
+          if (ROLE_POINTER_KEY in obj && typeof obj[ROLE_POINTER_KEY] === 'number') {
+            const pointerIdx = obj[ROLE_POINTER_KEY]
             const role = roleIndexMap.get(pointerIdx)
             if (role) {
               return role
@@ -399,7 +400,7 @@ function extractFromReactRouterData(html: string): ParseResult | null {
           if (looksLikeStandaloneCode(next)) continue
 
           // Detect role using pointer-based or direct keyword detection
-          const role = detectRoleForContent(arr, contentIndex, i)
+          const role = detectRoleForContent(arr, i)
 
           rawMessages.push({
             index: contentIndex,
