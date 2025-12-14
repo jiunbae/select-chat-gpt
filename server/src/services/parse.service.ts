@@ -38,7 +38,10 @@ export class InvalidUrlError extends Error {
 
 // Constants for magic numbers
 const MIN_REACT_ROUTER_DATA_LENGTH = 1000
-const ROLE_LOOKBEHIND_WINDOW = 30
+const ROLE_LOOKBEHIND_WINDOW = 50  // Increased from 30 for better role detection
+
+// The "_49" key in pointer objects typically points to the role index
+// These are stored as actual JavaScript objects in the parsed array, not strings
 
 // Constants for code detection heuristics
 const CODE_RATIO_THRESHOLD = 0.7
@@ -341,6 +344,42 @@ function extractFromReactRouterData(html: string): ParseResult | null {
       }
     }
 
+    // Build a map of role indices: index -> 'user' | 'assistant'
+    // ChatGPT data stores roles at specific indices, and pointers reference these indices
+    const roleIndexMap = new Map<number, 'user' | 'assistant'>()
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i] === 'user' || arr[i] === 'assistant') {
+        roleIndexMap.set(i, arr[i] as 'user' | 'assistant')
+      }
+    }
+
+    // Helper function to detect role from pointer object or direct keyword
+    function detectRoleForContent(arr: unknown[], contentIndex: number, arrayIndex: number): 'user' | 'assistant' | null {
+      for (let j = arrayIndex - 1; j >= Math.max(0, arrayIndex - ROLE_LOOKBEHIND_WINDOW); j--) {
+        const val = arr[j]
+
+        // Strategy 1: Look for pointer objects {"_49":IDX,...} that reference role indices
+        // These are actual JavaScript objects, not strings
+        if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+          const obj = val as Record<string, unknown>
+          if ('_49' in obj && typeof obj._49 === 'number') {
+            const pointerIdx = obj._49
+            const role = roleIndexMap.get(pointerIdx)
+            if (role) {
+              return role
+            }
+          }
+        }
+
+        // Strategy 2: Direct role keyword (fallback for simpler data structures)
+        if (val === 'user' || val === 'assistant') {
+          return val as 'user' | 'assistant'
+        }
+      }
+
+      return null
+    }
+
     // Extract raw messages by finding Array(1) followed by content
     const rawMessages: Array<{ index: number; content: string; detectedRole: 'user' | 'assistant' | null }> = []
 
@@ -359,12 +398,8 @@ function extractFromReactRouterData(html: string): ParseResult | null {
           // Skip standalone code blocks
           if (looksLikeStandaloneCode(next)) continue
 
-          // Look backwards for role within a window
-          let role: 'user' | 'assistant' | null = null
-          for (let j = i - 1; j >= Math.max(0, i - ROLE_LOOKBEHIND_WINDOW); j--) {
-            if (arr[j] === 'user') { role = 'user'; break }
-            if (arr[j] === 'assistant') { role = 'assistant'; break }
-          }
+          // Detect role using pointer-based or direct keyword detection
+          const role = detectRoleForContent(arr, contentIndex, i)
 
           rawMessages.push({
             index: contentIndex,
