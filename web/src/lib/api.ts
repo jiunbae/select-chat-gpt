@@ -1,5 +1,3 @@
-import { cache } from 'react';
-
 export interface Message {
   id: string;
   role: "user" | "assistant";
@@ -39,6 +37,9 @@ export class NetworkError extends Error {
   }
 }
 
+// 호환성을 위한 별칭
+export type ApiError = NetworkError;
+
 // API 응답 결과 타입
 export type ApiResult<T> =
   | { success: true; data: T }
@@ -66,13 +67,8 @@ export function getErrorMessage(error: NetworkError): string {
   }
 }
 
-// 서버 사이드 (SSR)에서는 Docker 내부 URL 사용, 클라이언트에서는 외부 URL 사용
+// Static Export에서는 항상 클라이언트에서 실행되므로 NEXT_PUBLIC_API_URL만 사용
 function getApiBaseUrl(): string {
-  if (typeof window === 'undefined') {
-    // Server-side: use internal Docker network URL
-    return process.env.API_URL_INTERNAL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-  }
-  // Client-side: use public URL
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 }
 
@@ -181,15 +177,12 @@ export async function parseUrl(url: string): Promise<ApiResult<ParseResult>> {
   }
 }
 
-// Internal function for fetching share data
-async function getShareInternal(id: string): Promise<ApiResult<ShareData>> {
+// Share 데이터 조회 - 클라이언트에서만 호출됨
+export async function getShare(id: string): Promise<ApiResult<ShareData>> {
   try {
     const apiUrl = getApiBaseUrl();
-    console.log(`[API] Fetching share ${id} from ${apiUrl}`);
 
-    const response = await fetchWithErrorHandling(`${apiUrl}/api/shares/${id}`, {
-      next: { revalidate: 60 },
-    } as RequestInit);
+    const response = await fetchWithErrorHandling(`${apiUrl}/api/shares/${id}`);
 
     if (!response.ok) {
       if (response.status >= 500) {
@@ -198,10 +191,17 @@ async function getShareInternal(id: string): Promise<ApiResult<ShareData>> {
           error: new NetworkError('server_error', 'Server error', response.status)
         };
       }
-      // 404나 다른 클라이언트 에러
+      // 404 에러는 conversation_not_found로 처리
+      if (response.status === 404) {
+        return {
+          success: false,
+          error: new NetworkError('conversation_not_found', 'Share not found', 404)
+        };
+      }
+      // 다른 클라이언트 에러
       return {
         success: false,
-        error: new NetworkError('unknown', 'Share not found')
+        error: new NetworkError('unknown', 'Request failed', response.status)
       };
     }
 
@@ -220,8 +220,3 @@ async function getShareInternal(id: string): Promise<ApiResult<ShareData>> {
     };
   }
 }
-
-// Cached version of getShare - prevents duplicate API calls
-// within the same React Server Component render cycle
-// (e.g., between generateMetadata and page component)
-export const getShare = cache(getShareInternal);
