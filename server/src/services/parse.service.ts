@@ -347,7 +347,7 @@ function extractFromReactRouterDataStructured(html: string): ParseResult | null 
 
     function decodeValue(v: unknown): unknown {
       if (Array.isArray(v)) {
-        return v.map((item) => typeof item === 'number' ? decodeIndex(item) : item)
+        return v.map((item) => (typeof item === 'number' ? decodeIndex(item) : decodeValue(item)))
       }
 
       if (v && typeof v === 'object') {
