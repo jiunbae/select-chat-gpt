@@ -296,7 +296,195 @@ function isValidMessageContent(val: unknown): val is string {
 }
 
 // Extract data from ChatGPT's React Router streaming format
-function extractFromReactRouterData(html: string): ParseResult | null {
+function extractFromReactRouterDataStructured(html: string): ParseResult | null {
+  try {
+    // Parse any `streamController.enqueue("...")` chunks that decode into a JSON array.
+    // ChatGPT uses React Router streaming data with a compact "heap" array that references
+    // values by index. We decode the heap and then reconstruct the linear conversation
+    // path using `current_node` and `parent` pointers.
+    const enqueueMatches = html.matchAll(/streamController\.enqueue\("((?:[^"\\]|\\.)*)"\)/g)
+
+    const candidates: unknown[][] = []
+    for (const m of enqueueMatches) {
+      const raw = m[1]
+      try {
+        const unescaped = JSON.parse('"' + raw + '"')
+        const parsed = JSON.parse(unescaped)
+        if (Array.isArray(parsed) && parsed.includes('serverResponse')) {
+          candidates.push(parsed)
+        }
+      } catch {
+        // Ignore non-JSON chunks (e.g., "P20:...") and malformed chunks
+      }
+    }
+
+    if (candidates.length === 0) return null
+
+    // Prefer the largest heap since it contains the full mapping for long conversations
+    const heap = candidates.reduce((best, cur) => cur.length > best.length ? cur : best, candidates[0])
+
+    const serverResponseIndex = heap.indexOf('serverResponse')
+    if (serverResponseIndex === -1) return null
+
+    const serverResponsePtr = heap[serverResponseIndex + 1]
+    if (!serverResponsePtr || typeof serverResponsePtr !== 'object' || Array.isArray(serverResponsePtr)) {
+      return null
+    }
+
+    const cache = new Map<number, unknown>()
+
+    function decodeIndex(idx: number): unknown {
+      if (cache.has(idx)) return cache.get(idx)
+
+      // Placeholder helps prevent infinite recursion if the structure is cyclic
+      cache.set(idx, null)
+
+      const v = heap[idx]
+      const decoded = decodeValue(v)
+      cache.set(idx, decoded)
+      return decoded
+    }
+
+    function decodeValue(v: unknown): unknown {
+      if (Array.isArray(v)) {
+        return v.map((item) => (typeof item === 'number' ? decodeIndex(item) : decodeValue(item)))
+      }
+
+      if (v && typeof v === 'object') {
+        const entries = Object.entries(v as Record<string, unknown>)
+        const hasPointerKeys = entries.some(([k]) => k.startsWith('_'))
+
+        // If it's not a pointer object, return as-is to avoid dropping data.
+        // (We only rely on decoding for the pointer-encoded parts.)
+        if (!hasPointerKeys) return v
+
+        const out: Record<string, unknown> = {}
+        for (const [k, childIdx] of entries) {
+          if (!k.startsWith('_')) continue
+          if (typeof childIdx !== 'number') continue
+
+          const propNameIdx = Number(k.slice(1))
+          if (!Number.isInteger(propNameIdx) || propNameIdx < 0 || propNameIdx >= heap.length) continue
+
+          const propName = heap[propNameIdx]
+          if (typeof propName !== 'string') continue
+
+          out[propName] = decodeIndex(childIdx)
+        }
+        return out
+      }
+
+      return v
+    }
+
+    const serverResponse = decodeValue(serverResponsePtr)
+    if (!serverResponse || typeof serverResponse !== 'object' || Array.isArray(serverResponse)) return null
+
+    const sr = serverResponse as Record<string, unknown>
+    const data = sr['data']
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return null
+
+    const conversation = data as Record<string, unknown>
+    const mappingVal = conversation['mapping']
+    if (!mappingVal || typeof mappingVal !== 'object' || Array.isArray(mappingVal)) return null
+
+    const mapping = mappingVal as Record<string, unknown>
+    const currentNode = typeof conversation['current_node'] === 'string' ? conversation['current_node'] : null
+
+    const title = typeof conversation['title'] === 'string' && conversation['title'].length > 0
+      ? conversation['title']
+      : 'ChatGPT Conversation'
+
+    // Build the selected conversation path:
+    // - Prefer `current_node` when available (handles edits/branches)
+    // - Fallback to walking from root via the last child
+    const nodePath: string[] = []
+    const seen = new Set<string>()
+
+    function getNode(id: string): Record<string, unknown> | null {
+      const n = mapping[id]
+      if (!n || typeof n !== 'object' || Array.isArray(n)) return null
+      return n as Record<string, unknown>
+    }
+
+    if (currentNode && getNode(currentNode)) {
+      let cursor: string | null = currentNode
+      while (cursor && !seen.has(cursor)) {
+        seen.add(cursor)
+        nodePath.push(cursor)
+
+        const node = getNode(cursor)
+        const parent = node && typeof node['parent'] === 'string' ? node['parent'] : null
+        cursor = parent
+      }
+      nodePath.reverse()
+    } else {
+      // Fallback: start from root if present
+      let cursor: string | null = 'client-created-root'
+      for (let i = 0; i < 10000 && cursor; i++) {
+        if (seen.has(cursor)) break
+        seen.add(cursor)
+        nodePath.push(cursor)
+
+        const node = getNode(cursor)
+        const children = node && Array.isArray(node['children']) ? node['children'] : null
+        const lastChild = children?.length ? children[children.length - 1] : null
+        cursor = typeof lastChild === 'string' ? lastChild : null
+      }
+    }
+
+    if (nodePath.length === 0) return null
+
+    const messages: ParsedMessage[] = []
+
+    for (const nodeId of nodePath) {
+      const node = getNode(nodeId)
+      if (!node) continue
+
+      const messageVal = node['message']
+      if (!messageVal || typeof messageVal !== 'object' || Array.isArray(messageVal)) continue
+      const message = messageVal as Record<string, unknown>
+
+      const authorVal = message['author']
+      if (!authorVal || typeof authorVal !== 'object' || Array.isArray(authorVal)) continue
+      const author = authorVal as Record<string, unknown>
+
+      const role = author['role']
+      if (role !== 'user' && role !== 'assistant') continue
+
+      const contentVal = message['content']
+      if (!contentVal || typeof contentVal !== 'object' || Array.isArray(contentVal)) continue
+      const content = contentVal as Record<string, unknown>
+
+      const contentType = content['content_type']
+      if (contentType !== 'text') continue
+
+      const partsVal = content['parts']
+      const parts = Array.isArray(partsVal) ? partsVal : []
+      const text = parts.filter((p): p is string => typeof p === 'string').join('')
+
+      // Skip empty messages (but keep whitespace inside messages)
+      if (text.trim().length === 0) continue
+
+      messages.push({
+        id: typeof message['id'] === 'string' ? message['id'] : nodeId,
+        role,
+        content: text,
+        html: '' // HTML rendering is done client-side
+      })
+    }
+
+    if (messages.length === 0) return null
+
+    return { title, sourceUrl: '', messages }
+  } catch (e) {
+    console.error('Failed to extract from React Router structured data:', e)
+    return null
+  }
+}
+
+// Extract data from ChatGPT's React Router streaming format (heuristic fallback)
+function extractFromReactRouterDataHeuristic(html: string): ParseResult | null {
   try {
     // Find all streamController.enqueue calls and get the biggest one
     const matches = html.matchAll(/streamController\.enqueue\("((?:[^"\\]|\\.)*)"\)/g)
@@ -446,6 +634,15 @@ function extractFromReactRouterData(html: string): ParseResult | null {
     console.error('Failed to extract from React Router data:', e)
     return null
   }
+}
+
+function extractFromReactRouterData(html: string): ParseResult | null {
+  // Prefer structured extraction for accuracy (especially in long conversations),
+  // then fall back to the older heuristic extraction.
+  const structured = extractFromReactRouterDataStructured(html)
+  if (structured && structured.messages.length > 0) return structured
+
+  return extractFromReactRouterDataHeuristic(html)
 }
 
 export async function fetchAndParseChatGPT(url: string): Promise<ParseResult> {
