@@ -13,6 +13,9 @@ export {
   type ContentPadding,
   type PageSize,
   type Margin,
+  type MarginPreset,
+  type CustomMargin,
+  type PdfHeaderFooterOptions,
   ExportError,
   exportToImage,
   exportToPDF,
@@ -25,4 +28,6 @@ export {
   getLetterSpacingValue,
   getMessageGapValue,
   getContentPaddingValue,
+  getMarginCssValue,
+  MARGIN_PRESETS,
 } from '@selectchatgpt/common/export';

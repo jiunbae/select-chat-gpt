@@ -1,4 +1,4 @@
-import type { ExportStyle, ExportStyleType, ExportOptions, LetterSpacing, LineHeight, FontSize, FontFamily, MessageGap, ContentPadding, Margin } from './types';
+import type { ExportStyle, ExportStyleType, ExportOptions, LetterSpacing, LineHeight, FontSize, FontFamily, MessageGap, ContentPadding, MarginPreset, CustomMargin } from './types';
 
 // Helper functions for style values
 export function getLetterSpacingValue(spacing: LetterSpacing): string {
@@ -74,13 +74,46 @@ export function getContentPaddingValue(padding: ContentPadding): string {
   return values[padding];
 }
 
-export function getMarginValue(margin: Margin): number {
-  const values: Record<Margin, number> = {
+// Legacy margin function (returns pixels for image export)
+export function getMarginValue(margin: MarginPreset): number {
+  const values: Record<string, number> = {
+    none: 0,
+    minimal: 12,
     compact: 24,
     normal: 32,
     wide: 48,
+    'a4-standard': 40,
+    custom: 32,
   };
-  return values[margin];
+  return values[margin] ?? 32;
+}
+
+// Margin preset values in mm (for CSS @page)
+export const MARGIN_PRESETS: Record<string, string | CustomMargin> = {
+  'none': '0mm',
+  'minimal': '5mm',
+  'compact': '10mm',
+  'normal': '15mm',
+  'wide': '25mm',
+  'a4-standard': { top: '20mm', bottom: '20mm', left: '25mm', right: '25mm' },
+  'custom': '15mm', // Default fallback
+};
+
+/**
+ * Get CSS margin value from margin preset or custom margin
+ * Returns a CSS-compatible margin string (e.g., "15mm" or "20mm 25mm 20mm 25mm")
+ */
+export function getMarginCssValue(margin: MarginPreset, customMargin?: CustomMargin): string {
+  if (margin === 'custom' && customMargin) {
+    return `${customMargin.top} ${customMargin.right} ${customMargin.bottom} ${customMargin.left}`;
+  }
+
+  const preset = MARGIN_PRESETS[margin];
+  if (typeof preset === 'object') {
+    return `${preset.top} ${preset.right} ${preset.bottom} ${preset.left}`;
+  }
+
+  return preset ?? '15mm';
 }
 
 export function getChatGPTStyle(): ExportStyle {

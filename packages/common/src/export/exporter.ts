@@ -2,6 +2,7 @@ import type { ExportMessage, ExportProgress, ExportStyleType, ExportOptions } fr
 import { ExportError } from './types';
 import { markdownToHtml } from './markdown-utils';
 import { createExportableElement, filterMessages } from './renderer';
+import { removeCitations, removeCitationsFromHtml } from './sanitize-content';
 import {
   getFontSizeValue,
   getFontFamilyValue,
@@ -9,6 +10,7 @@ import {
   getLetterSpacingValue,
   getMessageGapValue,
   getContentPaddingValue,
+  getMarginCssValue,
 } from './styles';
 
 // Dynamic imports for heavy libraries - only loaded when actually used
@@ -264,8 +266,20 @@ export async function downloadAsImage(canvas: HTMLCanvasElement, filename: strin
 }
 
 function generatePrintStyles(options?: ExportOptions, styleType?: ExportStyleType): string {
-  const margin = options?.margin || 'normal';
-  const marginValue = margin === 'compact' ? '10mm' : margin === 'wide' ? '25mm' : '15mm';
+  const marginValue = getMarginCssValue(options?.margin || 'normal', options?.customMargin);
+  const pdfHF = options?.pdfHeaderFooter;
+
+  // Determine if we should hide browser default header/footer
+  // When any custom header/footer option is enabled, we use @page margin: 0 approach
+  const useCustomHeaderFooter = pdfHF && (
+    pdfHF.showDate ||
+    pdfHF.showTitle ||
+    pdfHF.showPageNumbers ||
+    pdfHF.showDomain
+  );
+
+  // For custom header/footer, we set @page margin to 0 and use body padding
+  const pageMargin = useCustomHeaderFooter ? '0' : marginValue;
 
   // Get style values from options
   const fontSize = getFontSizeValue(options?.fontSize || 'base');
@@ -290,11 +304,52 @@ function generatePrintStyles(options?: ExportOptions, styleType?: ExportStyleTyp
       ? 'Georgia, "Times New Roman", serif'
       : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
 
+  // Custom header/footer CSS
+  const customHeaderFooterStyles = useCustomHeaderFooter ? `
+    .print-header,
+    .print-footer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      height: 15mm;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 15mm;
+      font-size: 10px;
+      color: #666;
+      font-family: ${isClean ? 'Georgia, serif' : 'Arial, sans-serif'};
+    }
+    .print-header {
+      top: 0;
+    }
+    .print-footer {
+      bottom: 0;
+    }
+    .print-header-left,
+    .print-footer-left {
+      text-align: left;
+    }
+    .print-header-center,
+    .print-footer-center {
+      text-align: center;
+      flex: 1;
+    }
+    .print-header-right,
+    .print-footer-right {
+      text-align: right;
+    }
+    body {
+      padding-top: ${pdfHF?.showDate || pdfHF?.showTitle ? '20mm' : '0'};
+      padding-bottom: ${pdfHF?.showPageNumbers || pdfHF?.showDomain ? '20mm' : '0'};
+    }
+  ` : '';
+
   return `
     @media print {
       @page {
         size: ${options?.pageSize || 'A4'};
-        margin: ${marginValue};
+        margin: ${pageMargin};
       }
       * {
         -webkit-print-color-adjust: exact !important;
@@ -424,6 +479,7 @@ function generatePrintStyles(options?: ExportOptions, styleType?: ExportStyleTyp
       background-color: ${isClean ? '#f9fafb' : '#2a2a2a'};
       font-weight: 600;
     }
+    ${customHeaderFooterStyles}
   `;
 }
 
@@ -468,6 +524,9 @@ function generatePrintHTML(
     // Use html if available, otherwise convert markdown content to HTML
     let content = msg.html || markdownToHtml(msg.content);
 
+    // Remove ChatGPT citation patterns
+    content = removeCitationsFromHtml(content);
+
     // Remove interactive elements
     const temp = document.createElement('div');
     temp.innerHTML = content;
@@ -490,6 +549,7 @@ function generatePrintHTML(
   }).join('');
 
   const fontLinks = getFontLinks(options?.fontFamily);
+  const pdfHF = options?.pdfHeaderFooter;
 
   // KaTeX auto-render script to render LaTeX formulas
   const katexAutoRenderScript = `
@@ -510,6 +570,31 @@ function generatePrintHTML(
     </script>
   `;
 
+  // Generate custom header HTML
+  const showHeader = pdfHF?.showDate || pdfHF?.showTitle;
+  const headerHTML = showHeader ? `
+    <div class="print-header">
+      <div class="print-header-left">${pdfHF?.showDate ? new Date().toLocaleDateString() : ''}</div>
+      <div class="print-header-center">${pdfHF?.showTitle ? title : ''}</div>
+      <div class="print-header-right"></div>
+    </div>
+  ` : '';
+
+  // Generate custom footer HTML
+  const showFooter = pdfHF?.showDomain || pdfHF?.showPageNumbers;
+  const domainText = pdfHF?.customDomain || (typeof window !== 'undefined' ? window.location.hostname : 'selectchatgpt.im-si.org');
+  const footerHTML = showFooter ? `
+    <div class="print-footer">
+      <div class="print-footer-left">${pdfHF?.showDomain ? domainText : ''}</div>
+      <div class="print-footer-center"></div>
+      <div class="print-footer-right">${pdfHF?.showPageNumbers ? '<span class="page-number"></span>' : ''}</div>
+    </div>
+  ` : '';
+
+  // Branding subtitle (default: hidden)
+  const showBranding = pdfHF?.showBranding ?? false;
+  const brandingHTML = showBranding ? '<div class="export-subtitle">Generated by SelectChatGPT</div>' : '';
+
   return `
     <!DOCTYPE html>
     <html>
@@ -524,9 +609,11 @@ function generatePrintHTML(
       <style>${generatePrintStyles(options, styleType)}</style>
     </head>
     <body>
+      ${headerHTML}
+      ${footerHTML}
       <div class="export-container">
         <h1 class="export-title">${title}</h1>
-        <div class="export-subtitle">Generated by SelectChatGPT</div>
+        ${brandingHTML}
         ${messagesHTML}
       </div>
     </body>
@@ -729,6 +816,9 @@ export async function exportToMarkdown(
     let markdownContent = message.html
       ? await htmlToMarkdown(message.html)
       : message.content;
+
+    // Remove ChatGPT citation patterns
+    markdownContent = removeCitations(markdownContent);
 
     // Remove code blocks if requested
     if (options?.hideCodeBlocks) {

@@ -13,6 +13,9 @@ export type {
   ContentPadding,
   PageSize,
   Margin,
+  MarginPreset,
+  CustomMargin,
+  PdfHeaderFooterOptions,
 } from './types';
 export { ExportError } from './types';
 
@@ -28,7 +31,15 @@ export {
   getMessageGapValue,
   getContentPaddingValue,
   getMarginValue,
+  getMarginCssValue,
+  MARGIN_PRESETS,
 } from './styles';
+
+// Content sanitization
+export {
+  removeCitations,
+  removeCitationsFromHtml,
+} from './sanitize-content';
 
 // Renderer
 export {

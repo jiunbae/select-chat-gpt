@@ -15,7 +15,9 @@ import {
   type LineHeight,
   type FontSize,
   type PageSize,
-  type Margin,
+  type MarginPreset,
+  type CustomMargin,
+  type PdfHeaderFooterOptions,
 } from '@/lib/export';
 import { Analytics } from '@/lib/analytics';
 
@@ -176,12 +178,25 @@ export function ExportButton({
   const [hideUserMessages, setHideUserMessages] = useState(false);
   const [hideCodeBlocks, setHideCodeBlocks] = useState(false);
   const [pageSize, setPageSize] = useState<PageSize>('a4');
-  const [margin, setMargin] = useState<Margin>('normal');
+  const [margin, setMargin] = useState<MarginPreset>('normal');
+  const [customMargin, setCustomMargin] = useState<CustomMargin>({
+    top: '15mm',
+    bottom: '15mm',
+    left: '15mm',
+    right: '15mm',
+  });
+  // Header/footer options (default: only page numbers ON)
+  const [showBranding, setShowBranding] = useState(false);
+  const [showDate, setShowDate] = useState(false);
+  const [showTitle, setShowTitle] = useState(false);
+  const [showPageNumbers, setShowPageNumbers] = useState(true);
+  const [showDomain, setShowDomain] = useState(false);
 
   // Collapsible sections state
   const [textStylingOpen, setTextStylingOpen] = useState(false);
   const [contentOpen, setContentOpen] = useState(false);
   const [layoutOpen, setLayoutOpen] = useState(false);
+  const [headerFooterOpen, setHeaderFooterOpen] = useState(false);
 
   // Use external values if provided, otherwise use internal state
   const hasExternalControl = externalStyleType !== undefined && externalExportOptions !== undefined;
@@ -193,6 +208,15 @@ export function ExportButton({
     if (externalExportOptions) {
       return externalExportOptions;
     }
+
+    const pdfHeaderFooter: PdfHeaderFooterOptions = {
+      showBranding,
+      showDate,
+      showTitle,
+      showPageNumbers,
+      showDomain,
+    };
+
     return {
       letterSpacing,
       lineHeight,
@@ -201,6 +225,8 @@ export function ExportButton({
       hideCodeBlocks,
       pageSize,
       margin,
+      customMargin: margin === 'custom' ? customMargin : undefined,
+      pdfHeaderFooter,
     };
   };
 
@@ -485,11 +511,94 @@ export function ExportButton({
                     label="Margin"
                     value={margin}
                     options={[
-                      { value: 'compact', label: 'Compact' },
-                      { value: 'normal', label: 'Normal' },
-                      { value: 'wide', label: 'Wide' },
+                      { value: 'none', label: 'None (0mm)' },
+                      { value: 'minimal', label: 'Minimal (5mm)' },
+                      { value: 'compact', label: 'Compact (10mm)' },
+                      { value: 'normal', label: 'Normal (15mm)' },
+                      { value: 'wide', label: 'Wide (25mm)' },
+                      { value: 'a4-standard', label: 'A4 Standard' },
+                      { value: 'custom', label: 'Custom...' },
                     ]}
                     onChange={setMargin}
+                  />
+                  {margin === 'custom' && (
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div>
+                        <label className="text-xs text-gray-500 dark:text-gray-400">Top</label>
+                        <input
+                          type="text"
+                          value={customMargin.top}
+                          onChange={(e) => setCustomMargin({ ...customMargin, top: e.target.value })}
+                          className="w-full px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          placeholder="15mm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 dark:text-gray-400">Bottom</label>
+                        <input
+                          type="text"
+                          value={customMargin.bottom}
+                          onChange={(e) => setCustomMargin({ ...customMargin, bottom: e.target.value })}
+                          className="w-full px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          placeholder="15mm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 dark:text-gray-400">Left</label>
+                        <input
+                          type="text"
+                          value={customMargin.left}
+                          onChange={(e) => setCustomMargin({ ...customMargin, left: e.target.value })}
+                          className="w-full px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          placeholder="15mm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 dark:text-gray-400">Right</label>
+                        <input
+                          type="text"
+                          value={customMargin.right}
+                          onChange={(e) => setCustomMargin({ ...customMargin, right: e.target.value })}
+                          className="w-full px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          placeholder="15mm"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CollapsibleSection>
+              )}
+
+              {/* Header & Footer Options (pdf only, only when no external control) */}
+              {showLayoutOptions && (
+                <CollapsibleSection
+                  title="Header & Footer"
+                  isOpen={headerFooterOpen}
+                  onToggle={() => setHeaderFooterOpen(!headerFooterOpen)}
+                >
+                  <CheckboxField
+                    label="Show date (top-left)"
+                    checked={showDate}
+                    onChange={setShowDate}
+                  />
+                  <CheckboxField
+                    label="Show title (top-center)"
+                    checked={showTitle}
+                    onChange={setShowTitle}
+                  />
+                  <CheckboxField
+                    label="Show page numbers (bottom-right)"
+                    checked={showPageNumbers}
+                    onChange={setShowPageNumbers}
+                  />
+                  <CheckboxField
+                    label="Show domain (bottom-left)"
+                    checked={showDomain}
+                    onChange={setShowDomain}
+                  />
+                  <CheckboxField
+                    label="Show 'Generated by SelectChatGPT'"
+                    checked={showBranding}
+                    onChange={setShowBranding}
                   />
                 </CollapsibleSection>
               )}

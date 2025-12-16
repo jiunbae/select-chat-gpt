@@ -1,6 +1,7 @@
 import type { ExportMessage, ExportStyle, ExportStyleType, ExportOptions } from './types';
 import { getExportStyle } from './styles';
 import { markdownToHtml } from './markdown-utils';
+import { removeCitationsFromHtml } from './sanitize-content';
 
 // Filter messages based on export options
 export function filterMessages(messages: ExportMessage[], options?: ExportOptions): ExportMessage[] {
@@ -23,8 +24,11 @@ function applyStyles(element: HTMLElement, styles: Partial<CSSStyleDeclaration>)
 // Remove interactive elements that should not be in the exported output.
 // This is not a security sanitizer.
 function sanitizeHTML(html: string, options?: ExportOptions): string {
+  // Remove ChatGPT citation patterns first
+  const cleanedHtml = removeCitationsFromHtml(html);
+
   const temp = document.createElement('div');
-  temp.innerHTML = html;
+  temp.innerHTML = cleanedHtml;
   temp.querySelectorAll('button, [role="button"], .copy-button, svg.icon')
     .forEach(el => el.remove());
 

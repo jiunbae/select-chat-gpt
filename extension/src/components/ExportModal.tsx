@@ -14,7 +14,9 @@ import {
   type LineHeight,
   type FontSize,
   type PageSize,
-  type Margin,
+  type MarginPreset,
+  type CustomMargin,
+  type PdfHeaderFooterOptions,
 } from "~src/utils/export-image"
 
 interface ExportModalProps {
@@ -165,12 +167,26 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
   const [hideUserMessages, setHideUserMessages] = useState(false)
   const [hideCodeBlocks, setHideCodeBlocks] = useState(false)
   const [pageSize, setPageSize] = useState<PageSize>('a4')
-  const [margin, setMargin] = useState<Margin>('normal')
+  const [margin, setMargin] = useState<MarginPreset>('normal')
+  const [customMargin, setCustomMargin] = useState<CustomMargin>({
+    top: '15mm',
+    bottom: '15mm',
+    left: '15mm',
+    right: '15mm',
+  })
+
+  // Header/Footer options state (default: only page numbers ON)
+  const [showBranding, setShowBranding] = useState(false)
+  const [showDate, setShowDate] = useState(false)
+  const [showTitle, setShowTitle] = useState(false)
+  const [showPageNumbers, setShowPageNumbers] = useState(true)
+  const [showDomain, setShowDomain] = useState(false)
 
   // Collapsible sections state
   const [textStylingOpen, setTextStylingOpen] = useState(false)
   const [contentOpen, setContentOpen] = useState(false)
   const [layoutOpen, setLayoutOpen] = useState(false)
+  const [headerFooterOpen, setHeaderFooterOpen] = useState(false)
 
   // Build export options
   const getExportOptions = (): ExportOptions => ({
@@ -181,6 +197,14 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
     hideCodeBlocks,
     pageSize,
     margin,
+    customMargin: margin === 'custom' ? customMargin : undefined,
+    pdfHeaderFooter: {
+      showBranding,
+      showDate,
+      showTitle,
+      showPageNumbers,
+      showDomain,
+    },
   })
 
   const handleCreateLink = async () => {
@@ -459,11 +483,94 @@ export function ExportModal({ messages, onClose }: ExportModalProps) {
                 label={t('margin')}
                 value={margin}
                 options={[
+                  { value: 'none', label: t('marginNone') },
+                  { value: 'minimal', label: t('marginMinimal') },
                   { value: 'compact', label: t('marginCompact') },
                   { value: 'normal', label: t('marginNormal') },
                   { value: 'wide', label: t('marginWide') },
+                  { value: 'a4-standard', label: t('marginA4Standard') },
+                  { value: 'custom', label: t('marginCustom') },
                 ]}
                 onChange={setMargin}
+              />
+              {margin === 'custom' && (
+                <div className="scgpt-grid scgpt-grid-cols-2 scgpt-gap-2 scgpt-mt-2">
+                  <div className="scgpt-flex scgpt-items-center scgpt-gap-2">
+                    <label className="scgpt-text-xs scgpt-text-gray-500 scgpt-w-10">{t('marginTop')}</label>
+                    <input
+                      type="text"
+                      value={customMargin.top}
+                      onChange={(e) => setCustomMargin({ ...customMargin, top: e.target.value })}
+                      className="scgpt-flex-1 scgpt-px-2 scgpt-py-1 scgpt-text-xs scgpt-border scgpt-border-gray-200 scgpt-rounded"
+                      placeholder="15mm"
+                    />
+                  </div>
+                  <div className="scgpt-flex scgpt-items-center scgpt-gap-2">
+                    <label className="scgpt-text-xs scgpt-text-gray-500 scgpt-w-10">{t('marginBottom')}</label>
+                    <input
+                      type="text"
+                      value={customMargin.bottom}
+                      onChange={(e) => setCustomMargin({ ...customMargin, bottom: e.target.value })}
+                      className="scgpt-flex-1 scgpt-px-2 scgpt-py-1 scgpt-text-xs scgpt-border scgpt-border-gray-200 scgpt-rounded"
+                      placeholder="15mm"
+                    />
+                  </div>
+                  <div className="scgpt-flex scgpt-items-center scgpt-gap-2">
+                    <label className="scgpt-text-xs scgpt-text-gray-500 scgpt-w-10">{t('marginLeft')}</label>
+                    <input
+                      type="text"
+                      value={customMargin.left}
+                      onChange={(e) => setCustomMargin({ ...customMargin, left: e.target.value })}
+                      className="scgpt-flex-1 scgpt-px-2 scgpt-py-1 scgpt-text-xs scgpt-border scgpt-border-gray-200 scgpt-rounded"
+                      placeholder="15mm"
+                    />
+                  </div>
+                  <div className="scgpt-flex scgpt-items-center scgpt-gap-2">
+                    <label className="scgpt-text-xs scgpt-text-gray-500 scgpt-w-10">{t('marginRight')}</label>
+                    <input
+                      type="text"
+                      value={customMargin.right}
+                      onChange={(e) => setCustomMargin({ ...customMargin, right: e.target.value })}
+                      className="scgpt-flex-1 scgpt-px-2 scgpt-py-1 scgpt-text-xs scgpt-border scgpt-border-gray-200 scgpt-rounded"
+                      placeholder="15mm"
+                    />
+                  </div>
+                </div>
+              )}
+            </CollapsibleSection>
+          )}
+
+          {/* Header & Footer Options (pdf only) */}
+          {mode === 'pdf' && (
+            <CollapsibleSection
+              title={t('headerFooter')}
+              isOpen={headerFooterOpen}
+              onToggle={() => setHeaderFooterOpen(!headerFooterOpen)}
+            >
+              <CheckboxField
+                label={t('showDate')}
+                checked={showDate}
+                onChange={setShowDate}
+              />
+              <CheckboxField
+                label={t('showTitle')}
+                checked={showTitle}
+                onChange={setShowTitle}
+              />
+              <CheckboxField
+                label={t('showPageNumbers')}
+                checked={showPageNumbers}
+                onChange={setShowPageNumbers}
+              />
+              <CheckboxField
+                label={t('showDomain')}
+                checked={showDomain}
+                onChange={setShowDomain}
+              />
+              <CheckboxField
+                label={t('showBranding')}
+                checked={showBranding}
+                onChange={setShowBranding}
               />
             </CollapsibleSection>
           )}
