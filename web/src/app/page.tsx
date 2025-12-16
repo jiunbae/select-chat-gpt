@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { UrlInput } from "@/components/UrlInput";
+import { Header } from "@/components/Header";
 
 export default function Home() {
   const t = useTranslations('home');
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8 bg-gradient-to-b from-white to-gray-50 dark:from-chatgpt-dark dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-chatgpt-dark dark:to-gray-900">
+      <Header />
+      <main className="flex flex-col items-center justify-center p-8 pt-16">
       <div className="max-w-2xl w-full text-center">
         {/* Header */}
         <div className="mb-8">
@@ -106,6 +109,7 @@ export default function Home() {
       <footer className="mt-16 text-center text-gray-500 dark:text-gray-400 text-sm">
         <p>{t('footerText')}</p>
       </footer>
-    </main>
+      </main>
+    </div>
   );
 }

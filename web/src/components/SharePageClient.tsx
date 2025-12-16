@@ -8,6 +8,7 @@ import { StyleControls } from './StyleControls';
 import { ExportButton } from './ExportButton';
 import { AdUnit } from './AdUnit';
 import { StyleProvider, useStyleContext } from './StyleContext';
+import { LanguageSelector } from './LanguageSelector';
 
 interface SharePageClientProps {
   share: {
@@ -195,6 +196,10 @@ function SharePageContent({ share }: SharePageClientProps) {
                 <line x1="10" y1="14" x2="21" y2="3" />
               </svg>
             </a>
+            <div
+              className={`h-6 w-px ${isCleanStyle ? 'bg-gray-200' : 'bg-gray-700'}`}
+            />
+            <LanguageSelector />
           </div>
         </div>
       </header>

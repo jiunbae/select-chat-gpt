@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { LocaleProvider } from "@/providers/LocaleProvider";
-import { LanguageSelector } from "@/components/LanguageSelector";
 import "./globals.css";
 
 // Pretendard CDN URL - unicode-range subset이 적용되어 필요한 글자만 로드
@@ -76,9 +75,6 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <LocaleProvider>
-          <div className="fixed top-4 right-4 z-[100]">
-            <LanguageSelector />
-          </div>
           {children}
         </LocaleProvider>
       </body>
