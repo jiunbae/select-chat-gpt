@@ -15,6 +15,9 @@ export default {
         "chatgpt-dark": "#212121",
         "chatgpt-light": "#f7f7f8",
       },
+      screens: {
+        'xs': '480px',
+      },
     },
   },
   plugins: [],

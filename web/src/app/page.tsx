@@ -11,8 +11,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-chatgpt-dark dark:to-gray-900">
       <Header />
-      <main className="flex flex-col items-center justify-center p-8 pt-16">
-      <div className="max-w-2xl w-full text-center">
+      <main className="flex flex-col items-center justify-center px-4 py-8 sm:p-8 pt-8 sm:pt-16">
+        <div className="max-w-2xl w-full text-center">
         {/* Header */}
         <div className="mb-8">
           <div className="w-20 h-20 mx-auto bg-primary rounded-2xl flex items-center justify-center mb-6">
@@ -106,9 +106,9 @@ export default function Home() {
         </div>
       </div>
 
-      <footer className="mt-16 text-center text-gray-500 dark:text-gray-400 text-sm">
-        <p>{t('footerText')}</p>
-      </footer>
+        <footer className="mt-16 text-center text-gray-500 dark:text-gray-400 text-sm">
+          <p>{t('footerText')}</p>
+        </footer>
       </main>
     </div>
   );

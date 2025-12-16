@@ -123,83 +123,89 @@ function SharePageContent({ share }: SharePageClientProps) {
           borderColor: isCleanStyle ? '#e5e7eb' : '#444444',
         }}
       >
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-            style={{ color: isCleanStyle ? '#1f2937' : '#ffffff' }}
-          >
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-              >
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                <polyline points="16 6 12 2 8 6" />
-                <line x1="12" y1="2" x2="12" y2="15" />
-              </svg>
-            </div>
-            <span className="font-semibold">SelectChatGPT</span>
-          </Link>
-
-          <div className="flex items-center gap-3">
-            {/* Selection controls */}
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-sm ${isCleanStyle ? 'text-gray-500' : 'text-gray-400'}`}
-              >
-                {filteredSelectedCount} / {filteredMessages.length}
-              </span>
-              <button
-                onClick={handleSelectAll}
-                className={`px-2 py-1 text-sm rounded transition-colors ${
-                  isCleanStyle
-                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                {allSelected ? 'Deselect All' : 'Select All'}
-              </button>
-            </div>
-            <div
-              className={`h-6 w-px ${isCleanStyle ? 'bg-gray-200' : 'bg-gray-700'}`}
-            />
-            <ExportButton
-              messages={selectedMessages}
-              title={share.title}
-              sourceUrl={share.sourceUrl}
-              styleType={styleType}
-              exportOptions={getExportOptions()}
-              disabled={filteredSelectedCount === 0}
-            />
-            <a
-              href={share.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-primary hover:underline flex items-center gap-1"
+        <div className="max-w-3xl mx-auto px-4 py-3">
+          {/* Top row: Logo and Language Selector */}
+          <div className="flex items-center justify-between">
+            <Link
+              href="/"
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              style={{ color: isCleanStyle ? '#1f2937' : '#ffffff' }}
             >
-              View Original
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="2"
+                >
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                  <polyline points="16 6 12 2 8 6" />
+                  <line x1="12" y1="2" x2="12" y2="15" />
+                </svg>
+              </div>
+              <span className="font-semibold hidden sm:inline">SelectChatGPT</span>
+            </Link>
+
+            {/* Actions - responsive layout */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Selection controls - hidden on very small screens */}
+              <div className="hidden xs:flex items-center gap-2">
+                <span
+                  className={`text-sm ${isCleanStyle ? 'text-gray-500' : 'text-gray-400'}`}
+                >
+                  {filteredSelectedCount}/{filteredMessages.length}
+                </span>
+                <button
+                  onClick={handleSelectAll}
+                  className={`px-2 py-1 text-xs sm:text-sm rounded transition-colors ${
+                    isCleanStyle
+                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  {allSelected ? 'Deselect' : 'Select All'}
+                </button>
+              </div>
+              <div
+                className={`hidden xs:block h-6 w-px ${isCleanStyle ? 'bg-gray-200' : 'bg-gray-700'}`}
+              />
+              <ExportButton
+                messages={selectedMessages}
+                title={share.title}
+                sourceUrl={share.sourceUrl}
+                styleType={styleType}
+                exportOptions={getExportOptions()}
+                disabled={filteredSelectedCount === 0}
+              />
+              {/* View Original - icon only on mobile */}
+              <a
+                href={share.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline flex items-center gap-1"
+                title="View Original"
               >
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-            </a>
-            <div
-              className={`h-6 w-px ${isCleanStyle ? 'bg-gray-200' : 'bg-gray-700'}`}
-            />
-            <LanguageSelector />
+                <span className="hidden sm:inline">View Original</span>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </a>
+              <div
+                className={`h-6 w-px ${isCleanStyle ? 'bg-gray-200' : 'bg-gray-700'}`}
+              />
+              <LanguageSelector />
+            </div>
           </div>
         </div>
       </header>
