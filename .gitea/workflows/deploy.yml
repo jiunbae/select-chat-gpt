@@ -1,0 +1,68 @@
+name: Deploy to K8s
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: registry.jiun.dev
+  NAMESPACE: selectchatgpt
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get commit hash
+        id: vars
+        run: echo "tag=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Login to Registry
+        run: |
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ env.REGISTRY }} \
+            -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
+
+      - name: Build and push server
+        run: |
+          docker build --platform linux/amd64 \
+            -t ${{ env.REGISTRY }}/selectchatgpt-server:${{ steps.vars.outputs.tag }} \
+            -t ${{ env.REGISTRY }}/selectchatgpt-server:latest \
+            ./server
+          docker push ${{ env.REGISTRY }}/selectchatgpt-server:${{ steps.vars.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/selectchatgpt-server:latest
+
+      - name: Build and push web
+        run: |
+          docker build --platform linux/amd64 \
+            -t ${{ env.REGISTRY }}/selectchatgpt-web:${{ steps.vars.outputs.tag }} \
+            -t ${{ env.REGISTRY }}/selectchatgpt-web:latest \
+            --build-arg NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }} \
+            --build-arg NEXT_PUBLIC_GA_ID=${{ secrets.NEXT_PUBLIC_GA_ID }} \
+            -f web/Dockerfile .
+          docker push ${{ env.REGISTRY }}/selectchatgpt-web:${{ steps.vars.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/selectchatgpt-web:latest
+
+      - name: Setup kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl && mv kubectl /usr/local/bin/
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Deploy to K8s
+        run: |
+          TAG=${{ steps.vars.outputs.tag }}
+          kubectl set image deployment/server server=${{ env.REGISTRY }}/selectchatgpt-server:$TAG -n ${{ env.NAMESPACE }}
+          kubectl set image deployment/web web=${{ env.REGISTRY }}/selectchatgpt-web:$TAG -n ${{ env.NAMESPACE }}
+          kubectl rollout status deployment/server -n ${{ env.NAMESPACE }} --timeout=120s
+          kubectl rollout status deployment/web -n ${{ env.NAMESPACE }} --timeout=120s
+
+      - name: Verify
+        run: kubectl get pods -n ${{ env.NAMESPACE }}
