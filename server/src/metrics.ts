@@ -42,6 +42,28 @@ export const parseOperations = new client.Counter({
   registers: [register],
 })
 
+// Parse Success Counter - tracks successful parse operations
+export const parseSuccessTotal = new client.Counter({
+  name: 'selectchatgpt_parse_success_total',
+  help: 'Total successful parse operations',
+  registers: [register],
+})
+
+// Parse Failure Counter - tracks failed parse operations (all strategies failed)
+export const parseFailureTotal = new client.Counter({
+  name: 'selectchatgpt_parse_failure_total',
+  help: 'Total failed parse operations where all strategies failed',
+  registers: [register],
+})
+
+// Parse Fallback Used Counter - tracks when fallback strategies are used
+export const parseFallbackUsed = new client.Counter({
+  name: 'selectchatgpt_parse_fallback_used_total',
+  help: 'Total times fallback strategies were used for parsing',
+  labelNames: ['strategy'], // strategy: heuristic|manual
+  registers: [register],
+})
+
 // MongoDB Connection Status Gauge
 export const mongodbConnected = new client.Gauge({
   name: 'selectchatgpt_mongodb_connected',

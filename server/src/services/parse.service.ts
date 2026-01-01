@@ -1,5 +1,22 @@
 import { JSDOM } from 'jsdom'
 import { createShare, CreateShareInput, ShareOutput } from './share.service.js'
+import { parseSuccessTotal, parseFailureTotal, parseFallbackUsed } from '../metrics.js'
+
+// Parse strategy enum for tracking which method succeeded
+export enum ParseStrategy {
+  STRUCTURED = 'structured',    // Full structured extraction with pointer decoding
+  HEURISTIC = 'heuristic',      // Pattern-based heuristic extraction
+  MANUAL = 'manual',            // Manual fallback with relaxed rules
+  FAILED = 'failed'             // All strategies failed
+}
+
+// Extended parse result with strategy info
+export interface ExtendedParseResult {
+  result: ParseResult | null
+  strategy: ParseStrategy
+  attemptedStrategies: ParseStrategy[]
+  errors: Map<ParseStrategy, string>
+}
 
 export interface ParsedMessage {
   id: string
@@ -645,6 +662,203 @@ function extractFromReactRouterData(html: string): ParseResult | null {
   return extractFromReactRouterDataHeuristic(html)
 }
 
+// Manual fallback extraction - most relaxed rules for edge cases
+// This attempts to extract any text content that looks like conversation
+function extractWithManualFallback(html: string): ParseResult | null {
+  try {
+    const dom = new JSDOM(html)
+    const document = dom.window.document
+
+    // Try to find title from meta tags
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+    const title = ogTitle?.getAttribute('content') || 'ChatGPT Conversation'
+
+    // Strategy 1: Look for data in script tags with JSON-like content
+    const scripts = document.querySelectorAll('script')
+    for (const script of scripts) {
+      const content = script.textContent || ''
+
+      // Look for conversation-like patterns in script content
+      const conversationMatch = content.match(/"parts"\s*:\s*\[\s*"([^"]+)"/g)
+      if (conversationMatch && conversationMatch.length > 0) {
+        const messages: ParsedMessage[] = []
+        let role: 'user' | 'assistant' = 'user'
+
+        for (const match of conversationMatch) {
+          const textMatch = match.match(/"parts"\s*:\s*\[\s*"([^"]+)"/)
+          if (textMatch && textMatch[1]) {
+            const text = textMatch[1]
+              .replace(/\\n/g, '\n')
+              .replace(/\\"/g, '"')
+              .replace(/\\\\/g, '\\')
+
+            if (text.trim().length > 0 && !METADATA_KEYWORDS.has(text.toLowerCase())) {
+              messages.push({
+                id: `manual-${messages.length}`,
+                role,
+                content: text,
+                html: ''
+              })
+              role = role === 'user' ? 'assistant' : 'user'
+            }
+          }
+        }
+
+        if (messages.length > 0) {
+          return { title, sourceUrl: '', messages }
+        }
+      }
+    }
+
+    // Strategy 2: Look for Next.js/React hydration data
+    const nextDataScript = document.querySelector('#__NEXT_DATA__')
+    if (nextDataScript) {
+      try {
+        const nextData = JSON.parse(nextDataScript.textContent || '{}')
+        const props = nextData?.props?.pageProps
+        if (props?.serverResponse?.data?.mapping) {
+          // Use structured extraction logic on this data
+          const mapping = props.serverResponse.data.mapping
+          const messages: ParsedMessage[] = []
+
+          for (const [nodeId, node] of Object.entries(mapping)) {
+            const n = node as Record<string, unknown>
+            const msg = n?.message as Record<string, unknown>
+            if (!msg) continue
+
+            const author = msg?.author as Record<string, unknown>
+            const role = author?.role
+            if (role !== 'user' && role !== 'assistant') continue
+
+            const content = msg?.content as Record<string, unknown>
+            if (content?.content_type !== 'text') continue
+
+            const parts = content?.parts as unknown[]
+            const text = Array.isArray(parts)
+              ? parts.filter((p): p is string => typeof p === 'string').join('')
+              : ''
+
+            if (text.trim().length > 0) {
+              messages.push({
+                id: typeof msg.id === 'string' ? msg.id : nodeId,
+                role: role as 'user' | 'assistant',
+                content: text,
+                html: ''
+              })
+            }
+          }
+
+          if (messages.length > 0) {
+            return {
+              title: props.serverResponse.data.title || title,
+              sourceUrl: '',
+              messages
+            }
+          }
+        }
+      } catch {
+        // Continue to next strategy
+      }
+    }
+
+    // Strategy 3: Look for visible conversation text in DOM
+    const articleElements = document.querySelectorAll('article, [data-message-author-role]')
+    if (articleElements.length > 0) {
+      const messages: ParsedMessage[] = []
+
+      for (const el of articleElements) {
+        const roleAttr = el.getAttribute('data-message-author-role')
+        const role: 'user' | 'assistant' = roleAttr === 'assistant' ? 'assistant' : 'user'
+        const text = el.textContent?.trim() || ''
+
+        if (text.length > 0) {
+          messages.push({
+            id: `dom-${messages.length}`,
+            role,
+            content: text,
+            html: ''
+          })
+        }
+      }
+
+      if (messages.length > 0) {
+        return { title, sourceUrl: '', messages }
+      }
+    }
+
+    return null
+  } catch (e) {
+    console.error('Manual fallback extraction failed:', e)
+    return null
+  }
+}
+
+// Multi-strategy extraction with fallback chain
+// Tries: structured -> heuristic -> manual, tracking which strategy succeeded
+export function extractMessagesWithFallback(html: string): ExtendedParseResult {
+  const attemptedStrategies: ParseStrategy[] = []
+  const errors = new Map<ParseStrategy, string>()
+
+  // Strategy 1: Structured extraction (most accurate)
+  attemptedStrategies.push(ParseStrategy.STRUCTURED)
+  try {
+    const structuredResult = extractFromReactRouterDataStructured(html)
+    if (structuredResult && structuredResult.messages.length > 0) {
+      return {
+        result: structuredResult,
+        strategy: ParseStrategy.STRUCTURED,
+        attemptedStrategies,
+        errors
+      }
+    }
+    errors.set(ParseStrategy.STRUCTURED, 'No messages extracted from structured data')
+  } catch (e) {
+    errors.set(ParseStrategy.STRUCTURED, e instanceof Error ? e.message : 'Unknown error')
+  }
+
+  // Strategy 2: Heuristic extraction (pattern-based)
+  attemptedStrategies.push(ParseStrategy.HEURISTIC)
+  try {
+    const heuristicResult = extractFromReactRouterDataHeuristic(html)
+    if (heuristicResult && heuristicResult.messages.length > 0) {
+      return {
+        result: heuristicResult,
+        strategy: ParseStrategy.HEURISTIC,
+        attemptedStrategies,
+        errors
+      }
+    }
+    errors.set(ParseStrategy.HEURISTIC, 'No messages extracted from heuristic patterns')
+  } catch (e) {
+    errors.set(ParseStrategy.HEURISTIC, e instanceof Error ? e.message : 'Unknown error')
+  }
+
+  // Strategy 3: Manual fallback (most relaxed)
+  attemptedStrategies.push(ParseStrategy.MANUAL)
+  try {
+    const manualResult = extractWithManualFallback(html)
+    if (manualResult && manualResult.messages.length > 0) {
+      return {
+        result: manualResult,
+        strategy: ParseStrategy.MANUAL,
+        attemptedStrategies,
+        errors
+      }
+    }
+    errors.set(ParseStrategy.MANUAL, 'No messages extracted with manual fallback')
+  } catch (e) {
+    errors.set(ParseStrategy.MANUAL, e instanceof Error ? e.message : 'Unknown error')
+  }
+
+  // All strategies failed
+  return {
+    result: null,
+    strategy: ParseStrategy.FAILED,
+    attemptedStrategies,
+    errors
+  }
+}
+
 export async function fetchAndParseChatGPT(url: string): Promise<ParseResult> {
   if (!isValidChatGPTShareUrl(url)) {
     throw new InvalidUrlError()
@@ -668,22 +882,46 @@ export async function fetchAndParseChatGPT(url: string): Promise<ParseResult> {
 
   const html = await response.text()
 
-  // Extract from React Router streaming data
-  const streamResult = extractFromReactRouterData(html)
-  if (streamResult && streamResult.messages.length > 0) {
+  // Use multi-strategy extraction with fallback chain
+  const extractResult = extractMessagesWithFallback(html)
+
+  if (extractResult.result && extractResult.result.messages.length > 0) {
+    // Record success metrics
+    parseSuccessTotal.inc()
+
+    // Record fallback usage if not using primary strategy
+    if (extractResult.strategy !== ParseStrategy.STRUCTURED) {
+      parseFallbackUsed.inc({ strategy: extractResult.strategy })
+      console.log(`Parse succeeded with fallback strategy: ${extractResult.strategy}`)
+    }
+
     return {
-      ...streamResult,
+      ...extractResult.result,
       sourceUrl: url
     }
   }
 
-  // If extraction failed, try to get title from meta tags for better error message
+  // All strategies failed - record failure metrics
+  parseFailureTotal.inc()
+
+  // Build detailed error message
+  const errorDetails = Array.from(extractResult.errors.entries())
+    .map(([strategy, error]) => `${strategy}: ${error}`)
+    .join('; ')
+
+  console.error(`All parse strategies failed for ${url}:`, errorDetails)
+
+  // Try to get title from meta tags for better error message
   const dom = new JSDOM(html)
   const document = dom.window.document
   const ogTitle = document.querySelector('meta[property="og:title"]')
   const pageTitle = ogTitle?.getAttribute('content') || 'the conversation'
 
-  throw new NoMessagesFoundError(`No messages found in ${pageTitle}. The page format may have changed.`)
+  throw new NoMessagesFoundError(
+    `No messages found in ${pageTitle}. ` +
+    `Tried ${extractResult.attemptedStrategies.length} extraction strategies. ` +
+    `The page format may have changed or the conversation may be empty.`
+  )
 }
 
 export async function parseAndCreateShare(url: string): Promise<ShareOutput> {
