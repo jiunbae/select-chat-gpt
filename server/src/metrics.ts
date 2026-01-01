@@ -55,3 +55,25 @@ export const activeConnections = new client.Gauge({
   help: 'Number of active HTTP connections',
   registers: [register],
 })
+
+// Cache Hit Counter
+export const cacheHits = new client.Counter({
+  name: 'selectchatgpt_cache_hits_total',
+  help: 'Total number of cache hits',
+  registers: [register],
+})
+
+// Cache Miss Counter
+export const cacheMisses = new client.Counter({
+  name: 'selectchatgpt_cache_misses_total',
+  help: 'Total number of cache misses',
+  labelNames: ['reason'], // reason: not_found|disconnected|error
+  registers: [register],
+})
+
+// Redis Connection Status Gauge
+export const redisConnected = new client.Gauge({
+  name: 'selectchatgpt_redis_connected',
+  help: 'Redis connection status (1=connected, 0=disconnected)',
+  registers: [register],
+})

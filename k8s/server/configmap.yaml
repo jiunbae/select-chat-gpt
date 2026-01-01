@@ -7,6 +7,7 @@ data:
   PORT: "3001"
   NODE_ENV: "production"
   MONGODB_URI: "mongodb://mongodb:27017/selectchatgpt"
+  REDIS_URL: "redis://redis:6379"
   CORS_ORIGIN: "https://selectchatgpt.jiun.dev,chrome-extension://"
   SHARE_BASE_URL: "https://selectchatgpt.jiun.dev/s"
   RATE_LIMIT_WINDOW_MS: "60000"

@@ -1,24 +1,13 @@
 import { Share, IShare, IMessage } from '../models/Share.js'
 import { generateShareId } from '../utils/id-generator.js'
 import { sanitizeHtml, sanitizeText } from '../utils/sanitize.js'
-import { LRUCache } from 'lru-cache'
+import * as cache from './cache.service.js'
 
 const MAX_MESSAGES = 100
 const MAX_CONTENT_LENGTH = 100000
 const MAX_HTML_LENGTH = 500000
-
-// LRU Cache configuration
-// - max: maximum number of items to store
-// - ttl: time-to-live in milliseconds (5 minutes)
-// - allowStale: return stale items while revalidating in background
-// - updateAgeOnGet: false - ensures cache entries expire after TTL,
-//   preventing indefinitely stale data for frequently accessed items
-const shareCache = new LRUCache<string, ShareData>({
-  max: 1000,
-  ttl: 1000 * 60 * 5, // 5 minutes
-  allowStale: true,
-  updateAgeOnGet: false,
-})
+const CACHE_TTL = 300 // 5 minutes in seconds
+const CACHE_PREFIX = 'share:'
 
 // Batch viewCount updates to reduce DB writes
 // Max buffer size prevents unbounded memory growth during DB outages
@@ -190,8 +179,10 @@ export async function createShare(input: CreateShareInput): Promise<ShareOutput>
 }
 
 export async function getShare(shareId: string): Promise<ShareData | null> {
-  // Check cache first
-  const cached = shareCache.get(shareId)
+  const cacheKey = `${CACHE_PREFIX}${shareId}`
+
+  // Check Redis cache first
+  const cached = await cache.get<ShareData>(cacheKey)
   if (cached) {
     // Increment view count asynchronously (batched)
     incrementViewCount(shareId)
@@ -228,15 +219,17 @@ export async function getShare(shareId: string): Promise<ShareData | null> {
     viewCount: share.viewCount + 1  // Include current view in count
   }
 
-  // Store in cache with incremented viewCount
-  shareCache.set(shareId, shareData)
+  // Store in Redis cache with TTL
+  await cache.set(cacheKey, shareData, CACHE_TTL)
 
   return shareData
 }
 
 export async function deleteShare(shareId: string): Promise<boolean> {
-  // Invalidate cache entry to prevent serving deleted data
-  shareCache.delete(shareId)
+  const cacheKey = `${CACHE_PREFIX}${shareId}`
+
+  // Invalidate Redis cache entry to prevent serving deleted data
+  await cache.del(cacheKey)
   // Remove any pending viewCount updates for deleted share
   // Note: If a flush is in progress, already-queued updates may still be
   // applied to DB (MongoDB will update 0 documents). This is acceptable
