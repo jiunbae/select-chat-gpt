@@ -3,6 +3,9 @@ import { t } from "~src/utils/i18n"
 
 export type RoleFilter = "all" | "user" | "assistant"
 
+/** 마지막 N개 선택 드롭다운에 표시할 값 목록 */
+const LAST_N_VALUES = [5, 10, 20, 50] as const
+
 interface SearchBarProps {
   searchQuery: string
   onSearchChange: (query: string) => void
@@ -13,6 +16,7 @@ interface SearchBarProps {
   totalCount: number
   matchedCount: number
   onSelectLastN: (n: number) => void
+  onClearFilters: () => void
 }
 
 export function SearchBar({
@@ -25,6 +29,7 @@ export function SearchBar({
   totalCount,
   matchedCount,
   onSelectLastN,
+  onClearFilters,
 }: SearchBarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [showLastNDropdown, setShowLastNDropdown] = useState(false)
@@ -125,7 +130,7 @@ export function SearchBar({
 
             {showLastNDropdown && (
               <div className="scgpt-absolute scgpt-top-full scgpt-left-0 scgpt-mt-1 scgpt-bg-white scgpt-border scgpt-border-gray-200 scgpt-rounded-md scgpt-shadow-lg scgpt-py-1 scgpt-z-10 scgpt-min-w-[100px]">
-                {[5, 10, 20, 50].map((n) => (
+                {LAST_N_VALUES.map((n) => (
                   <button
                     key={n}
                     onClick={() => {
@@ -152,11 +157,7 @@ export function SearchBar({
           {/* 필터 초기화 */}
           {hasActiveFilters && (
             <button
-              onClick={() => {
-                onSearchChange("")
-                onRoleFilterChange("all")
-                onCodeOnlyChange(false)
-              }}
+              onClick={onClearFilters}
               className="scgpt-p-1.5 scgpt-text-gray-400 scgpt-hover:text-gray-600 scgpt-hover:bg-gray-100 scgpt-rounded"
               title={t("clearFilters") || "Clear filters"}
             >

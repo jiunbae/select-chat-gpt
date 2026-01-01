@@ -64,22 +64,6 @@
   border-radius: 2px;
 }
 
-/* 검색 바 애니메이션 */
-@keyframes slideInFromLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.selectchatgpt-search-panel-enter {
-  animation: slideInFromLeft 0.2s ease forwards;
-}
-
 /* 코드 블록 포함 메시지 표시 */
 .selectchatgpt-has-code::after {
   content: '</>';

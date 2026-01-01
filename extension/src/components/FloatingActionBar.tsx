@@ -16,6 +16,7 @@ interface FloatingActionBarProps {
   onCodeOnlyChange: (codeOnly: boolean) => void
   matchedCount: number
   onSelectLastN: (n: number) => void
+  onClearFilters: () => void
 }
 
 export function FloatingActionBar({
@@ -32,6 +33,7 @@ export function FloatingActionBar({
   onCodeOnlyChange,
   matchedCount,
   onSelectLastN,
+  onClearFilters,
 }: FloatingActionBarProps) {
   const isAllSelected = selectedCount === totalCount && totalCount > 0
 
@@ -49,6 +51,7 @@ export function FloatingActionBar({
           totalCount={totalCount}
           matchedCount={matchedCount}
           onSelectLastN={onSelectLastN}
+          onClearFilters={onClearFilters}
         />
 
         <div className="scgpt-h-6 scgpt-w-px scgpt-bg-gray-200" />
