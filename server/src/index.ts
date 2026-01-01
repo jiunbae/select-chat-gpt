@@ -15,7 +15,6 @@ import {
   httpRequestTotal,
   mongodbConnected,
   activeConnections,
-  redisConnected,
 } from './metrics.js'
 
 dotenv.config()
@@ -108,12 +107,8 @@ async function startServer() {
   try {
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/selectchatgpt'
 
-    // Initialize Redis
-    redisConnected.set(0) // Initialize to disconnected state
-    const redis = initRedis()
-    redis.on('connect', () => redisConnected.set(1))
-    redis.on('close', () => redisConnected.set(0))
-    redis.on('error', () => redisConnected.set(0))
+    // Initialize Redis (metrics are managed in cache.service.ts)
+    initRedis()
 
     // Track MongoDB connection status
     mongodbConnected.set(0) // Initialize to disconnected state

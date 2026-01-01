@@ -15,6 +15,7 @@ resources:
   - mongodb/service.yaml
 
   # Redis
+  - redis/pvc.yaml
   - redis/deployment.yaml
   - redis/service.yaml
 

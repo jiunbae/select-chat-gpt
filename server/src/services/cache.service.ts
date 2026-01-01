@@ -1,5 +1,5 @@
 import Redis from 'ioredis'
-import { cacheHits, cacheMisses } from '../metrics.js'
+import { cacheHits, cacheMisses, redisConnected } from '../metrics.js'
 
 const DEFAULT_TTL = 300 // 5 minutes in seconds
 
@@ -25,16 +25,19 @@ export function initRedis(): Redis {
   redis.on('connect', () => {
     console.log('Redis connected')
     isConnected = true
+    redisConnected.set(1)
   })
 
   redis.on('error', (err) => {
     console.error('Redis error:', err.message)
     isConnected = false
+    redisConnected.set(0)
   })
 
   redis.on('close', () => {
     console.log('Redis connection closed')
     isConnected = false
+    redisConnected.set(0)
   })
 
   return redis
@@ -75,7 +78,7 @@ export async function get<T>(key: string): Promise<T | null> {
     cacheHits.inc()
     return JSON.parse(value) as T
   } catch (error) {
-    console.error('Cache get error:', error)
+    console.error('Cache get error:', error instanceof Error ? error.message : String(error))
     cacheMisses.inc({ reason: 'error' })
     return null
   }
@@ -97,7 +100,7 @@ export async function set<T>(key: string, value: T, ttl: number = DEFAULT_TTL): 
     await redis.setex(key, ttl, serialized)
     return true
   } catch (error) {
-    console.error('Cache set error:', error)
+    console.error('Cache set error:', error instanceof Error ? error.message : String(error))
     return false
   }
 }
@@ -115,7 +118,7 @@ export async function del(key: string): Promise<boolean> {
     await redis.del(key)
     return true
   } catch (error) {
-    console.error('Cache del error:', error)
+    console.error('Cache del error:', error instanceof Error ? error.message : String(error))
     return false
   }
 }
