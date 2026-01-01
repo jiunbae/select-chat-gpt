@@ -54,6 +54,8 @@ type MessageKey =
   | 'selectAll'
   | 'deselectAll'
   | 'clear'
+  | 'usageRemaining'
+  | 'usageLimitReached'
   | 'createShareLink'
   | 'failedToCreateShare'
   | 'failedToCopy'
