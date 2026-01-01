@@ -50,6 +50,10 @@ export class GeminiParser implements IChatParser {
     return GEMINI_URL_PATTERNS.some((pattern) => pattern.test(url))
   }
 
+  getSupportedPatterns(): string[] {
+    return ['https://gemini.google.com/share/*', 'https://g.co/gemini/share/*']
+  }
+
   async parse(url: string): Promise<ParseResult> {
     if (!this.canParse(url)) {
       throw new InvalidUrlError('Invalid Gemini share URL')
@@ -154,7 +158,16 @@ export class GeminiParser implements IChatParser {
     }
   }
 
-  private findConversationData(data: Record<string, unknown>): GeminiConversation | null {
+  private findConversationData(
+    data: Record<string, unknown>,
+    visited: Set<object> = new Set()
+  ): GeminiConversation | null {
+    // Cycle detection to prevent stack overflow from circular references
+    if (visited.has(data)) {
+      return null
+    }
+    visited.add(data)
+
     // Direct conversation object
     if (data.messages || data.turns || data.conversation) {
       return data as GeminiConversation
@@ -185,7 +198,7 @@ export class GeminiParser implements IChatParser {
         }
       }
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        const result = this.findConversationData(value as Record<string, unknown>)
+        const result = this.findConversationData(value as Record<string, unknown>, visited)
         if (result) return result
       }
     }

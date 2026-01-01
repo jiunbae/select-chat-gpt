@@ -99,16 +99,11 @@ export class ParserRegistry {
 
   /**
    * Get supported URL patterns as a human-readable list
+   * Dynamically collects patterns from all registered parsers
    * @returns Array of supported URL patterns
    */
   getSupportedPatterns(): string[] {
-    return [
-      'https://chatgpt.com/share/*',
-      'https://chat.openai.com/share/*',
-      'https://claude.ai/share/*',
-      'https://gemini.google.com/share/*',
-      'https://g.co/gemini/share/*'
-    ]
+    return this.parsers.flatMap((parser) => parser.getSupportedPatterns())
   }
 
   /**

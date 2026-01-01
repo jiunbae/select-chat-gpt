@@ -40,6 +40,12 @@ export interface IChatParser {
    * @returns The parsed conversation result
    */
   parse(url: string): Promise<ParseResult>
+
+  /**
+   * Get supported URL patterns as a human-readable list
+   * @returns Array of URL pattern strings (e.g., 'https://example.com/share/*')
+   */
+  getSupportedPatterns(): string[]
 }
 
 // Custom error types for better error handling

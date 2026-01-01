@@ -53,6 +53,10 @@ export class ClaudeParser implements IChatParser {
     return CLAUDE_URL_PATTERN.test(url)
   }
 
+  getSupportedPatterns(): string[] {
+    return ['https://claude.ai/share/*']
+  }
+
   async parse(url: string): Promise<ParseResult> {
     if (!this.canParse(url)) {
       throw new InvalidUrlError('Invalid Claude share URL')

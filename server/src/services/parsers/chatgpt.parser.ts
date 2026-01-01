@@ -550,6 +550,10 @@ export class ChatGPTParser implements IChatParser {
     return CHATGPT_URL_PATTERNS.some((pattern) => pattern.test(url))
   }
 
+  getSupportedPatterns(): string[] {
+    return ['https://chatgpt.com/share/*', 'https://chat.openai.com/share/*']
+  }
+
   async parse(url: string): Promise<ParseResult> {
     if (!this.canParse(url)) {
       throw new InvalidUrlError('Invalid ChatGPT share URL')
