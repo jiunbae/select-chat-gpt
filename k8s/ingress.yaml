@@ -5,11 +5,11 @@ metadata:
   namespace: selectchatgpt
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.priority: "100"
+    traefik.ingress.kubernetes.io/router.priority: "200"
 spec:
   ingressClassName: traefik
   rules:
-    - host: selectchatgpt.im-si.org
+    - host: selectchatgpt.jiun.dev
       http:
         paths:
           # API 서버 (/api로 시작하는 요청)
@@ -35,3 +35,26 @@ spec:
                 name: server
                 port:
                   number: 3001
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: selectchatgpt-web-ingress
+  namespace: selectchatgpt
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.priority: "50"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: selectchatgpt.jiun.dev
+      http:
+        paths:
+          # Web (정적 파일, 기본 경로)
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 3000

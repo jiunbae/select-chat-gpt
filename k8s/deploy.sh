@@ -2,9 +2,8 @@
 set -e
 
 # Configuration
-REGISTRY="registry.im-si.org"
+REGISTRY="registry.jiun.dev"
 NAMESPACE="selectchatgpt"
-STATIC_NAMESPACE="static-sites"
 export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"
 
 # Get script and project directory
@@ -50,7 +49,7 @@ else
             --help)
                 echo "Usage: $0 [--server] [--web] [--apply]"
                 echo "  --server  Build and deploy server"
-                echo "  --web     Build and deploy web static files"
+                echo "  --web     Build and deploy web"
                 echo "  --apply   Apply k8s manifests only"
                 echo "  (no args) Do everything"
                 exit 0
@@ -72,31 +71,28 @@ if [ "$DEPLOY_SERVER" = true ]; then
     docker push $REGISTRY/selectchatgpt-server:latest
 
     echo "==> Updating server deployment..."
-    kubectl set image deployment/server server=$REGISTRY/selectchatgpt-server:$TAG -n $NAMESPACE
-    kubectl rollout status deployment/server -n $NAMESPACE --timeout=120s
+    kubectl set image deployment/server server=$REGISTRY/selectchatgpt-server:$TAG -n $NAMESPACE || true
+    kubectl rollout status deployment/server -n $NAMESPACE --timeout=120s || true
 fi
 
-# Deploy Web (static files to shared nginx)
+# Deploy Web
 if [ "$DEPLOY_WEB" = true ]; then
-    echo "==> Building web static files..."
-    cd "$PROJECT_DIR"
-    NEXT_PUBLIC_API_URL=https://selectchatgpt.im-si.org \
-    NEXT_PUBLIC_GA_ID=G-QTQ15S85X2 \
-    pnpm --filter select-chatgpt-web build
+    echo "==> Building web image..."
+    docker build --platform linux/amd64 \
+        -t $REGISTRY/selectchatgpt-web:$TAG \
+        -t $REGISTRY/selectchatgpt-web:latest \
+        --build-arg NEXT_PUBLIC_API_URL=https://selectchatgpt.jiun.dev \
+        --build-arg NEXT_PUBLIC_GA_ID=G-QTQ15S85X2 \
+        -f "$PROJECT_DIR/web/Dockerfile" \
+        "$PROJECT_DIR"
 
-    echo "==> Deploying to static-nginx..."
-    POD=$(kubectl get pod -n $STATIC_NAMESPACE -l app=static-nginx -o jsonpath='{.items[0].metadata.name}')
-    if [ -z "$POD" ]; then
-        echo "Error: static-nginx pod not found in $STATIC_NAMESPACE namespace"
-        exit 1
-    fi
+    echo "==> Pushing web image..."
+    docker push $REGISTRY/selectchatgpt-web:$TAG
+    docker push $REGISTRY/selectchatgpt-web:latest
 
-    # Use tar to preserve special characters in paths (e.g., [[...id]])
-    kubectl exec -n $STATIC_NAMESPACE "$POD" -- rm -rf /var/www/selectchatgpt
-    kubectl exec -n $STATIC_NAMESPACE "$POD" -- mkdir -p /var/www/selectchatgpt
-    tar -cf - -C "$PROJECT_DIR/web/out" . | kubectl exec -i -n $STATIC_NAMESPACE "$POD" -- tar -xf - -C /var/www/selectchatgpt/
-
-    echo "==> Web deployment complete (static files copied)"
+    echo "==> Updating web deployment..."
+    kubectl set image deployment/web web=$REGISTRY/selectchatgpt-web:$TAG -n $NAMESPACE || true
+    kubectl rollout status deployment/web -n $NAMESPACE --timeout=120s || true
 fi
 
 # Apply manifests only
@@ -110,5 +106,3 @@ echo "=== Deployment Complete ==="
 echo "Version: $TAG"
 echo ""
 kubectl get pods -n $NAMESPACE
-echo ""
-kubectl get pods -n $STATIC_NAMESPACE -l app=static-nginx

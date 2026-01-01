@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: registry.im-si.org/selectchatgpt-server:latest
+          image: registry.jiun.dev/selectchatgpt-server:latest
           ports:
             - containerPort: 3001
           envFrom:

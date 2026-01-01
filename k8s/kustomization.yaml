@@ -18,10 +18,12 @@ resources:
   - server/configmap.yaml
   - server/deployment.yaml
   - server/service.yaml
-  - server/servicemonitor.yaml
+  - server/service-metrics.yaml
 
-  # Web - 정적 파일은 static-sites 네임스페이스의 static-nginx에서 서빙
-  # (IAC 저장소의 ~/workspace/iac/static-nginx에서 관리)
+  # Web
+  - web/configmap.yaml
+  - web/deployment.yaml
+  - web/service.yaml
 
   # Ingress
   - ingress.yaml
