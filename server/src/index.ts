@@ -8,6 +8,7 @@ import dotenv from 'dotenv'
 import shareRoutes from './routes/share.js'
 import parseRoutes from './routes/parse.js'
 import { shutdownShareService } from './services/share.service.js'
+import { initRedis, shutdownRedis, isRedisConnected } from './services/cache.service.js'
 import {
   register,
   httpRequestDuration,
@@ -106,6 +107,9 @@ async function startServer() {
   try {
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/selectchatgpt'
 
+    // Initialize Redis (metrics are managed in cache.service.ts)
+    initRedis()
+
     // Track MongoDB connection status
     mongodbConnected.set(0) // Initialize to disconnected state
     mongoose.connection.on('connected', () => {
@@ -152,6 +156,10 @@ async function startServer() {
         // Flush pending viewCount updates before shutdown
         await shutdownShareService()
         console.log('Share service shutdown complete')
+
+        // Close Redis connection
+        await shutdownRedis()
+        console.log('Redis connection closed')
 
         // Close MongoDB connection
         await mongoose.connection.close()
