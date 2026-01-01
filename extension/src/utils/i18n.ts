@@ -60,6 +60,17 @@ type MessageKey =
   | 'failedToCopyMarkdown'
   | 'failedToExportImage'
   | 'failedToExportPDF'
+  // Search and filter
+  | 'searchFilter'
+  | 'searchPlaceholder'
+  | 'filterAll'
+  | 'filterUser'
+  | 'filterAssistant'
+  | 'codeOnly'
+  | 'selectLastN'
+  | 'lastNMessages'
+  | 'matchedCount'
+  | 'clearFilters'
 
 /**
  * Get localized message

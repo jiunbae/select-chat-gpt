@@ -298,5 +298,61 @@
   "failedToExportPDF": {
     "message": "导出PDF失败",
     "description": "PDF export error"
+  },
+  "searchFilter": {
+    "message": "搜索和筛选",
+    "description": "Search and filter button tooltip"
+  },
+  "searchPlaceholder": {
+    "message": "搜索消息...",
+    "description": "Search input placeholder"
+  },
+  "filterAll": {
+    "message": "全部角色",
+    "description": "All roles filter option"
+  },
+  "filterUser": {
+    "message": "仅用户",
+    "description": "User only filter option"
+  },
+  "filterAssistant": {
+    "message": "仅助手",
+    "description": "Assistant only filter option"
+  },
+  "codeOnly": {
+    "message": "仅代码",
+    "description": "Code only filter checkbox"
+  },
+  "selectLastN": {
+    "message": "最后N条",
+    "description": "Select last N messages button"
+  },
+  "lastNMessages": {
+    "message": "最后 $count$ 条",
+    "description": "Last N messages option",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "10"
+      }
+    }
+  },
+  "matchedCount": {
+    "message": "$matched$/$total$ 匹配",
+    "description": "Matched count display",
+    "placeholders": {
+      "matched": {
+        "content": "$1",
+        "example": "5"
+      },
+      "total": {
+        "content": "$2",
+        "example": "10"
+      }
+    }
+  },
+  "clearFilters": {
+    "message": "清除筛选",
+    "description": "Clear filters button tooltip"
   }
 }
