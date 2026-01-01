@@ -275,6 +275,24 @@
     "message": "清除",
     "description": "Clear button"
   },
+  "usageRemaining": {
+    "message": "$remaining$ / $limit$ 剩余",
+    "description": "本月剩余的分享链接额度",
+    "placeholders": {
+      "remaining": {
+        "content": "$1",
+        "example": "3"
+      },
+      "limit": {
+        "content": "$2",
+        "example": "10"
+      }
+    }
+  },
+  "usageLimitReached": {
+    "message": "已达到本月分享链接上限，请下个月再试。",
+    "description": "分享次数耗尽时的提示"
+  },
   "createShareLink": {
     "message": "创建分享链接",
     "description": "Create share link button"

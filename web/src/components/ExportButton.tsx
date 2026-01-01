@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { Message } from '@/lib/api';
 import {
   exportToImage,
@@ -20,6 +20,7 @@ import {
   type PdfHeaderFooterOptions,
 } from '@/lib/export';
 import { Analytics } from '@/lib/analytics';
+import { ExportAdModal } from './ExportAdModal';
 
 interface ExportButtonProps {
   messages: Message[];
@@ -169,6 +170,8 @@ export function ExportButton({
   const [error, setError] = useState<string | null>(null);
   const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showAdModal, setShowAdModal] = useState(false);
+  const [pendingExportHandler, setPendingExportHandler] = useState<(() => void) | null>(null);
 
   // Internal state (used when external props are not provided)
   const [internalStyleType, setInternalStyleType] = useState<ExportStyleType>('chatgpt');
@@ -305,18 +308,37 @@ export function ExportButton({
   const handleExportImage = createExportHandler(exportToImage, 'image', 'Failed to export image');
   const handleExportPDF = createExportHandler(exportToPDF, 'pdf', 'Failed to export PDF');
 
+  const startAdFlow = (handler: () => void) => {
+    setPendingExportHandler(() => handler);
+    setShowAdModal(true);
+    setIsOpen(false);
+  };
+
+  const handleAdClose = useCallback(() => {
+    setShowAdModal(false);
+    setPendingExportHandler(null);
+  }, []);
+
+  const handleAdComplete = useCallback(() => {
+    if (pendingExportHandler) {
+      pendingExportHandler();
+    }
+    setPendingExportHandler(null);
+    setShowAdModal(false);
+  }, [pendingExportHandler]);
+
   const EXPORT_ACTIONS: Record<'image' | 'pdf', ExportActionConfig & { handler: () => void }> = {
     image: {
       icon: ImageIcon,
       label: 'Download as PNG',
       description: 'High-quality image export for sharing',
-      handler: handleExportImage,
+      handler: () => startAdFlow(handleExportImage),
     },
     pdf: {
       icon: PdfIcon,
       label: 'Download as PDF',
       description: 'Multi-page PDF for printing and archiving',
-      handler: handleExportPDF,
+      handler: () => startAdFlow(handleExportPDF),
     },
   };
 
@@ -694,6 +716,7 @@ export function ExportButton({
           </div>
         </>
       )}
+      <ExportAdModal isOpen={showAdModal} onClose={handleAdClose} onComplete={handleAdComplete} />
     </div>
   );
 }
