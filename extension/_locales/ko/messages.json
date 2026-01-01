@@ -298,5 +298,61 @@
   "failedToExportPDF": {
     "message": "PDF 내보내기에 실패했습니다",
     "description": "PDF export error"
+  },
+  "searchFilter": {
+    "message": "검색 & 필터",
+    "description": "Search and filter button tooltip"
+  },
+  "searchPlaceholder": {
+    "message": "메시지 검색...",
+    "description": "Search input placeholder"
+  },
+  "filterAll": {
+    "message": "전체",
+    "description": "All roles filter option"
+  },
+  "filterUser": {
+    "message": "사용자만",
+    "description": "User only filter option"
+  },
+  "filterAssistant": {
+    "message": "어시스턴트만",
+    "description": "Assistant only filter option"
+  },
+  "codeOnly": {
+    "message": "코드 포함",
+    "description": "Code only filter checkbox"
+  },
+  "selectLastN": {
+    "message": "마지막 N개",
+    "description": "Select last N messages button"
+  },
+  "lastNMessages": {
+    "message": "마지막 $count$개",
+    "description": "Last N messages option",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "10"
+      }
+    }
+  },
+  "matchedCount": {
+    "message": "$matched$/$total$ 일치",
+    "description": "Matched count display",
+    "placeholders": {
+      "matched": {
+        "content": "$1",
+        "example": "5"
+      },
+      "total": {
+        "content": "$2",
+        "example": "10"
+      }
+    }
+  },
+  "clearFilters": {
+    "message": "필터 초기화",
+    "description": "Clear filters button tooltip"
   }
 }

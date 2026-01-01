@@ -298,5 +298,61 @@
   "failedToExportPDF": {
     "message": "Failed to export PDF",
     "description": "PDF export error"
+  },
+  "searchFilter": {
+    "message": "Search & Filter",
+    "description": "Search and filter button tooltip"
+  },
+  "searchPlaceholder": {
+    "message": "Search messages...",
+    "description": "Search input placeholder"
+  },
+  "filterAll": {
+    "message": "All roles",
+    "description": "All roles filter option"
+  },
+  "filterUser": {
+    "message": "User only",
+    "description": "User only filter option"
+  },
+  "filterAssistant": {
+    "message": "Assistant only",
+    "description": "Assistant only filter option"
+  },
+  "codeOnly": {
+    "message": "Code only",
+    "description": "Code only filter checkbox"
+  },
+  "selectLastN": {
+    "message": "Last N",
+    "description": "Select last N messages button"
+  },
+  "lastNMessages": {
+    "message": "Last $count$",
+    "description": "Last N messages option",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "10"
+      }
+    }
+  },
+  "matchedCount": {
+    "message": "$matched$/$total$ matched",
+    "description": "Matched count display",
+    "placeholders": {
+      "matched": {
+        "content": "$1",
+        "example": "5"
+      },
+      "total": {
+        "content": "$2",
+        "example": "10"
+      }
+    }
+  },
+  "clearFilters": {
+    "message": "Clear filters",
+    "description": "Clear filters button tooltip"
   }
 }

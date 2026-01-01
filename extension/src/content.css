@@ -21,3 +21,59 @@
 #selectchatgpt-share-btn {
   transition: background-color 0.15s ease;
 }
+
+/* ========================================
+   Search Highlight Styles
+   ======================================== */
+
+/* 검색 결과 하이라이트 */
+.selectchatgpt-search-highlight {
+  background-color: #fef08a !important; /* yellow-200 */
+  padding: 0 2px;
+  border-radius: 2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* 현재 포커스된 하이라이트 */
+.selectchatgpt-search-highlight-active {
+  background-color: #fbbf24 !important; /* amber-400 */
+  outline: 2px solid #f59e0b;
+  outline-offset: 1px;
+}
+
+/* 필터에 의해 숨겨진 메시지 */
+.selectchatgpt-message-filtered {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* 필터에 매칭된 메시지 강조 */
+.selectchatgpt-message-matched {
+  position: relative;
+}
+
+.selectchatgpt-message-matched::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #10a37f;
+  border-radius: 2px;
+}
+
+/* 코드 블록 포함 메시지 표시 */
+.selectchatgpt-has-code::after {
+  content: '</>';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 10px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+}
