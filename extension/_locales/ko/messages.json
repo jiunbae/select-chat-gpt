@@ -275,6 +275,24 @@
     "message": "초기화",
     "description": "Clear button"
   },
+  "usageRemaining": {
+    "message": "$remaining$ / $limit$ 남음",
+    "description": "이번 달 공유 링크 생성 잔여 횟수",
+    "placeholders": {
+      "remaining": {
+        "content": "$1",
+        "example": "3"
+      },
+      "limit": {
+        "content": "$2",
+        "example": "10"
+      }
+    }
+  },
+  "usageLimitReached": {
+    "message": "이번 달 공유 링크 생성 한도에 도달했습니다. 다음 달에 다시 시도해주세요.",
+    "description": "사용량 한도 초과 안내 메시지"
+  },
   "createShareLink": {
     "message": "공유 링크 생성",
     "description": "Create share link button"
