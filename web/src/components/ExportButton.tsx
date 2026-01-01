@@ -19,6 +19,12 @@ import {
   type CustomMargin,
   type PdfHeaderFooterOptions,
 } from '@/lib/export';
+import {
+  PDF_PRESETS,
+  PRESET_LIST,
+  DEFAULT_PRESET,
+  type PresetKey,
+} from '@/lib/export-presets';
 import { Analytics } from '@/lib/analytics';
 
 interface ExportButtonProps {
@@ -198,6 +204,10 @@ export function ExportButton({
   const [layoutOpen, setLayoutOpen] = useState(false);
   const [headerFooterOpen, setHeaderFooterOpen] = useState(false);
 
+  // PDF Preset state
+  const [selectedPreset, setSelectedPreset] = useState<PresetKey>(DEFAULT_PRESET);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+
   // Use external values if provided, otherwise use internal state
   const hasExternalControl = externalStyleType !== undefined && externalExportOptions !== undefined;
   const styleType = externalStyleType ?? internalStyleType;
@@ -207,6 +217,11 @@ export function ExportButton({
   const getExportOptions = (): ExportOptions => {
     if (externalExportOptions) {
       return externalExportOptions;
+    }
+
+    // For PDF mode with preset (and no advanced options), use preset options
+    if (mode === 'pdf' && !showAdvancedOptions) {
+      return PDF_PRESETS[selectedPreset].options;
     }
 
     const pdfHeaderFooter: PdfHeaderFooterOptions = {
@@ -228,6 +243,30 @@ export function ExportButton({
       customMargin: margin === 'custom' ? customMargin : undefined,
       pdfHeaderFooter,
     };
+  };
+
+  // Apply preset options to internal state
+  const applyPreset = (presetKey: PresetKey) => {
+    setSelectedPreset(presetKey);
+    const preset = PDF_PRESETS[presetKey];
+    const opts = preset.options;
+
+    // Apply options to state
+    if (opts.fontSize) setFontSize(opts.fontSize);
+    if (opts.lineHeight) setLineHeight(opts.lineHeight);
+    if (opts.letterSpacing) setLetterSpacing(opts.letterSpacing);
+    if (opts.pageSize) setPageSize(opts.pageSize);
+    if (opts.margin) setMargin(opts.margin);
+    setHideUserMessages(opts.hideUserMessages ?? false);
+    setHideCodeBlocks(opts.hideCodeBlocks ?? false);
+
+    if (opts.pdfHeaderFooter) {
+      setShowBranding(opts.pdfHeaderFooter.showBranding ?? false);
+      setShowDate(opts.pdfHeaderFooter.showDate ?? false);
+      setShowTitle(opts.pdfHeaderFooter.showTitle ?? false);
+      setShowPageNumbers(opts.pdfHeaderFooter.showPageNumbers ?? true);
+      setShowDomain(opts.pdfHeaderFooter.showDomain ?? false);
+    }
   };
 
   const handleCopyMarkdown = async () => {
@@ -386,8 +425,55 @@ export function ExportButton({
                 ))}
               </div>
 
-              {/* Style Selector for Image/PDF */}
-              {showStyleSelector && (
+              {/* PDF Preset Selector */}
+              {mode === 'pdf' && !hasExternalControl && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Preset
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {PRESET_LIST.map((preset) => (
+                      <button
+                        key={preset.key}
+                        onClick={() => applyPreset(preset.key)}
+                        className={`py-2 px-3 rounded-lg text-sm border transition-colors ${
+                          selectedPreset === preset.key
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className="font-medium">{preset.name}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {PDF_PRESETS[selectedPreset].description}
+                  </p>
+                </div>
+              )}
+
+              {/* Advanced Options Toggle (PDF only) */}
+              {mode === 'pdf' && !hasExternalControl && (
+                <button
+                  onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                  className="w-full mb-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center justify-center gap-2 transition-colors"
+                >
+                  <span>{showAdvancedOptions ? '고급 옵션 숨기기' : '고급 옵션 보기'}</span>
+                  <svg
+                    className={`w-4 h-4 transition-transform ${showAdvancedOptions ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Style Selector for Image/PDF (show always for image, only in advanced for pdf) */}
+              {showStyleSelector && (mode === 'image' || showAdvancedOptions) && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Style
@@ -423,8 +509,8 @@ export function ExportButton({
                 </div>
               )}
 
-              {/* Text Styling Options (image/pdf only) */}
-              {showStyleSelector && (
+              {/* Text Styling Options (image always, pdf only in advanced) */}
+              {showStyleSelector && (mode === 'image' || showAdvancedOptions) && (
                 <CollapsibleSection
                   title="Text Styling"
                   isOpen={textStylingOpen}
@@ -470,8 +556,8 @@ export function ExportButton({
                 </CollapsibleSection>
               )}
 
-              {/* Content Filtering Options (all modes, only when no external control) */}
-              {showContentOptions && (
+              {/* Content Filtering Options (markdown/image always, pdf only in advanced) */}
+              {showContentOptions && (mode !== 'pdf' || showAdvancedOptions) && (
                 <CollapsibleSection
                   title="Content"
                   isOpen={contentOpen}
@@ -490,8 +576,8 @@ export function ExportButton({
                 </CollapsibleSection>
               )}
 
-              {/* Layout Options (pdf only, only when no external control) */}
-              {showLayoutOptions && (
+              {/* Layout Options (pdf only, only in advanced) */}
+              {showLayoutOptions && showAdvancedOptions && (
                 <CollapsibleSection
                   title="Layout"
                   isOpen={layoutOpen}
@@ -568,8 +654,8 @@ export function ExportButton({
                 </CollapsibleSection>
               )}
 
-              {/* Header & Footer Options (pdf only, only when no external control) */}
-              {showLayoutOptions && (
+              {/* Header & Footer Options (pdf only, only in advanced) */}
+              {showLayoutOptions && showAdvancedOptions && (
                 <CollapsibleSection
                   title="Header & Footer"
                   isOpen={headerFooterOpen}
