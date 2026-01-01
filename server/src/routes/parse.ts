@@ -2,14 +2,22 @@ import { Router, Request, Response } from 'express'
 import type { Router as RouterType } from 'express'
 import {
   parseAndCreateShare,
-  isValidChatGPTShareUrl,
+  isValidShareUrl,
+  getSupportedPatterns,
   ConversationNotFoundError,
   NoMessagesFoundError,
-  InvalidUrlError
+  InvalidUrlError,
+  UnsupportedPlatformError
 } from '../services/parse.service.js'
 import { parseOperations } from '../metrics.js'
 
 const router: RouterType = Router()
+
+// Helper to get user-friendly error message for unsupported URLs
+function getUnsupportedUrlMessage(): string {
+  const patterns = getSupportedPatterns()
+  return `Unsupported URL. Supported platforms: ${patterns.join(', ')}`
+}
 
 router.post('/', async (req: Request, res: Response) => {
   try {
@@ -25,10 +33,10 @@ router.post('/', async (req: Request, res: Response) => {
 
     const trimmedUrl = url.trim()
 
-    if (!isValidChatGPTShareUrl(trimmedUrl)) {
+    if (!isValidShareUrl(trimmedUrl)) {
       res.status(400).json({
         success: false,
-        error: 'Invalid ChatGPT share URL. Please use a URL like https://chatgpt.com/share/...'
+        error: getUnsupportedUrlMessage()
       })
       return
     }
@@ -48,7 +56,7 @@ router.post('/', async (req: Request, res: Response) => {
       parseOperations.inc({ status: 'error', error_type: 'not_found' })
       res.status(404).json({
         success: false,
-        error: 'ChatGPT conversation not found. Please check the URL.'
+        error: 'Conversation not found. Please check the URL.'
       })
       return
     }
@@ -66,7 +74,16 @@ router.post('/', async (req: Request, res: Response) => {
       parseOperations.inc({ status: 'error', error_type: 'invalid_url' })
       res.status(400).json({
         success: false,
-        error: 'Invalid ChatGPT share URL. Please use a URL like https://chatgpt.com/share/...'
+        error: getUnsupportedUrlMessage()
+      })
+      return
+    }
+
+    if (error instanceof UnsupportedPlatformError) {
+      parseOperations.inc({ status: 'error', error_type: 'unsupported_platform' })
+      res.status(400).json({
+        success: false,
+        error: getUnsupportedUrlMessage()
       })
       return
     }
@@ -78,6 +95,14 @@ router.post('/', async (req: Request, res: Response) => {
       error: 'Failed to parse the conversation. Please try again.'
     })
   }
+})
+
+// GET endpoint to list supported platforms
+router.get('/platforms', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    patterns: getSupportedPatterns()
+  })
 })
 
 export default router

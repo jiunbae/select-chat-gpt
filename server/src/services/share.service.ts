@@ -100,10 +100,19 @@ export interface ShareData {
   viewCount: number
 }
 
+// Supported hostnames for share URLs
+const SUPPORTED_HOSTNAMES = new Set([
+  'chatgpt.com',
+  'chat.openai.com',
+  'claude.ai',
+  'gemini.google.com',
+  'g.co'
+])
+
 function validateUrl(url: string): boolean {
   try {
     const parsed = new URL(url)
-    return parsed.protocol === 'https:' && parsed.hostname === 'chatgpt.com'
+    return parsed.protocol === 'https:' && SUPPORTED_HOSTNAMES.has(parsed.hostname)
   } catch {
     return false
   }
