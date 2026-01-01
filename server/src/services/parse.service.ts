@@ -57,6 +57,9 @@ export class InvalidUrlError extends Error {
 const MIN_REACT_ROUTER_DATA_LENGTH = 1000
 const ROLE_LOOKBEHIND_WINDOW = 50  // Increased from 30 for better role detection
 
+// Default title for conversations when title is not found
+const DEFAULT_CONVERSATION_TITLE = 'ChatGPT Conversation'
+
 // The "_49" key in pointer objects typically points to the role index
 // These are stored as actual JavaScript objects in the parsed array, not strings
 const ROLE_POINTER_KEY = '_49'
@@ -410,7 +413,7 @@ function extractFromReactRouterDataStructured(html: string): ParseResult | null 
 
     const title = typeof conversation['title'] === 'string' && conversation['title'].length > 0
       ? conversation['title']
-      : 'ChatGPT Conversation'
+      : DEFAULT_CONVERSATION_TITLE
 
     // Build the selected conversation path:
     // - Prefer `current_node` when available (handles edits/branches)
@@ -528,7 +531,7 @@ function extractFromReactRouterDataHeuristic(html: string): ParseResult | null {
     if (!Array.isArray(arr)) return null
 
     // Find title
-    let title = 'ChatGPT Conversation'
+    let title = DEFAULT_CONVERSATION_TITLE
     for (let i = 0; i < arr.length - 1; i++) {
       if (arr[i] === 'title' && typeof arr[i + 1] === 'string' && arr[i + 1].length > 0) {
         title = arr[i + 1]
@@ -671,7 +674,7 @@ function extractWithManualFallback(html: string): ParseResult | null {
 
     // Try to find title from meta tags
     const ogTitle = document.querySelector('meta[property="og:title"]')
-    const title = ogTitle?.getAttribute('content') || 'ChatGPT Conversation'
+    const title = ogTitle?.getAttribute('content') || DEFAULT_CONVERSATION_TITLE
 
     // Strategy 1: Look for data in script tags with JSON-like content
     const scripts = document.querySelectorAll('script')
@@ -687,10 +690,14 @@ function extractWithManualFallback(html: string): ParseResult | null {
         for (const match of conversationMatch) {
           const textMatch = match.match(/"parts"\s*:\s*\[\s*"([^"]+)"/)
           if (textMatch && textMatch[1]) {
-            const text = textMatch[1]
-              .replace(/\\n/g, '\n')
-              .replace(/\\"/g, '"')
-              .replace(/\\\\/g, '\\')
+            // Use JSON.parse for robust escape sequence handling (handles \n, \", \\, \t, \uXXXX, etc.)
+            let text: string
+            try {
+              text = JSON.parse(`"${textMatch[1]}"`)
+            } catch {
+              // Fallback to raw text if JSON parsing fails
+              text = textMatch[1]
+            }
 
             if (text.trim().length > 0 && !METADATA_KEYWORDS.has(text.toLowerCase())) {
               messages.push({
@@ -756,7 +763,8 @@ function extractWithManualFallback(html: string): ParseResult | null {
             }
           }
         }
-      } catch {
+      } catch (e) {
+        console.error('Manual fallback (Next.js data) failed:', e)
         // Continue to next strategy
       }
     }
@@ -793,61 +801,53 @@ function extractWithManualFallback(html: string): ParseResult | null {
   }
 }
 
+// Strategy configuration for the fallback chain
+interface StrategyConfig {
+  name: ParseStrategy
+  extractor: (html: string) => ParseResult | null
+  errorMessage: string
+}
+
 // Multi-strategy extraction with fallback chain
 // Tries: structured -> heuristic -> manual, tracking which strategy succeeded
 export function extractMessagesWithFallback(html: string): ExtendedParseResult {
+  const strategies: StrategyConfig[] = [
+    {
+      name: ParseStrategy.STRUCTURED,
+      extractor: extractFromReactRouterDataStructured,
+      errorMessage: 'No messages extracted from structured data',
+    },
+    {
+      name: ParseStrategy.HEURISTIC,
+      extractor: extractFromReactRouterDataHeuristic,
+      errorMessage: 'No messages extracted from heuristic patterns',
+    },
+    {
+      name: ParseStrategy.MANUAL,
+      extractor: extractWithManualFallback,
+      errorMessage: 'No messages extracted with manual fallback',
+    },
+  ]
+
   const attemptedStrategies: ParseStrategy[] = []
   const errors = new Map<ParseStrategy, string>()
 
-  // Strategy 1: Structured extraction (most accurate)
-  attemptedStrategies.push(ParseStrategy.STRUCTURED)
-  try {
-    const structuredResult = extractFromReactRouterDataStructured(html)
-    if (structuredResult && structuredResult.messages.length > 0) {
-      return {
-        result: structuredResult,
-        strategy: ParseStrategy.STRUCTURED,
-        attemptedStrategies,
-        errors
+  for (const { name, extractor, errorMessage } of strategies) {
+    attemptedStrategies.push(name)
+    try {
+      const result = extractor(html)
+      if (result && result.messages.length > 0) {
+        return {
+          result,
+          strategy: name,
+          attemptedStrategies,
+          errors,
+        }
       }
+      errors.set(name, errorMessage)
+    } catch (e) {
+      errors.set(name, e instanceof Error ? e.message : 'Unknown error')
     }
-    errors.set(ParseStrategy.STRUCTURED, 'No messages extracted from structured data')
-  } catch (e) {
-    errors.set(ParseStrategy.STRUCTURED, e instanceof Error ? e.message : 'Unknown error')
-  }
-
-  // Strategy 2: Heuristic extraction (pattern-based)
-  attemptedStrategies.push(ParseStrategy.HEURISTIC)
-  try {
-    const heuristicResult = extractFromReactRouterDataHeuristic(html)
-    if (heuristicResult && heuristicResult.messages.length > 0) {
-      return {
-        result: heuristicResult,
-        strategy: ParseStrategy.HEURISTIC,
-        attemptedStrategies,
-        errors
-      }
-    }
-    errors.set(ParseStrategy.HEURISTIC, 'No messages extracted from heuristic patterns')
-  } catch (e) {
-    errors.set(ParseStrategy.HEURISTIC, e instanceof Error ? e.message : 'Unknown error')
-  }
-
-  // Strategy 3: Manual fallback (most relaxed)
-  attemptedStrategies.push(ParseStrategy.MANUAL)
-  try {
-    const manualResult = extractWithManualFallback(html)
-    if (manualResult && manualResult.messages.length > 0) {
-      return {
-        result: manualResult,
-        strategy: ParseStrategy.MANUAL,
-        attemptedStrategies,
-        errors
-      }
-    }
-    errors.set(ParseStrategy.MANUAL, 'No messages extracted with manual fallback')
-  } catch (e) {
-    errors.set(ParseStrategy.MANUAL, e instanceof Error ? e.message : 'Unknown error')
   }
 
   // All strategies failed
@@ -855,7 +855,7 @@ export function extractMessagesWithFallback(html: string): ExtendedParseResult {
     result: null,
     strategy: ParseStrategy.FAILED,
     attemptedStrategies,
-    errors
+    errors,
   }
 }
 
