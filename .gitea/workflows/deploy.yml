@@ -85,16 +85,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ env.IAC_REPO }}
-          token: ${{ secrets.IAC_REPO_TOKEN }}
+          token: ${{ secrets.IAC_GITHUB_TOKEN }}
+          path: iac
 
       - name: Update image tag in IaC repo
         run: |
-          cd ${{ env.APP_PATH }}
+          cd iac/${{ env.APP_PATH }}
           sed -i "s/newTag: .*/newTag: ${{ gitea.sha }}/" kustomization.yaml
           cat kustomization.yaml
 
       - name: Commit and push to IaC repo
         run: |
+          cd iac
           git config user.name "Gitea Actions"
           git config user.email "actions@gitea.jiun.dev"
           git add ${{ env.APP_PATH }}/kustomization.yaml
