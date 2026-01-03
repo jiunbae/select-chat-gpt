@@ -81,12 +81,9 @@ jobs:
     needs: [build-server, build-web]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout IaC repo
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.IAC_REPO }}
-          token: ${{ secrets.IAC_GITHUB_TOKEN }}
-          path: iac
+      - name: Clone IaC repo from GitHub
+        run: |
+          git clone https://x-access-token:${{ secrets.IAC_GITHUB_TOKEN }}@github.com/${{ env.IAC_REPO }}.git iac
 
       - name: Update image tag in IaC repo
         run: |
