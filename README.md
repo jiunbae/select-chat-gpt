@@ -149,113 +149,124 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 - Tailwind CSS
 - React Markdown
 
-## K3s 배포
+## GitOps 배포
 
 ### 아키텍처
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  Tailscale Network                                      │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  NAS (Synology)              VMM K3s Cluster           │
-│  ├── registry.im-si.org      ├── selectchatgpt.im-si.org│
-│  └── Docker Registry         ├── api.selectchatgpt...  │
-│                              ├── MongoDB                │
-│                              ├── Server                 │
-│                              └── Web                    │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+GitHub: select-chat-gpt ──mirror──→ Gitea: select-chat-gpt
+                                           │
+                                           ↓
+                                   Gitea Actions (CI)
+                                           │
+                                     이미지 빌드/푸시
+                                           │
+                                           ↓
+GitHub: jiunbae/IaC ←──── kustomization.yaml 업데이트 (newTag)
+         │
+         ↓
+   ArgoCD 감시 → K8s 자동 배포
 ```
 
-### K8s 매니페스트 구조
+### 배포 흐름
+
+1. **코드 Push**: `main` 브랜치에 push
+2. **Mirror Sync**: GitHub → Gitea 자동 동기화
+3. **CI 빌드**: Gitea Actions가 Docker 이미지 빌드 및 Registry push
+4. **매니페스트 업데이트**: CI가 IaC 레포의 `kustomization.yaml` 업데이트
+5. **자동 배포**: ArgoCD가 변경 감지 후 K8s에 자동 배포
+
+### 자동 배포 (GitOps)
+
+```bash
+# main 브랜치에 push하면 자동 배포
+git push origin main
+
+# 배포 상태 확인
+kubectl --kubeconfig ~/.kube/jiun-k3s.yaml get application selectchatgpt -n argocd
+kubectl --kubeconfig ~/.kube/jiun-k3s.yaml get pods -n selectchatgpt
+```
+
+### 수동 동기화
+
+```bash
+# ArgoCD 강제 동기화
+kubectl --kubeconfig ~/.kube/jiun-k3s.yaml patch application selectchatgpt -n argocd \
+  --type merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}'
+```
+
+### K8s 매니페스트 (IaC 레포)
+
+매니페스트는 [jiunbae/IaC](https://github.com/jiunbae/IaC) 레포에서 관리됩니다:
 
 ```
-k8s/
+IaC/kubernetes/apps/selectchatgpt/
+├── application.yaml      # ArgoCD Application
+├── kustomization.yaml    # 이미지 태그 관리
 ├── namespace.yaml
 ├── ingress.yaml
-├── cert-manager/
-│   ├── clusterissuer.yaml
-│   └── certificate.yaml
 ├── mongodb/
+│   ├── pvc.yaml
+│   ├── deployment.yaml
+│   └── service.yaml
+├── redis/
 │   ├── pvc.yaml
 │   ├── deployment.yaml
 │   └── service.yaml
 ├── server/
 │   ├── configmap.yaml
 │   ├── deployment.yaml
-│   └── service.yaml
+│   ├── service.yaml
+│   └── service-metrics.yaml
 └── web/
     ├── configmap.yaml
     ├── deployment.yaml
     └── service.yaml
 ```
 
-### 최초 배포
+### CI 필수 Secrets (Gitea)
+
+| Secret | 설명 |
+|--------|------|
+| `REGISTRY_USERNAME` | Docker Registry 사용자명 |
+| `REGISTRY_PASSWORD` | Docker Registry 비밀번호 |
+| `IAC_GITHUB_TOKEN` | GitHub IaC 레포 접근 토큰 |
+| `NEXT_PUBLIC_API_URL` | API 서버 URL |
+| `NEXT_PUBLIC_GA_ID` | Google Analytics ID |
+| `NEXT_PUBLIC_ADSENSE_ID` | Google AdSense ID |
+
+### Extension 배포
+
+Extension은 별도로 빌드하여 Chrome 웹 스토어에 업로드합니다:
 
 ```bash
-# 1. Private Registry에 이미지 Push
-pnpm docker:release
-
-# 2. K3s에서 매니페스트 적용
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/mongodb/
-kubectl apply -f k8s/server/
-kubectl apply -f k8s/web/
-kubectl apply -f k8s/cert-manager/
-kubectl apply -f k8s/ingress.yaml
-
-# 3. 상태 확인
-kubectl get pods -n selectchatgpt
-```
-
-### 업데이트 배포
-
-#### 서버 배포 (Server + Web)
-
-```bash
-# 1. 이미지 빌드 & Push
-pnpm docker:release
-
-# 2. K3s에서 재배포
-kubectl rollout restart deployment/server -n selectchatgpt
-kubectl rollout restart deployment/web -n selectchatgpt
-
-# 3. 상태 확인
-kubectl get pods -n selectchatgpt -w
-```
-
-#### Extension 배포
-
-```bash
-# 프로덕션 빌드 (api.selectchatgpt.im-si.org 사용)
+# 프로덕션 빌드
 pnpm build:ext
 
 # 결과물: extension/build/chrome-mv3-prod/
-# Chrome 웹 스토어에 업로드 또는 직접 배포
-```
-
-#### 전체 배포 (서버 + Extension)
-
-```bash
-# 1. 서버 배포
-pnpm docker:release
-kubectl rollout restart deployment/server -n selectchatgpt
-kubectl rollout restart deployment/web -n selectchatgpt
-
-# 2. Extension 빌드
-pnpm build:ext
 ```
 
 ### 로그 확인
 
 ```bash
-# 전체 로그
-kubectl logs -n selectchatgpt -l app=server -f
-kubectl logs -n selectchatgpt -l app=web -f
+# Pod 로그
+kubectl --kubeconfig ~/.kube/jiun-k3s.yaml logs -n selectchatgpt -l app=server -f
+kubectl --kubeconfig ~/.kube/jiun-k3s.yaml logs -n selectchatgpt -l app=web -f
 
-# 특정 Pod 로그
-kubectl logs -n selectchatgpt <pod-name>
+# ArgoCD 상태
+kubectl --kubeconfig ~/.kube/jiun-k3s.yaml get application selectchatgpt -n argocd -o yaml
+```
+
+### 롤백
+
+```bash
+# Git revert로 롤백
+git revert <commit-hash>
+git push origin main
+
+# 또는 ArgoCD에서 이전 리비전으로 롤백
+kubectl --kubeconfig ~/.kube/jiun-k3s.yaml patch application selectchatgpt -n argocd \
+  --type merge -p '{"spec":{"source":{"targetRevision":"<previous-commit>"}}}'
 ```
 
 ### 유용한 명령어
@@ -263,8 +274,7 @@ kubectl logs -n selectchatgpt <pod-name>
 | 명령어 | 설명 |
 |--------|------|
 | `kubectl get pods -n selectchatgpt` | Pod 상태 확인 |
-| `kubectl get svc -n selectchatgpt` | 서비스 확인 |
-| `kubectl get ingress -n selectchatgpt` | Ingress 확인 |
+| `kubectl get application -n argocd` | ArgoCD 앱 상태 |
 | `kubectl describe pod <name> -n selectchatgpt` | Pod 상세 정보 |
 | `kubectl exec -it <pod> -n selectchatgpt -- sh` | Pod 접속 |
 

@@ -1,7 +1,7 @@
 // Google Analytics 4 Measurement Protocol for Chrome Extension
 // https://developers.google.com/analytics/devguides/collection/protocol/ga4
 
-const GA_MEASUREMENT_ID = process.env.PLASMO_PUBLIC_GA_MEASUREMENT_ID || 'G-QTQ15S85X2'
+const GA_MEASUREMENT_ID = process.env.PLASMO_PUBLIC_GA_MEASUREMENT_ID
 const GA_API_SECRET = process.env.PLASMO_PUBLIC_GA_API_SECRET || ''
 
 const GA_ENDPOINT = 'https://www.google-analytics.com/mp/collect'

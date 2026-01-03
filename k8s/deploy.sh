@@ -81,8 +81,9 @@ if [ "$DEPLOY_WEB" = true ]; then
     docker build --platform linux/amd64 \
         -t $REGISTRY/selectchatgpt-web:$TAG \
         -t $REGISTRY/selectchatgpt-web:latest \
-        --build-arg NEXT_PUBLIC_API_URL=https://selectchatgpt.jiun.dev \
-        --build-arg NEXT_PUBLIC_GA_ID=G-QTQ15S85X2 \
+        --build-arg NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://selectchatgpt.jiun.dev}" \
+        --build-arg NEXT_PUBLIC_GA_ID="${NEXT_PUBLIC_GA_ID:-}" \
+        --build-arg NEXT_PUBLIC_ADSENSE_ID="${NEXT_PUBLIC_ADSENSE_ID:-}" \
         -f "$PROJECT_DIR/web/Dockerfile" \
         "$PROJECT_DIR"
 
