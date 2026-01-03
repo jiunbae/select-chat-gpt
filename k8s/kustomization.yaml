@@ -32,3 +32,11 @@ resources:
 
   # Ingress
   - ingress.yaml
+
+# Image tags managed by GitOps CI pipeline
+# CI builds image -> pushes to registry -> updates newTag -> ArgoCD syncs
+images:
+  - name: registry.jiun.dev/selectchatgpt-server
+    newTag: "latest"
+  - name: registry.jiun.dev/selectchatgpt-web
+    newTag: "latest"

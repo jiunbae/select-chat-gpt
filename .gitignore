@@ -42,3 +42,6 @@ coverage/
 *.crx
 *.pem
 keys/
+
+# K8s secrets
+k8s/secrets.yaml
