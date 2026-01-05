@@ -114,24 +114,24 @@ function processTextOutsideCodeBlocks(content: string, processor: (text: string)
   return parts.join('');
 }
 
+// Citation regex pattern - defined outside function to avoid recompilation
+// Matches: citeturn0search1, turn0search13, cite[1][13][17]
+const CITATION_REGEX = /(?:cite)?turn\d+search(\d+)|cite((?:\[\d+\])+)/g;
+
 // Convert ChatGPT citation patterns to clickable superscript links
 // Handles multiple citation formats:
 // 1. citeturn0search1turn0search13 → [1][13] (ChatGPT web search citations)
 // 2. cite[1][13][17] → [1][13][17] (bracket-style citations)
-// Uses unified regex with replacer function for single-pass processing
 function convertCitations(content: string): string {
   return processTextOutsideCodeBlocks(content, (text) =>
-    text.replace(
-      /(?:cite)?turn\d+search(\d+)|cite((?:\[\d+\])+)/g,
-      (_, p1, p2) => {
-        if (p1) {
-          // Handle citeturn0searchN format
-          return `<sup class="citation-link">[${p1}]</sup>`;
-        }
-        // Handle cite[N][M]... format
-        return `<sup class="citation-link">${p2}</sup>`;
+    text.replace(CITATION_REGEX, (_, p1, p2) => {
+      if (p1) {
+        // Handle citeturn0searchN format
+        return `<sup class="citation-link">[${p1}]</sup>`;
       }
-    )
+      // Handle cite[N][M]... format
+      return `<sup class="citation-link">${p2}</sup>`;
+    })
   );
 }
 
