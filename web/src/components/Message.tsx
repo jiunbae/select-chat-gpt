@@ -27,7 +27,7 @@ import {
   getContentPaddingValue,
 } from "@/lib/export";
 
-// Extended sanitize schema to allow KaTeX-generated elements
+// Extended sanitize schema to allow KaTeX-generated elements and citation sup tags
 const sanitizeSchema = {
   ...defaultSchema,
   tagNames: [
@@ -36,7 +36,9 @@ const sanitizeSchema = {
     'math', 'semantics', 'mrow', 'mi', 'mn', 'mo', 'msup', 'msub',
     'mfrac', 'mroot', 'msqrt', 'mtext', 'mspace', 'mtable', 'mtr', 'mtd',
     'annotation', 'svg', 'path', 'line', 'rect', 'g', 'use', 'defs',
-    'span', 'div'
+    'span', 'div',
+    // Citation superscript tag
+    'sup'
   ],
   attributes: {
     ...defaultSchema.attributes,
@@ -93,10 +95,20 @@ function decodeHtmlEntities(content: string): string {
 // Convert ChatGPT citation patterns to clickable superscript links
 // Matches patterns like: citeturn0search1turn0search13turn0search17
 // Converts to: [1][13][17] style links
+// Only process content outside of code blocks to avoid corrupting code
 function convertCitations(content: string): string {
-  // Pattern matches: citeturn{N}search{M} where N and M are numbers
-  // We need to handle concatenated citations like: citeturn0search1turn0search13
-  return content.replace(/citeturn\d+search(\d+)/g, '<sup class="citation-link">[$1]</sup>');
+  // Split by fenced code blocks, keeping the delimiters
+  const parts = content.split(/(```[\s\S]*?```)/g);
+
+  for (let i = 0; i < parts.length; i++) {
+    // Only process parts outside of code blocks (even indices)
+    if (i % 2 === 0) {
+      // Pattern matches: citeturn{N}search{M} where N and M are numbers
+      parts[i] = parts[i].replace(/citeturn\d+search(\d+)/g, '<sup class="citation-link">[$1]</sup>');
+    }
+  }
+
+  return parts.join('');
 }
 
 // Convert LaTeX delimiters from ChatGPT format to standard format
@@ -260,32 +272,37 @@ export const Message = memo(function Message({
                   [rehypeSanitize, sanitizeSchema]
                 ]}
                 components={{
+                  // Handle code blocks with syntax highlighting
+                  pre({ children }) {
+                    return <>{children}</>;
+                  },
                   code({ node, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '');
-                    const isInline = !match && !className?.includes('language-');
-                    return !isInline ? (
-                      <SyntaxHighlighter
-                        style={isCleanStyle ? oneLight : oneDark}
-                        language={match ? match[1] : 'text'}
-                        PreTag="div"
-                        customStyle={{
-                          margin: '1em 0',
-                          borderRadius: '8px',
-                          fontSize: '14px',
-                        }}
-                      >
-                        {String(children).replace(/\n$/, '')}
-                      </SyntaxHighlighter>
-                    ) : (
+                    // Check if this is a code block (has language class or contains newlines)
+                    const codeString = String(children).replace(/\n$/, '');
+                    const isCodeBlock = match || codeString.includes('\n');
+
+                    if (isCodeBlock) {
+                      return (
+                        <SyntaxHighlighter
+                          style={isCleanStyle ? oneLight : oneDark}
+                          language={match ? match[1] : 'text'}
+                          PreTag="div"
+                          customStyle={{
+                            margin: '1em 0',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                          }}
+                        >
+                          {codeString}
+                        </SyntaxHighlighter>
+                      );
+                    }
+
+                    // Inline code with Tailwind classes
+                    return (
                       <code
-                        className={className}
-                        style={{
-                          backgroundColor: isCleanStyle ? '#f3f4f6' : '#3c3c3c',
-                          color: isCleanStyle ? '#dc2626' : '#e5e5e5',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          fontSize: '0.9em',
-                        }}
+                        className={`${isCleanStyle ? 'bg-gray-100 text-red-600' : 'bg-zinc-700 text-gray-200'} px-1.5 py-0.5 rounded text-[0.9em]`}
                         {...props}
                       >
                         {children}

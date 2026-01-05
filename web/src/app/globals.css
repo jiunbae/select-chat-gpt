@@ -127,18 +127,9 @@ body {
 
 /* Citation link styling */
 .markdown-content .citation-link {
-  @apply text-xs font-medium cursor-pointer;
-  color: #0ea5e9;
-  text-decoration: none;
-  padding: 0 2px;
-  vertical-align: super;
+  @apply text-xs font-medium cursor-pointer px-0.5 no-underline align-super text-sky-500 dark:text-sky-400;
 }
 
 .markdown-content .citation-link:hover {
-  text-decoration: underline;
-}
-
-/* Dark mode citation styling */
-.dark .markdown-content .citation-link {
-  color: #38bdf8;
+  @apply underline;
 }
