@@ -101,11 +101,22 @@ function decodeHtmlEntities(content: string): string {
   return textarea.value;
 }
 
-// Helper function to process text outside of code blocks (both fenced and inline)
-// This prevents corrupting code content when applying text transformations
-function processTextOutsideCodeBlocks(content: string, processor: (text: string) => string): string {
-  // Match fenced code blocks (```...```), double backtick (`...`), and single backtick (`...`)
-  const parts = content.split(/(```[\s\S]*?```|``[\s\S]*?``|`[^`\n]*?`)/g);
+// Regex pattern parts for block exclusion
+const CODE_BLOCK_REGEX_PART = "```[\\s\\S]*?```|``[\\s\\S]*?``|`[^`\\n]*?`";
+// LaTeX regex using .source for better readability (avoids string escaping)
+const LATEX_BLOCK_REGEX_PART = [
+  /\\\[[\s\S]*?\\\]/.source,  // Matches display mode LaTeX: \[...\]
+  /\\\([\s\S]*?\\\)/.source   // Matches inline mode LaTeX: \(...\)
+].join('|');
+
+// Pre-compiled regex patterns for performance
+const CODE_BLOCK_REGEX = new RegExp(`(${CODE_BLOCK_REGEX_PART})`, 'g');
+const CODE_AND_LATEX_BLOCK_REGEX = new RegExp(`(${CODE_BLOCK_REGEX_PART}|${LATEX_BLOCK_REGEX_PART})`, 'g');
+
+// Generic helper function to process text outside specified block patterns
+// This prevents corrupting protected content when applying text transformations
+function processTextOutsideBlocks(content: string, ignorePattern: RegExp, processor: (text: string) => string): string {
+  const parts = content.split(ignorePattern);
   for (let i = 0; i < parts.length; i++) {
     if (i % 2 === 0) {
       parts[i] = processor(parts[i]);
@@ -114,13 +125,35 @@ function processTextOutsideCodeBlocks(content: string, processor: (text: string)
   return parts.join('');
 }
 
+// Process text outside code blocks only (for LaTeX delimiter conversion)
+function processTextOutsideCodeBlocks(content: string, processor: (text: string) => string): string {
+  return processTextOutsideBlocks(content, CODE_BLOCK_REGEX, processor);
+}
+
+// Process text outside code blocks AND LaTeX blocks (for citation conversion)
+function processTextOutsideCodeAndLatexBlocks(content: string, processor: (text: string) => string): string {
+  return processTextOutsideBlocks(content, CODE_AND_LATEX_BLOCK_REGEX, processor);
+}
+
+// Citation regex pattern - defined outside function to avoid recompilation
+// Matches: citeturn0search1, turn0search13, cite[1][13][17]
+// Using unrolled loop pattern to avoid nested quantifier backtracking
+const CITATION_REGEX = /(?:cite)?turn\d+search(\d+)|cite(\[\d+\](?:\[\d+\])*)/g;
+
 // Convert ChatGPT citation patterns to clickable superscript links
-// Matches patterns like: citeturn0search1turn0search13turn0search17
-// Converts to: [1][13][17] style links
-// Uses (?:cite)? to handle both initial "cite" and subsequent "turn" patterns
+// Handles multiple citation formats:
+// 1. citeturn0search1turn0search13 → [1][13] (ChatGPT web search citations)
+// 2. cite[1][13][17] → [1][13][17] (bracket-style citations)
 function convertCitations(content: string): string {
-  return processTextOutsideCodeBlocks(content, (text) =>
-    text.replace(/(?:cite)?turn\d+search(\d+)/g, '<sup class="citation-link">[$1]</sup>')
+  return processTextOutsideCodeAndLatexBlocks(content, (text) =>
+    text.replace(CITATION_REGEX, (_, p1, p2) => {
+      if (p1) {
+        // Handle citeturn0searchN format
+        return `<sup class="citation-link">[${p1}]</sup>`;
+      }
+      // Handle cite[N][M]... format
+      return `<sup class="citation-link">${p2}</sup>`;
+    })
   );
 }
 
