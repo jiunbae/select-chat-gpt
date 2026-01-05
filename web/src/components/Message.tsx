@@ -101,10 +101,11 @@ function decodeHtmlEntities(content: string): string {
   return textarea.value;
 }
 
-// Helper function to process text outside of code blocks
+// Helper function to process text outside of code blocks (both fenced and inline)
 // This prevents corrupting code content when applying text transformations
 function processTextOutsideCodeBlocks(content: string, processor: (text: string) => string): string {
-  const parts = content.split(/(```[\s\S]*?```)/g);
+  // Match fenced code blocks (```...```), double backtick (`...`), and single backtick (`...`)
+  const parts = content.split(/(```[\s\S]*?```|``[\s\S]*?``|`[^`\n]*?`)/g);
   for (let i = 0; i < parts.length; i++) {
     if (i % 2 === 0) {
       parts[i] = processor(parts[i]);
