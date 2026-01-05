@@ -137,7 +137,8 @@ function processTextOutsideCodeAndLatexBlocks(content: string, processor: (text:
 
 // Citation regex pattern - defined outside function to avoid recompilation
 // Matches: citeturn0search1, turn0search13, cite[1][13][17]
-const CITATION_REGEX = /(?:cite)?turn\d+search(\d+)|cite((?:\[\d+\])+)/g;
+// Using unrolled loop pattern to avoid nested quantifier backtracking
+const CITATION_REGEX = /(?:cite)?turn\d+search(\d+)|cite(\[\d+\](?:\[\d+\])*)/g;
 
 // Convert ChatGPT citation patterns to clickable superscript links
 // Handles multiple citation formats:
