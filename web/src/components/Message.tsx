@@ -2,6 +2,8 @@
 
 import { useMemo, memo } from "react";
 import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -246,6 +248,40 @@ export const Message = memo(function Message({
                   rehypeRaw,
                   [rehypeSanitize, sanitizeSchema]
                 ]}
+                components={{
+                  code({ node, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    const isInline = !match && !className?.includes('language-');
+                    return !isInline ? (
+                      <SyntaxHighlighter
+                        style={isCleanStyle ? oneLight : oneDark}
+                        language={match ? match[1] : 'text'}
+                        PreTag="div"
+                        customStyle={{
+                          margin: '1em 0',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                        }}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    ) : (
+                      <code
+                        className={className}
+                        style={{
+                          backgroundColor: isCleanStyle ? '#f3f4f6' : '#3c3c3c',
+                          color: isCleanStyle ? '#dc2626' : '#e5e5e5',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontSize: '0.9em',
+                        }}
+                        {...props}
+                      >
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
               >
                 {processedContent}
               </ReactMarkdown>
