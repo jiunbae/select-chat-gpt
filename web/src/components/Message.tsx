@@ -101,11 +101,18 @@ function decodeHtmlEntities(content: string): string {
   return textarea.value;
 }
 
-// Helper function to process text outside of code blocks (both fenced and inline)
-// This prevents corrupting code content when applying text transformations
-function processTextOutsideCodeBlocks(content: string, processor: (text: string) => string): string {
-  // Match fenced code blocks (```...```), double backtick (`...`), and single backtick (`...`)
-  const parts = content.split(/(```[\s\S]*?```|``[\s\S]*?``|`[^`\n]*?`)/g);
+// Regex pattern parts for block exclusion
+const CODE_BLOCK_REGEX_PART = "```[\\s\\S]*?```|``[\\s\\S]*?``|`[^`\\n]*?`";
+const LATEX_BLOCK_REGEX_PART = "\\\\\\[[\\s\\S]*?\\\\\\]|\\\\\\([\\s\\S]*?\\\\\\)";
+
+// Pre-compiled regex patterns for performance
+const CODE_BLOCK_REGEX = new RegExp(`(${CODE_BLOCK_REGEX_PART})`, 'g');
+const CODE_AND_LATEX_BLOCK_REGEX = new RegExp(`(${CODE_BLOCK_REGEX_PART}|${LATEX_BLOCK_REGEX_PART})`, 'g');
+
+// Generic helper function to process text outside specified block patterns
+// This prevents corrupting protected content when applying text transformations
+function processTextOutsideBlocks(content: string, ignorePattern: RegExp, processor: (text: string) => string): string {
+  const parts = content.split(ignorePattern);
   for (let i = 0; i < parts.length; i++) {
     if (i % 2 === 0) {
       parts[i] = processor(parts[i]);
@@ -114,18 +121,14 @@ function processTextOutsideCodeBlocks(content: string, processor: (text: string)
   return parts.join('');
 }
 
-// Helper function to process text outside of code blocks AND LaTeX blocks
-// Used specifically for citation conversion to avoid corrupting math expressions
+// Process text outside code blocks only (for LaTeX delimiter conversion)
+function processTextOutsideCodeBlocks(content: string, processor: (text: string) => string): string {
+  return processTextOutsideBlocks(content, CODE_BLOCK_REGEX, processor);
+}
+
+// Process text outside code blocks AND LaTeX blocks (for citation conversion)
 function processTextOutsideCodeAndLatexBlocks(content: string, processor: (text: string) => string): string {
-  // Match fenced code blocks (```...```), double backtick (`...`), single backtick (`...`),
-  // and LaTeX delimiters (\[...\] and \(...\))
-  const parts = content.split(/(```[\s\S]*?```|``[\s\S]*?``|`[^`\n]*?`|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g);
-  for (let i = 0; i < parts.length; i++) {
-    if (i % 2 === 0) {
-      parts[i] = processor(parts[i]);
-    }
-  }
-  return parts.join('');
+  return processTextOutsideBlocks(content, CODE_AND_LATEX_BLOCK_REGEX, processor);
 }
 
 // Citation regex pattern - defined outside function to avoid recompilation
