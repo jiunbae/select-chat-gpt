@@ -115,13 +115,17 @@ function processTextOutsideCodeBlocks(content: string, processor: (text: string)
 }
 
 // Convert ChatGPT citation patterns to clickable superscript links
-// Matches patterns like: citeturn0search1turn0search13turn0search17
-// Converts to: [1][13][17] style links
-// Uses (?:cite)? to handle both initial "cite" and subsequent "turn" patterns
+// Handles multiple citation formats:
+// 1. citeturn0search1turn0search13 → [1][13] (ChatGPT web search citations)
+// 2. cite[1][13][17] → [1][13][17] (bracket-style citations)
 function convertCitations(content: string): string {
-  return processTextOutsideCodeBlocks(content, (text) =>
-    text.replace(/(?:cite)?turn\d+search(\d+)/g, '<sup class="citation-link">[$1]</sup>')
-  );
+  return processTextOutsideCodeBlocks(content, (text) => {
+    // Pattern 1: citeturn0searchN format (web search results)
+    let result = text.replace(/(?:cite)?turn\d+search(\d+)/g, '<sup class="citation-link">[$1]</sup>');
+    // Pattern 2: cite[N][M]... format (bracket-style citations) - remove 'cite' prefix
+    result = result.replace(/cite((?:\[\d+\])+)/g, '<sup class="citation-link">$1</sup>');
+    return result;
+  });
 }
 
 // Convert LaTeX delimiters from ChatGPT format to standard format
