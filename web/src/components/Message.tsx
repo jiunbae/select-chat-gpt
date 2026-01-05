@@ -101,9 +101,22 @@ function decodeHtmlEntities(content: string): string {
   return textarea.value;
 }
 
-// Helper function to process text outside of code blocks (both fenced and inline) and LaTeX blocks
-// This prevents corrupting code content and math expressions when applying text transformations
+// Helper function to process text outside of code blocks (both fenced and inline)
+// This prevents corrupting code content when applying text transformations
 function processTextOutsideCodeBlocks(content: string, processor: (text: string) => string): string {
+  // Match fenced code blocks (```...```), double backtick (`...`), and single backtick (`...`)
+  const parts = content.split(/(```[\s\S]*?```|``[\s\S]*?``|`[^`\n]*?`)/g);
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 2 === 0) {
+      parts[i] = processor(parts[i]);
+    }
+  }
+  return parts.join('');
+}
+
+// Helper function to process text outside of code blocks AND LaTeX blocks
+// Used specifically for citation conversion to avoid corrupting math expressions
+function processTextOutsideCodeAndLatexBlocks(content: string, processor: (text: string) => string): string {
   // Match fenced code blocks (```...```), double backtick (`...`), single backtick (`...`),
   // and LaTeX delimiters (\[...\] and \(...\))
   const parts = content.split(/(```[\s\S]*?```|``[\s\S]*?``|`[^`\n]*?`|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g);
@@ -124,7 +137,7 @@ const CITATION_REGEX = /(?:cite)?turn\d+search(\d+)|cite((?:\[\d+\])+)/g;
 // 1. citeturn0search1turn0search13 → [1][13] (ChatGPT web search citations)
 // 2. cite[1][13][17] → [1][13][17] (bracket-style citations)
 function convertCitations(content: string): string {
-  return processTextOutsideCodeBlocks(content, (text) =>
+  return processTextOutsideCodeAndLatexBlocks(content, (text) =>
     text.replace(CITATION_REGEX, (_, p1, p2) => {
       if (p1) {
         // Handle citeturn0searchN format
