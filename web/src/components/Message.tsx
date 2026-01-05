@@ -101,6 +101,13 @@ function decodeHtmlEntities(content: string): string {
   return textarea.value;
 }
 
+// Remove ChatGPT's Private Use Area (PUA) Unicode characters used as citation markers
+// These characters (U+E200-U+E2FF) appear around citations and break regex matching
+function stripCitationMarkers(content: string): string {
+  // Remove PUA characters in the range U+E200-U+E2FF
+  return content.replace(/[\uE200-\uE2FF]/g, '');
+}
+
 // Regex pattern parts for block exclusion
 const CODE_BLOCK_REGEX_PART = "```[\\s\\S]*?```|``[\\s\\S]*?``|`[^`\\n]*?`";
 // LaTeX regex using .source for better readability (avoids string escaping)
@@ -212,6 +219,8 @@ export const Message = memo(function Message({
     let content = message.content || '';
     // Decode HTML entities first (for backward compatibility with sanitized data)
     content = decodeHtmlEntities(content);
+    // Strip ChatGPT's PUA citation markers before processing
+    content = stripCitationMarkers(content);
     // Convert ChatGPT citations to clickable links
     content = convertCitations(content);
     // Convert LaTeX delimiters for remark-math compatibility
