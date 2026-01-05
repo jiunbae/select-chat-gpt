@@ -2,6 +2,9 @@
 
 import { useMemo, memo } from "react";
 import ReactMarkdown from "react-markdown";
+import type { ExtraProps } from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -9,6 +12,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import "katex/dist/katex.min.css";
 import type { Message as MessageType } from "@/lib/api";
+
 import {
   type ExportStyleType,
   type FontSize,
@@ -25,7 +29,14 @@ import {
   getContentPaddingValue,
 } from "@/lib/export";
 
-// Extended sanitize schema to allow KaTeX-generated elements
+// Type for code component props in react-markdown
+type CodeProps = React.ClassAttributes<HTMLElement> &
+  React.HTMLAttributes<HTMLElement> &
+  ExtraProps & {
+    inline?: boolean;
+  };
+
+// Extended sanitize schema to allow KaTeX-generated elements and citation sup tags
 const sanitizeSchema = {
   ...defaultSchema,
   tagNames: [
@@ -34,7 +45,9 @@ const sanitizeSchema = {
     'math', 'semantics', 'mrow', 'mi', 'mn', 'mo', 'msup', 'msub',
     'mfrac', 'mroot', 'msqrt', 'mtext', 'mspace', 'mtable', 'mtr', 'mtd',
     'annotation', 'svg', 'path', 'line', 'rect', 'g', 'use', 'defs',
-    'span', 'div'
+    'span', 'div',
+    // Citation superscript tag
+    'sup'
   ],
   attributes: {
     ...defaultSchema.attributes,
@@ -88,25 +101,37 @@ function decodeHtmlEntities(content: string): string {
   return textarea.value;
 }
 
-// Convert LaTeX delimiters from ChatGPT format to standard format
-// ChatGPT uses \[...\] and \(...\), remark-math expects $$...$$ and $...$
-// Only process content outside of code blocks to avoid corrupting code
-function convertLatexDelimiters(content: string): string {
-  // Split by fenced code blocks, keeping the delimiters
-  const parts = content.split(/(```[\s\S]*?```)/g);
-
+// Helper function to process text outside of code blocks (both fenced and inline)
+// This prevents corrupting code content when applying text transformations
+function processTextOutsideCodeBlocks(content: string, processor: (text: string) => string): string {
+  // Match fenced code blocks (```...```), double backtick (`...`), and single backtick (`...`)
+  const parts = content.split(/(```[\s\S]*?```|``[\s\S]*?``|`[^`\n]*?`)/g);
   for (let i = 0; i < parts.length; i++) {
-    // Only process parts outside of code blocks (even indices)
     if (i % 2 === 0) {
-      parts[i] = parts[i]
-        // Convert display math: \[...\] -> $$...$$ (require non-empty content with +?)
-        .replace(/\\\[([\s\S]+?)\\\]/g, (_, math) => `$$${math}$$`)
-        // Convert inline math: \(...\) -> $...$ (require non-empty content with +?)
-        .replace(/\\\(([\s\S]+?)\\\)/g, (_, math) => `$${math}$`);
+      parts[i] = processor(parts[i]);
     }
   }
-
   return parts.join('');
+}
+
+// Convert ChatGPT citation patterns to clickable superscript links
+// Matches patterns like: citeturn0search1turn0search13turn0search17
+// Converts to: [1][13][17] style links
+// Uses (?:cite)? to handle both initial "cite" and subsequent "turn" patterns
+function convertCitations(content: string): string {
+  return processTextOutsideCodeBlocks(content, (text) =>
+    text.replace(/(?:cite)?turn\d+search(\d+)/g, '<sup class="citation-link">[$1]</sup>')
+  );
+}
+
+// Convert LaTeX delimiters from ChatGPT format to standard format
+// ChatGPT uses \[...\] and \(...\), remark-math expects $$...$$ and $...$
+function convertLatexDelimiters(content: string): string {
+  return processTextOutsideCodeBlocks(content, (text) =>
+    text
+      .replace(/\\\[([\s\S]+?)\\\]/g, (_, math) => `$$${math}$$`)
+      .replace(/\\\(([\s\S]+?)\\\)/g, (_, math) => `$${math}$`)
+  );
 }
 
 export const Message = memo(function Message({
@@ -154,6 +179,8 @@ export const Message = memo(function Message({
     let content = message.content || '';
     // Decode HTML entities first (for backward compatibility with sanitized data)
     content = decodeHtmlEntities(content);
+    // Convert ChatGPT citations to clickable links
+    content = convertCitations(content);
     // Convert LaTeX delimiters for remark-math compatibility
     content = convertLatexDelimiters(content);
     if (hideCodeBlocks) {
@@ -246,6 +273,47 @@ export const Message = memo(function Message({
                   rehypeRaw,
                   [rehypeSanitize, sanitizeSchema]
                 ]}
+                components={{
+                  // Handle code blocks - pass through to let code component handle
+                  pre({ children }) {
+                    return <>{children}</>;
+                  },
+                  code(props: CodeProps) {
+                    const { node, inline, className, children, ...rest } = props;
+                    const match = /language-(\w+)/.exec(className || '');
+                    const codeString = String(children).replace(/\n$/, '');
+
+                    // Use inline prop if available, fallback to heuristic
+                    const isInlineCode = inline ?? (!match && !codeString.includes('\n'));
+
+                    if (!isInlineCode) {
+                      return (
+                        <SyntaxHighlighter
+                          style={isCleanStyle ? oneLight : oneDark}
+                          language={match ? match[1] : 'text'}
+                          PreTag="div"
+                          customStyle={{
+                            margin: '1em 0',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                          }}
+                        >
+                          {codeString}
+                        </SyntaxHighlighter>
+                      );
+                    }
+
+                    // Inline code with Tailwind classes
+                    return (
+                      <code
+                        className={`${isCleanStyle ? 'bg-gray-100 text-red-600' : 'bg-zinc-700 text-gray-200'} px-1.5 py-0.5 rounded text-[0.9em]`}
+                        {...rest}
+                      >
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
               >
                 {processedContent}
               </ReactMarkdown>
