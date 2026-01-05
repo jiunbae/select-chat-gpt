@@ -124,3 +124,21 @@ body {
 .markdown-content img {
   @apply max-w-full h-auto rounded-lg my-4;
 }
+
+/* Citation link styling */
+.markdown-content .citation-link {
+  @apply text-xs font-medium cursor-pointer;
+  color: #0ea5e9;
+  text-decoration: none;
+  padding: 0 2px;
+  vertical-align: super;
+}
+
+.markdown-content .citation-link:hover {
+  text-decoration: underline;
+}
+
+/* Dark mode citation styling */
+.dark .markdown-content .citation-link {
+  color: #38bdf8;
+}

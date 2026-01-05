@@ -88,6 +88,15 @@ function decodeHtmlEntities(content: string): string {
   return textarea.value;
 }
 
+// Convert ChatGPT citation patterns to clickable superscript links
+// Matches patterns like: citeturn0search1turn0search13turn0search17
+// Converts to: [1][13][17] style links
+function convertCitations(content: string): string {
+  // Pattern matches: citeturn{N}search{M} where N and M are numbers
+  // We need to handle concatenated citations like: citeturn0search1turn0search13
+  return content.replace(/citeturn\d+search(\d+)/g, '<sup class="citation-link">[$1]</sup>');
+}
+
 // Convert LaTeX delimiters from ChatGPT format to standard format
 // ChatGPT uses \[...\] and \(...\), remark-math expects $$...$$ and $...$
 // Only process content outside of code blocks to avoid corrupting code
@@ -154,6 +163,8 @@ export const Message = memo(function Message({
     let content = message.content || '';
     // Decode HTML entities first (for backward compatibility with sanitized data)
     content = decodeHtmlEntities(content);
+    // Convert ChatGPT citations to clickable links
+    content = convertCitations(content);
     // Convert LaTeX delimiters for remark-math compatibility
     content = convertLatexDelimiters(content);
     if (hideCodeBlocks) {
