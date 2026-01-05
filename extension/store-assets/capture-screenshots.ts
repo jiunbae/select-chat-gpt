@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 const path = require('path');
 
-const OUTPUT_DIR = '/Users/jiun/workspace/select-chat-gpt/extension/store-assets';
+const OUTPUT_DIR = __dirname;
 
 async function captureScreenshots() {
   const browser = await chromium.launch();
@@ -25,7 +25,7 @@ async function captureScreenshots() {
   if (shareLinks.length > 0) {
     console.log('Capturing share page:', shareLinks[0]);
     await page.goto(shareLinks[0], { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1000); // 렌더링 대기
+    await page.waitForSelector('.markdown-content', { state: 'visible' });
     await page.screenshot({
       path: path.join(OUTPUT_DIR, 'screenshot-2-conversation.png'),
       fullPage: false

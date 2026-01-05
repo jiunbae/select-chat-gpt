@@ -92,44 +92,35 @@ function decodeHtmlEntities(content: string): string {
   return textarea.value;
 }
 
+// Helper function to process text outside of code blocks
+// This prevents corrupting code content when applying text transformations
+function processTextOutsideCodeBlocks(content: string, processor: (text: string) => string): string {
+  const parts = content.split(/(```[\s\S]*?```)/g);
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 2 === 0) {
+      parts[i] = processor(parts[i]);
+    }
+  }
+  return parts.join('');
+}
+
 // Convert ChatGPT citation patterns to clickable superscript links
 // Matches patterns like: citeturn0search1turn0search13turn0search17
 // Converts to: [1][13][17] style links
-// Only process content outside of code blocks to avoid corrupting code
 function convertCitations(content: string): string {
-  // Split by fenced code blocks, keeping the delimiters
-  const parts = content.split(/(```[\s\S]*?```)/g);
-
-  for (let i = 0; i < parts.length; i++) {
-    // Only process parts outside of code blocks (even indices)
-    if (i % 2 === 0) {
-      // Pattern matches: citeturn{N}search{M} where N and M are numbers
-      parts[i] = parts[i].replace(/citeturn\d+search(\d+)/g, '<sup class="citation-link">[$1]</sup>');
-    }
-  }
-
-  return parts.join('');
+  return processTextOutsideCodeBlocks(content, (text) =>
+    text.replace(/citeturn\d+search(\d+)/g, '<sup class="citation-link">[$1]</sup>')
+  );
 }
 
 // Convert LaTeX delimiters from ChatGPT format to standard format
 // ChatGPT uses \[...\] and \(...\), remark-math expects $$...$$ and $...$
-// Only process content outside of code blocks to avoid corrupting code
 function convertLatexDelimiters(content: string): string {
-  // Split by fenced code blocks, keeping the delimiters
-  const parts = content.split(/(```[\s\S]*?```)/g);
-
-  for (let i = 0; i < parts.length; i++) {
-    // Only process parts outside of code blocks (even indices)
-    if (i % 2 === 0) {
-      parts[i] = parts[i]
-        // Convert display math: \[...\] -> $$...$$ (require non-empty content with +?)
-        .replace(/\\\[([\s\S]+?)\\\]/g, (_, math) => `$$${math}$$`)
-        // Convert inline math: \(...\) -> $...$ (require non-empty content with +?)
-        .replace(/\\\(([\s\S]+?)\\\)/g, (_, math) => `$${math}$`);
-    }
-  }
-
-  return parts.join('');
+  return processTextOutsideCodeBlocks(content, (text) =>
+    text
+      .replace(/\\\[([\s\S]+?)\\\]/g, (_, math) => `$$${math}$$`)
+      .replace(/\\\(([\s\S]+?)\\\)/g, (_, math) => `$${math}$`)
+  );
 }
 
 export const Message = memo(function Message({
@@ -272,17 +263,19 @@ export const Message = memo(function Message({
                   [rehypeSanitize, sanitizeSchema]
                 ]}
                 components={{
-                  // Handle code blocks with syntax highlighting
+                  // Handle code blocks - pass through to let code component handle
                   pre({ children }) {
                     return <>{children}</>;
                   },
-                  code({ node, className, children, ...props }) {
+                  // @ts-expect-error - inline prop exists in react-markdown but types may not reflect it
+                  code({ node, inline, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '');
-                    // Check if this is a code block (has language class or contains newlines)
                     const codeString = String(children).replace(/\n$/, '');
-                    const isCodeBlock = match || codeString.includes('\n');
 
-                    if (isCodeBlock) {
+                    // Use inline prop if available, fallback to heuristic
+                    const isInlineCode = inline ?? (!match && !codeString.includes('\n'));
+
+                    if (!isInlineCode) {
                       return (
                         <SyntaxHighlighter
                           style={isCleanStyle ? oneLight : oneDark}
