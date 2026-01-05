@@ -118,14 +118,21 @@ function processTextOutsideCodeBlocks(content: string, processor: (text: string)
 // Handles multiple citation formats:
 // 1. citeturn0search1turn0search13 → [1][13] (ChatGPT web search citations)
 // 2. cite[1][13][17] → [1][13][17] (bracket-style citations)
+// Uses unified regex with replacer function for single-pass processing
 function convertCitations(content: string): string {
-  return processTextOutsideCodeBlocks(content, (text) => {
-    // Pattern 1: citeturn0searchN format (web search results)
-    let result = text.replace(/(?:cite)?turn\d+search(\d+)/g, '<sup class="citation-link">[$1]</sup>');
-    // Pattern 2: cite[N][M]... format (bracket-style citations) - remove 'cite' prefix
-    result = result.replace(/cite((?:\[\d+\])+)/g, '<sup class="citation-link">$1</sup>');
-    return result;
-  });
+  return processTextOutsideCodeBlocks(content, (text) =>
+    text.replace(
+      /(?:cite)?turn\d+search(\d+)|cite((?:\[\d+\])+)/g,
+      (_, p1, p2) => {
+        if (p1) {
+          // Handle citeturn0searchN format
+          return `<sup class="citation-link">[${p1}]</sup>`;
+        }
+        // Handle cite[N][M]... format
+        return `<sup class="citation-link">${p2}</sup>`;
+      }
+    )
+  );
 }
 
 // Convert LaTeX delimiters from ChatGPT format to standard format
