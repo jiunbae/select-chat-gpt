@@ -2,6 +2,7 @@
 
 import { useMemo, memo } from "react";
 import ReactMarkdown from "react-markdown";
+import type { ExtraProps } from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
@@ -11,6 +12,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import "katex/dist/katex.min.css";
 import type { Message as MessageType } from "@/lib/api";
+
 import {
   type ExportStyleType,
   type FontSize,
@@ -26,6 +28,13 @@ import {
   getMessageGapValue,
   getContentPaddingValue,
 } from "@/lib/export";
+
+// Type for code component props in react-markdown
+type CodeProps = React.ClassAttributes<HTMLElement> &
+  React.HTMLAttributes<HTMLElement> &
+  ExtraProps & {
+    inline?: boolean;
+  };
 
 // Extended sanitize schema to allow KaTeX-generated elements and citation sup tags
 const sanitizeSchema = {
@@ -107,9 +116,10 @@ function processTextOutsideCodeBlocks(content: string, processor: (text: string)
 // Convert ChatGPT citation patterns to clickable superscript links
 // Matches patterns like: citeturn0search1turn0search13turn0search17
 // Converts to: [1][13][17] style links
+// Uses (?:cite)? to handle both initial "cite" and subsequent "turn" patterns
 function convertCitations(content: string): string {
   return processTextOutsideCodeBlocks(content, (text) =>
-    text.replace(/citeturn\d+search(\d+)/g, '<sup class="citation-link">[$1]</sup>')
+    text.replace(/(?:cite)?turn\d+search(\d+)/g, '<sup class="citation-link">[$1]</sup>')
   );
 }
 
@@ -267,8 +277,8 @@ export const Message = memo(function Message({
                   pre({ children }) {
                     return <>{children}</>;
                   },
-                  // @ts-expect-error - inline prop exists in react-markdown but types may not reflect it
-                  code({ node, inline, className, children, ...props }) {
+                  code(props: CodeProps) {
+                    const { node, inline, className, children, ...rest } = props;
                     const match = /language-(\w+)/.exec(className || '');
                     const codeString = String(children).replace(/\n$/, '');
 
@@ -296,7 +306,7 @@ export const Message = memo(function Message({
                     return (
                       <code
                         className={`${isCleanStyle ? 'bg-gray-100 text-red-600' : 'bg-zinc-700 text-gray-200'} px-1.5 py-0.5 rounded text-[0.9em]`}
-                        {...props}
+                        {...rest}
                       >
                         {children}
                       </code>
