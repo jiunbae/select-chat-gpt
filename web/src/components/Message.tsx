@@ -103,10 +103,10 @@ function decodeHtmlEntities(content: string): string {
 
 // Regex pattern parts for block exclusion
 const CODE_BLOCK_REGEX_PART = "```[\\s\\S]*?```|``[\\s\\S]*?``|`[^`\\n]*`";
-// LaTeX regex constructed from array for better readability
+// LaTeX regex using .source for better readability (avoids string escaping)
 const LATEX_BLOCK_REGEX_PART = [
-  "\\\\\\[[\\s\\S]*?\\\\\\]",  // Matches display mode LaTeX: \[...\]
-  "\\\\\\([\\s\\S]*?\\\\\\)"   // Matches inline mode LaTeX: \(...\)
+  /\\\[[\s\S]*?\\\]/.source,  // Matches display mode LaTeX: \[...\]
+  /\\\([\s\S]*?\\\)/.source   // Matches inline mode LaTeX: \(...\)
 ].join('|');
 
 // Pre-compiled regex patterns for performance
