@@ -13,6 +13,7 @@ const INACTIVE_TEXT_DARK = '#9ca3af';
 const BORDER_LIGHT = '#e5e7eb';
 const BORDER_DARK = '#444444';
 const DIVIDER_LIGHT = '#d1d5db';
+const DIVIDER_DARK = '#444444';
 const LABEL_TEXT_LIGHT = '#374151';
 const LABEL_TEXT_DARK = '#d1d5db';
 
@@ -241,7 +242,7 @@ export function StyleControls() {
             {/* Divider */}
             <div
               className="h-6 w-px"
-              style={{ backgroundColor: isCleanStyle ? DIVIDER_LIGHT : panelBorder }}
+              style={{ backgroundColor: isCleanStyle ? DIVIDER_LIGHT : DIVIDER_DARK }}
             />
 
             {/* Dropdown Toggles */}
