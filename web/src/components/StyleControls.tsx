@@ -3,7 +3,11 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useStyleContext } from './StyleContext';
-import type { LetterSpacing, LineHeight, FontSize, FontFamily, MessageGap, ContentPadding } from '@/lib/export';
+import type { LetterSpacing, LineHeight, FontSize, FontFamily, MessageGap, ContentPadding, ExportStyleType } from '@/lib/export';
+
+// Theme color constants
+const ACTIVE_COLOR = '#10a37f';
+const ACTIVE_BG_COLOR = 'rgba(16, 163, 127, 0.1)';
 
 // Chevron icon component
 function ChevronIcon({ isOpen, className = '' }: { isOpen: boolean; className?: string }) {
@@ -36,9 +40,9 @@ function DropdownToggle({
       onClick={onToggle}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors"
       style={{
-        borderColor: isOpen ? '#10a37f' : (isCleanStyle ? '#e5e7eb' : '#444444'),
-        backgroundColor: isOpen ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
-        color: isOpen ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
+        borderColor: isOpen ? ACTIVE_COLOR : (isCleanStyle ? '#e5e7eb' : '#444444'),
+        backgroundColor: isOpen ? ACTIVE_BG_COLOR : 'transparent',
+        color: isOpen ? ACTIVE_COLOR : (isCleanStyle ? '#6b7280' : '#9ca3af'),
       }}
     >
       {label}
@@ -126,8 +130,8 @@ function StyleTypeButton({
   panelBorder,
   children,
 }: {
-  type: 'chatgpt' | 'clean';
-  currentStyle: 'chatgpt' | 'clean';
+  type: ExportStyleType;
+  currentStyle: ExportStyleType;
   onClick: () => void;
   panelBorder: string;
   children: React.ReactNode;
@@ -140,9 +144,9 @@ function StyleTypeButton({
       onClick={onClick}
       className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors"
       style={{
-        borderColor: isActive ? '#10a37f' : panelBorder,
-        backgroundColor: isActive ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
-        color: isActive ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
+        borderColor: isActive ? ACTIVE_COLOR : panelBorder,
+        backgroundColor: isActive ? ACTIVE_BG_COLOR : 'transparent',
+        color: isActive ? ACTIVE_COLOR : (isCleanStyle ? '#6b7280' : '#9ca3af'),
       }}
     >
       {children}
