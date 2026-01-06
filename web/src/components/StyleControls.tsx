@@ -127,7 +127,7 @@ function StyleTypeButton({
   children,
 }: {
   type: 'chatgpt' | 'clean';
-  currentStyle: string;
+  currentStyle: 'chatgpt' | 'clean';
   onClick: () => void;
   panelBorder: string;
   children: React.ReactNode;
