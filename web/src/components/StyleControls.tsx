@@ -118,6 +118,38 @@ function CheckboxControl({
   );
 }
 
+// Style type button component
+function StyleTypeButton({
+  type,
+  currentStyle,
+  onClick,
+  panelBorder,
+  children,
+}: {
+  type: 'chatgpt' | 'clean';
+  currentStyle: string;
+  onClick: () => void;
+  panelBorder: string;
+  children: React.ReactNode;
+}) {
+  const isActive = type === currentStyle;
+  const isCleanStyle = currentStyle === 'clean';
+
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors"
+      style={{
+        borderColor: isActive ? '#10a37f' : panelBorder,
+        backgroundColor: isActive ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
+        color: isActive ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 type OpenSection = 'text' | 'spacing' | 'filters' | null;
 
 export function StyleControls() {
@@ -159,7 +191,7 @@ export function StyleControls() {
   return (
     <div className="relative">
       <div
-        className="border-t transition-colors"
+        className="transition-colors"
         style={{
           backgroundColor: panelBackground,
           borderColor: panelBorder,
@@ -177,30 +209,24 @@ export function StyleControls() {
                 {t('style')}:
               </span>
               <div className="flex gap-1">
-                <button
+                <StyleTypeButton
+                  type="chatgpt"
+                  currentStyle={styleType}
                   onClick={() => setStyleType('chatgpt')}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors"
-                  style={{
-                    borderColor: styleType === 'chatgpt' ? '#10a37f' : panelBorder,
-                    backgroundColor: styleType === 'chatgpt' ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
-                    color: styleType === 'chatgpt' ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
-                  }}
+                  panelBorder={panelBorder}
                 >
                   <div className="w-2.5 h-2.5 rounded bg-[#212121]" />
                   {t('chatgpt')}
-                </button>
-                <button
+                </StyleTypeButton>
+                <StyleTypeButton
+                  type="clean"
+                  currentStyle={styleType}
                   onClick={() => setStyleType('clean')}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors"
-                  style={{
-                    borderColor: styleType === 'clean' ? '#10a37f' : panelBorder,
-                    backgroundColor: styleType === 'clean' ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
-                    color: styleType === 'clean' ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
-                  }}
+                  panelBorder={panelBorder}
                 >
                   <div className="w-2.5 h-2.5 rounded bg-white border border-gray-300" />
                   {t('clean')}
-                </button>
+                </StyleTypeButton>
               </div>
             </div>
 
