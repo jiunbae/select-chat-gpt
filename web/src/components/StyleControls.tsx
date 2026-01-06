@@ -181,7 +181,7 @@ export function StyleControls() {
                   onClick={() => setStyleType('chatgpt')}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors"
                   style={{
-                    borderColor: styleType === 'chatgpt' ? '#10a37f' : (isCleanStyle ? '#e5e7eb' : '#444444'),
+                    borderColor: styleType === 'chatgpt' ? '#10a37f' : panelBorder,
                     backgroundColor: styleType === 'chatgpt' ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
                     color: styleType === 'chatgpt' ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
                   }}
@@ -193,7 +193,7 @@ export function StyleControls() {
                   onClick={() => setStyleType('clean')}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors"
                   style={{
-                    borderColor: styleType === 'clean' ? '#10a37f' : (isCleanStyle ? '#e5e7eb' : '#444444'),
+                    borderColor: styleType === 'clean' ? '#10a37f' : panelBorder,
                     backgroundColor: styleType === 'clean' ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
                     color: styleType === 'clean' ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
                   }}
@@ -207,7 +207,7 @@ export function StyleControls() {
             {/* Divider */}
             <div
               className="h-6 w-px"
-              style={{ backgroundColor: isCleanStyle ? '#d1d5db' : '#444444' }}
+              style={{ backgroundColor: isCleanStyle ? '#d1d5db' : panelBorder }}
             />
 
             {/* Dropdown Toggles */}
