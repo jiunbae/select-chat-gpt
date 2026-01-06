@@ -209,6 +209,7 @@ function SharePageContent({ share }: SharePageClientProps) {
             </div>
           </div>
         </div>
+        <StyleControls />
       </header>
 
       <div className="max-w-3xl mx-auto px-4 py-6">
@@ -229,9 +230,6 @@ function SharePageContent({ share }: SharePageClientProps) {
           <span>{share.viewCount} views</span>
         </div>
       </div>
-
-      {/* Style Controls */}
-      <StyleControls />
 
       {/* Top Ad */}
       <div className="max-w-3xl mx-auto px-4 pb-4">
