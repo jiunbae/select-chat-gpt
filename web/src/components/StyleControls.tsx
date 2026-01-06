@@ -10,6 +10,11 @@ const ACTIVE_COLOR = '#10a37f';
 const ACTIVE_BG_COLOR = 'rgba(16, 163, 127, 0.1)';
 const INACTIVE_TEXT_LIGHT = '#6b7280';
 const INACTIVE_TEXT_DARK = '#9ca3af';
+const BORDER_LIGHT = '#e5e7eb';
+const BORDER_DARK = '#444444';
+const DIVIDER_LIGHT = '#d1d5db';
+const LABEL_TEXT_LIGHT = '#374151';
+const LABEL_TEXT_DARK = '#d1d5db';
 
 // Chevron icon component
 function ChevronIcon({ isOpen, className = '' }: { isOpen: boolean; className?: string }) {
@@ -42,7 +47,7 @@ function DropdownToggle({
       onClick={onToggle}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors"
       style={{
-        borderColor: isOpen ? ACTIVE_COLOR : (isCleanStyle ? '#e5e7eb' : '#444444'),
+        borderColor: isOpen ? ACTIVE_COLOR : (isCleanStyle ? BORDER_LIGHT : BORDER_DARK),
         backgroundColor: isOpen ? ACTIVE_BG_COLOR : 'transparent',
         color: isOpen ? ACTIVE_COLOR : (isCleanStyle ? INACTIVE_TEXT_LIGHT : INACTIVE_TEXT_DARK),
       }}
@@ -80,7 +85,7 @@ function SelectControl<T extends string>({
         onChange={(e) => onChange(e.target.value as T)}
         className="px-2 py-1 text-sm border rounded-md"
         style={{
-          borderColor: isCleanStyle ? '#e5e7eb' : '#444444',
+          borderColor: isCleanStyle ? BORDER_LIGHT : BORDER_DARK,
           backgroundColor: isCleanStyle ? '#ffffff' : '#2a2a2a',
           color: isCleanStyle ? '#1f2937' : '#ffffff',
         }}
@@ -117,7 +122,7 @@ function CheckboxControl({
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         className="w-4 h-4 rounded text-primary focus:ring-primary"
-        style={{ borderColor: isCleanStyle ? '#d1d5db' : '#444444' }}
+        style={{ borderColor: isCleanStyle ? DIVIDER_LIGHT : BORDER_DARK }}
       />
       {label}
     </label>
@@ -185,7 +190,7 @@ export function StyleControls() {
   const [openSection, setOpenSection] = useState<OpenSection>(null);
   const isCleanStyle = styleType === 'clean';
   const panelBackground = isCleanStyle ? '#f9fafb' : '#1a1a1a';
-  const panelBorder = isCleanStyle ? '#e5e7eb' : '#444444';
+  const panelBorder = isCleanStyle ? BORDER_LIGHT : BORDER_DARK;
 
   const toggleSection = (section: OpenSection) => {
     setOpenSection(openSection === section ? null : section);
@@ -207,7 +212,7 @@ export function StyleControls() {
             <div className="flex items-center gap-2">
               <span
                 className="text-sm font-medium"
-                style={{ color: isCleanStyle ? '#374151' : '#d1d5db' }}
+                style={{ color: isCleanStyle ? LABEL_TEXT_LIGHT : LABEL_TEXT_DARK }}
               >
                 {t('style')}:
               </span>
@@ -236,7 +241,7 @@ export function StyleControls() {
             {/* Divider */}
             <div
               className="h-6 w-px"
-              style={{ backgroundColor: isCleanStyle ? '#d1d5db' : panelBorder }}
+              style={{ backgroundColor: isCleanStyle ? DIVIDER_LIGHT : panelBorder }}
             />
 
             {/* Dropdown Toggles */}
