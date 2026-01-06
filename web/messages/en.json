@@ -50,6 +50,7 @@
     "hideQuestions": "Hide questions",
     "hideCode": "Hide code",
     "hideDeselected": "Hide deselected",
+    "hideCitations": "Hide citations",
     "systemDefault": "System Default"
   },
   "exportButton": {

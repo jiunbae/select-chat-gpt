@@ -33,6 +33,7 @@ function SharePageContent({ share }: SharePageClientProps) {
     hideUserMessages,
     hideCodeBlocks,
     hideDeselected,
+    hideCitations,
     getExportOptions,
   } = useStyleContext();
 
@@ -262,6 +263,7 @@ function SharePageContent({ share }: SharePageClientProps) {
               messageGap={messageGap}
               contentPadding={contentPadding}
               hideCodeBlocks={hideCodeBlocks}
+              hideCitations={hideCitations}
               showCheckbox={true}
               isSelected={selectedIds.has(message.id)}
               onToggleSelect={handleToggleSelect}

@@ -44,6 +44,8 @@ interface StyleContextValue {
   setHideCodeBlocks: (hide: boolean) => void;
   hideDeselected: boolean;
   setHideDeselected: (hide: boolean) => void;
+  hideCitations: boolean;
+  setHideCitations: (hide: boolean) => void;
 
   // Layout (PDF)
   pageSize: PageSize;
@@ -71,6 +73,7 @@ export function StyleProvider({ children }: { children: React.ReactNode }) {
   const [hideUserMessages, setHideUserMessages] = useState(false);
   const [hideCodeBlocks, setHideCodeBlocks] = useState(false);
   const [hideDeselected, setHideDeselected] = useState(false);
+  const [hideCitations, setHideCitations] = useState(false);
   const [pageSize, setPageSize] = useState<PageSize>('a4');
   const [margin, setMargin] = useState<Margin>('normal');
   const [fontLoading, setFontLoading] = useState(false);
@@ -126,6 +129,8 @@ export function StyleProvider({ children }: { children: React.ReactNode }) {
         setHideCodeBlocks,
         hideDeselected,
         setHideDeselected,
+        hideCitations,
+        setHideCitations,
         pageSize,
         setPageSize,
         margin,

@@ -73,6 +73,7 @@ interface MessageProps {
   messageGap?: MessageGap;
   contentPadding?: ContentPadding;
   hideCodeBlocks?: boolean;
+  hideCitations?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
   showCheckbox?: boolean;
@@ -164,6 +165,13 @@ function convertCitations(content: string): string {
   );
 }
 
+// Remove ChatGPT citation patterns entirely (for hide citations option)
+function removeCitations(content: string): string {
+  return processTextOutsideCodeAndLatexBlocks(content, (text) =>
+    text.replace(CITATION_REGEX, '')
+  );
+}
+
 // Convert LaTeX delimiters from ChatGPT format to standard format
 // ChatGPT uses \[...\] and \(...\), remark-math expects $$...$$ and $...$
 function convertLatexDelimiters(content: string): string {
@@ -184,6 +192,7 @@ export const Message = memo(function Message({
   messageGap = 'md',
   contentPadding = 'md',
   hideCodeBlocks = false,
+  hideCitations = false,
   isSelected = true,
   onToggleSelect,
   showCheckbox = false,
@@ -221,15 +230,19 @@ export const Message = memo(function Message({
     content = decodeHtmlEntities(content);
     // Strip ChatGPT's PUA citation markers before processing
     content = stripCitationMarkers(content);
-    // Convert ChatGPT citations to clickable links
-    content = convertCitations(content);
+    // Either hide citations completely or convert them to clickable links
+    if (hideCitations) {
+      content = removeCitations(content);
+    } else {
+      content = convertCitations(content);
+    }
     // Convert LaTeX delimiters for remark-math compatibility
     content = convertLatexDelimiters(content);
     if (hideCodeBlocks) {
       content = removeCodeBlocks(content);
     }
     return content;
-  }, [message.content, hideCodeBlocks]);
+  }, [message.content, hideCodeBlocks, hideCitations]);
 
   // Style-specific text colors (using inline styles instead of dark: classes)
   const textColor = isCleanStyle ? '#1f2937' : '#ffffff';

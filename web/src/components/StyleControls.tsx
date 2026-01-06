@@ -143,6 +143,8 @@ export function StyleControls() {
     setHideCodeBlocks,
     hideDeselected,
     setHideDeselected,
+    hideCitations,
+    setHideCitations,
   } = useStyleContext();
 
   const [openSection, setOpenSection] = useState<OpenSection>(null);
@@ -339,6 +341,12 @@ export function StyleControls() {
                   label={t('hideDeselected')}
                   checked={hideDeselected}
                   onChange={setHideDeselected}
+                  isCleanStyle={isCleanStyle}
+                />
+                <CheckboxControl
+                  label={t('hideCitations')}
+                  checked={hideCitations}
+                  onChange={setHideCitations}
                   isCleanStyle={isCleanStyle}
                 />
               </div>

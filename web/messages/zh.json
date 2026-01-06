@@ -50,6 +50,7 @@
     "hideQuestions": "隐藏提问",
     "hideCode": "隐藏代码",
     "hideDeselected": "隐藏未选中",
+    "hideCitations": "隐藏引用",
     "systemDefault": "系统默认"
   },
   "exportButton": {
