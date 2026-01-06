@@ -3,7 +3,19 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useStyleContext } from './StyleContext';
-import type { LetterSpacing, LineHeight, FontSize, FontFamily, MessageGap, ContentPadding } from '@/lib/export';
+import type { LetterSpacing, LineHeight, FontSize, FontFamily, MessageGap, ContentPadding, ExportStyleType } from '@/lib/export';
+
+// Theme color constants
+const ACTIVE_COLOR = '#10a37f';
+const ACTIVE_BG_COLOR = 'rgba(16, 163, 127, 0.1)';
+const INACTIVE_TEXT_LIGHT = '#6b7280';
+const INACTIVE_TEXT_DARK = '#9ca3af';
+const BORDER_LIGHT = '#e5e7eb';
+const BORDER_DARK = '#444444';
+const DIVIDER_LIGHT = '#d1d5db';
+const DIVIDER_DARK = '#444444';
+const LABEL_TEXT_LIGHT = '#374151';
+const LABEL_TEXT_DARK = '#d1d5db';
 
 // Chevron icon component
 function ChevronIcon({ isOpen, className = '' }: { isOpen: boolean; className?: string }) {
@@ -36,9 +48,9 @@ function DropdownToggle({
       onClick={onToggle}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors"
       style={{
-        borderColor: isOpen ? '#10a37f' : (isCleanStyle ? '#e5e7eb' : '#444444'),
-        backgroundColor: isOpen ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
-        color: isOpen ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
+        borderColor: isOpen ? ACTIVE_COLOR : (isCleanStyle ? BORDER_LIGHT : BORDER_DARK),
+        backgroundColor: isOpen ? ACTIVE_BG_COLOR : 'transparent',
+        color: isOpen ? ACTIVE_COLOR : (isCleanStyle ? INACTIVE_TEXT_LIGHT : INACTIVE_TEXT_DARK),
       }}
     >
       {label}
@@ -65,7 +77,7 @@ function SelectControl<T extends string>({
     <div className="flex items-center gap-2">
       <label
         className="text-sm whitespace-nowrap"
-        style={{ color: isCleanStyle ? '#6b7280' : '#9ca3af' }}
+        style={{ color: isCleanStyle ? INACTIVE_TEXT_LIGHT : INACTIVE_TEXT_DARK }}
       >
         {label}
       </label>
@@ -74,7 +86,7 @@ function SelectControl<T extends string>({
         onChange={(e) => onChange(e.target.value as T)}
         className="px-2 py-1 text-sm border rounded-md"
         style={{
-          borderColor: isCleanStyle ? '#e5e7eb' : '#444444',
+          borderColor: isCleanStyle ? BORDER_LIGHT : BORDER_DARK,
           backgroundColor: isCleanStyle ? '#ffffff' : '#2a2a2a',
           color: isCleanStyle ? '#1f2937' : '#ffffff',
         }}
@@ -104,17 +116,46 @@ function CheckboxControl({
   return (
     <label
       className="flex items-center gap-2 cursor-pointer text-sm whitespace-nowrap"
-      style={{ color: isCleanStyle ? '#6b7280' : '#9ca3af' }}
+      style={{ color: isCleanStyle ? INACTIVE_TEXT_LIGHT : INACTIVE_TEXT_DARK }}
     >
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         className="w-4 h-4 rounded text-primary focus:ring-primary"
-        style={{ borderColor: isCleanStyle ? '#d1d5db' : '#444444' }}
+        style={{ borderColor: isCleanStyle ? DIVIDER_LIGHT : BORDER_DARK }}
       />
       {label}
     </label>
+  );
+}
+
+// Style type button component
+function StyleTypeButton({
+  isActive,
+  isCleanStyle,
+  onClick,
+  panelBorder,
+  children,
+}: {
+  isActive: boolean;
+  isCleanStyle: boolean;
+  onClick: () => void;
+  panelBorder: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors"
+      style={{
+        borderColor: isActive ? ACTIVE_COLOR : panelBorder,
+        backgroundColor: isActive ? ACTIVE_BG_COLOR : 'transparent',
+        color: isActive ? ACTIVE_COLOR : (isCleanStyle ? INACTIVE_TEXT_LIGHT : INACTIVE_TEXT_DARK),
+      }}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -149,211 +190,216 @@ export function StyleControls() {
 
   const [openSection, setOpenSection] = useState<OpenSection>(null);
   const isCleanStyle = styleType === 'clean';
+  const panelBackground = isCleanStyle ? '#f9fafb' : '#1a1a1a';
+  const panelBorder = isCleanStyle ? BORDER_LIGHT : BORDER_DARK;
 
   const toggleSection = (section: OpenSection) => {
     setOpenSection(openSection === section ? null : section);
   };
 
   return (
-    <div
-      className="border-b transition-colors"
-      style={{
-        backgroundColor: isCleanStyle ? '#f9fafb' : '#1a1a1a',
-        borderColor: isCleanStyle ? '#e5e7eb' : '#444444',
-      }}
-    >
-      <div className="max-w-3xl mx-auto px-4 py-3">
-        {/* All controls in one row */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Style Type */}
-          <div className="flex items-center gap-2">
-            <span
-              className="text-sm font-medium"
-              style={{ color: isCleanStyle ? '#374151' : '#d1d5db' }}
-            >
-              {t('style')}:
-            </span>
-            <div className="flex gap-1">
-              <button
-                onClick={() => setStyleType('chatgpt')}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors"
-                style={{
-                  borderColor: styleType === 'chatgpt' ? '#10a37f' : (isCleanStyle ? '#e5e7eb' : '#444444'),
-                  backgroundColor: styleType === 'chatgpt' ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
-                  color: styleType === 'chatgpt' ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
-                }}
+    <div className="relative">
+      <div
+        className="transition-colors"
+        style={{
+          backgroundColor: panelBackground,
+          borderColor: panelBorder,
+        }}
+      >
+        <div className="max-w-3xl mx-auto px-4 py-3">
+          {/* All controls in one row */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Style Type */}
+            <div className="flex items-center gap-2">
+              <span
+                className="text-sm font-medium"
+                style={{ color: isCleanStyle ? LABEL_TEXT_LIGHT : LABEL_TEXT_DARK }}
               >
-                <div className="w-2.5 h-2.5 rounded bg-[#212121]" />
-                {t('chatgpt')}
-              </button>
-              <button
-                onClick={() => setStyleType('clean')}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm border transition-colors"
-                style={{
-                  borderColor: styleType === 'clean' ? '#10a37f' : (isCleanStyle ? '#e5e7eb' : '#444444'),
-                  backgroundColor: styleType === 'clean' ? 'rgba(16, 163, 127, 0.1)' : 'transparent',
-                  color: styleType === 'clean' ? '#10a37f' : (isCleanStyle ? '#6b7280' : '#9ca3af'),
-                }}
-              >
-                <div className="w-2.5 h-2.5 rounded bg-white border border-gray-300" />
-                {t('clean')}
-              </button>
+                {t('style')}:
+              </span>
+              <div className="flex gap-1">
+                <StyleTypeButton
+                  isActive={styleType === 'chatgpt'}
+                  isCleanStyle={isCleanStyle}
+                  onClick={() => setStyleType('chatgpt')}
+                  panelBorder={panelBorder}
+                >
+                  <div className="w-2.5 h-2.5 rounded bg-[#212121]" />
+                  {t('chatgpt')}
+                </StyleTypeButton>
+                <StyleTypeButton
+                  isActive={styleType === 'clean'}
+                  isCleanStyle={isCleanStyle}
+                  onClick={() => setStyleType('clean')}
+                  panelBorder={panelBorder}
+                >
+                  <div className="w-2.5 h-2.5 rounded bg-white border border-gray-300" />
+                  {t('clean')}
+                </StyleTypeButton>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div
+              className="h-6 w-px"
+              style={{ backgroundColor: isCleanStyle ? DIVIDER_LIGHT : DIVIDER_DARK }}
+            />
+
+            {/* Dropdown Toggles */}
+            <DropdownToggle
+              label={t('text')}
+              isOpen={openSection === 'text'}
+              onToggle={() => toggleSection('text')}
+              isCleanStyle={isCleanStyle}
+            />
+            <DropdownToggle
+              label={t('spacing')}
+              isOpen={openSection === 'spacing'}
+              onToggle={() => toggleSection('spacing')}
+              isCleanStyle={isCleanStyle}
+            />
+            <DropdownToggle
+              label={t('filters')}
+              isOpen={openSection === 'filters'}
+              onToggle={() => toggleSection('filters')}
+              isCleanStyle={isCleanStyle}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded Section Content */}
+      {openSection && (
+        <div className="absolute left-0 right-0 top-full z-40">
+          <div
+            className="border-b shadow-sm transition-colors"
+            style={{
+              backgroundColor: panelBackground,
+              borderColor: panelBorder,
+            }}
+          >
+            <div className="max-w-3xl mx-auto px-4 py-3">
+              {openSection === 'text' && (
+                <div className="flex flex-wrap items-center gap-4">
+                  <SelectControl
+                    label={t('font')}
+                    value={fontFamily}
+                    options={[
+                      { value: 'pretendard', label: 'Pretendard' },
+                      { value: 'noto-sans-kr', label: 'Noto Sans KR' },
+                      { value: 'noto-serif-kr', label: 'Noto Serif KR' },
+                      { value: 'ibm-plex-sans-kr', label: 'IBM Plex Sans KR' },
+                      { value: 'system', label: t('systemDefault') },
+                    ]}
+                    onChange={(v) => setFontFamily(v as FontFamily)}
+                    isCleanStyle={isCleanStyle}
+                  />
+                  <SelectControl
+                    label={t('fontSize')}
+                    value={fontSize}
+                    options={[
+                      { value: 'xs', label: '12px' },
+                      { value: 'sm', label: '14px' },
+                      { value: 'base', label: '16px' },
+                      { value: 'lg', label: '18px' },
+                      { value: 'xl', label: '20px' },
+                      { value: '2xl', label: '24px' },
+                    ]}
+                    onChange={(v) => setFontSize(v as FontSize)}
+                    isCleanStyle={isCleanStyle}
+                  />
+                  <SelectControl
+                    label={t('lineHeight')}
+                    value={lineHeight}
+                    options={[
+                      { value: 'tight', label: '1.25' },
+                      { value: 'snug', label: '1.375' },
+                      { value: 'normal', label: '1.5' },
+                      { value: 'relaxed', label: '1.625' },
+                      { value: 'loose', label: '2.0' },
+                    ]}
+                    onChange={(v) => setLineHeight(v as LineHeight)}
+                    isCleanStyle={isCleanStyle}
+                  />
+                  <SelectControl
+                    label={t('letterSpacing')}
+                    value={letterSpacing}
+                    options={[
+                      { value: 'tighter', label: '-0.05em' },
+                      { value: 'tight', label: '-0.025em' },
+                      { value: 'normal', label: '0' },
+                      { value: 'wide', label: '0.025em' },
+                      { value: 'wider', label: '0.05em' },
+                    ]}
+                    onChange={(v) => setLetterSpacing(v as LetterSpacing)}
+                    isCleanStyle={isCleanStyle}
+                  />
+                </div>
+              )}
+
+              {openSection === 'spacing' && (
+                <div className="flex flex-wrap items-center gap-4">
+                  <SelectControl
+                    label={t('gap')}
+                    value={messageGap}
+                    options={[
+                      { value: 'none', label: 'None' },
+                      { value: 'sm', label: '8px' },
+                      { value: 'md', label: '16px' },
+                      { value: 'lg', label: '24px' },
+                      { value: 'xl', label: '32px' },
+                    ]}
+                    onChange={(v) => setMessageGap(v as MessageGap)}
+                    isCleanStyle={isCleanStyle}
+                  />
+                  <SelectControl
+                    label={t('padding')}
+                    value={contentPadding}
+                    options={[
+                      { value: 'none', label: 'None' },
+                      { value: 'sm', label: '8px' },
+                      { value: 'md', label: '16px' },
+                      { value: 'lg', label: '24px' },
+                      { value: 'xl', label: '32px' },
+                    ]}
+                    onChange={(v) => setContentPadding(v as ContentPadding)}
+                    isCleanStyle={isCleanStyle}
+                  />
+                </div>
+              )}
+
+              {openSection === 'filters' && (
+                <div className="flex flex-wrap items-center gap-4">
+                  <CheckboxControl
+                    label={t('hideQuestions')}
+                    checked={hideUserMessages}
+                    onChange={setHideUserMessages}
+                    isCleanStyle={isCleanStyle}
+                  />
+                  <CheckboxControl
+                    label={t('hideCode')}
+                    checked={hideCodeBlocks}
+                    onChange={setHideCodeBlocks}
+                    isCleanStyle={isCleanStyle}
+                  />
+                  <CheckboxControl
+                    label={t('hideDeselected')}
+                    checked={hideDeselected}
+                    onChange={setHideDeselected}
+                    isCleanStyle={isCleanStyle}
+                  />
+                  <CheckboxControl
+                    label={t('hideCitations')}
+                    checked={hideCitations}
+                    onChange={setHideCitations}
+                    isCleanStyle={isCleanStyle}
+                  />
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Divider */}
-          <div
-            className="h-6 w-px"
-            style={{ backgroundColor: isCleanStyle ? '#d1d5db' : '#444444' }}
-          />
-
-          {/* Dropdown Toggles */}
-          <DropdownToggle
-            label={t('text')}
-            isOpen={openSection === 'text'}
-            onToggle={() => toggleSection('text')}
-            isCleanStyle={isCleanStyle}
-          />
-          <DropdownToggle
-            label={t('spacing')}
-            isOpen={openSection === 'spacing'}
-            onToggle={() => toggleSection('spacing')}
-            isCleanStyle={isCleanStyle}
-          />
-          <DropdownToggle
-            label={t('filters')}
-            isOpen={openSection === 'filters'}
-            onToggle={() => toggleSection('filters')}
-            isCleanStyle={isCleanStyle}
-          />
         </div>
-
-        {/* Expanded Section Content */}
-        {openSection && (
-          <div
-            className="mt-3 pt-3 border-t"
-            style={{ borderColor: isCleanStyle ? '#e5e7eb' : '#444444' }}
-          >
-            {openSection === 'text' && (
-              <div className="flex flex-wrap items-center gap-4">
-                <SelectControl
-                  label={t('font')}
-                  value={fontFamily}
-                  options={[
-                    { value: 'pretendard', label: 'Pretendard' },
-                    { value: 'noto-sans-kr', label: 'Noto Sans KR' },
-                    { value: 'noto-serif-kr', label: 'Noto Serif KR' },
-                    { value: 'ibm-plex-sans-kr', label: 'IBM Plex Sans KR' },
-                    { value: 'system', label: t('systemDefault') },
-                  ]}
-                  onChange={(v) => setFontFamily(v as FontFamily)}
-                  isCleanStyle={isCleanStyle}
-                />
-                <SelectControl
-                  label={t('fontSize')}
-                  value={fontSize}
-                  options={[
-                    { value: 'xs', label: '12px' },
-                    { value: 'sm', label: '14px' },
-                    { value: 'base', label: '16px' },
-                    { value: 'lg', label: '18px' },
-                    { value: 'xl', label: '20px' },
-                    { value: '2xl', label: '24px' },
-                  ]}
-                  onChange={(v) => setFontSize(v as FontSize)}
-                  isCleanStyle={isCleanStyle}
-                />
-                <SelectControl
-                  label={t('lineHeight')}
-                  value={lineHeight}
-                  options={[
-                    { value: 'tight', label: '1.25' },
-                    { value: 'snug', label: '1.375' },
-                    { value: 'normal', label: '1.5' },
-                    { value: 'relaxed', label: '1.625' },
-                    { value: 'loose', label: '2.0' },
-                  ]}
-                  onChange={(v) => setLineHeight(v as LineHeight)}
-                  isCleanStyle={isCleanStyle}
-                />
-                <SelectControl
-                  label={t('letterSpacing')}
-                  value={letterSpacing}
-                  options={[
-                    { value: 'tighter', label: '-0.05em' },
-                    { value: 'tight', label: '-0.025em' },
-                    { value: 'normal', label: '0' },
-                    { value: 'wide', label: '0.025em' },
-                    { value: 'wider', label: '0.05em' },
-                  ]}
-                  onChange={(v) => setLetterSpacing(v as LetterSpacing)}
-                  isCleanStyle={isCleanStyle}
-                />
-              </div>
-            )}
-
-            {openSection === 'spacing' && (
-              <div className="flex flex-wrap items-center gap-4">
-                <SelectControl
-                  label={t('gap')}
-                  value={messageGap}
-                  options={[
-                    { value: 'none', label: 'None' },
-                    { value: 'sm', label: '8px' },
-                    { value: 'md', label: '16px' },
-                    { value: 'lg', label: '24px' },
-                    { value: 'xl', label: '32px' },
-                  ]}
-                  onChange={(v) => setMessageGap(v as MessageGap)}
-                  isCleanStyle={isCleanStyle}
-                />
-                <SelectControl
-                  label={t('padding')}
-                  value={contentPadding}
-                  options={[
-                    { value: 'none', label: 'None' },
-                    { value: 'sm', label: '8px' },
-                    { value: 'md', label: '16px' },
-                    { value: 'lg', label: '24px' },
-                    { value: 'xl', label: '32px' },
-                  ]}
-                  onChange={(v) => setContentPadding(v as ContentPadding)}
-                  isCleanStyle={isCleanStyle}
-                />
-              </div>
-            )}
-
-            {openSection === 'filters' && (
-              <div className="flex flex-wrap items-center gap-4">
-                <CheckboxControl
-                  label={t('hideQuestions')}
-                  checked={hideUserMessages}
-                  onChange={setHideUserMessages}
-                  isCleanStyle={isCleanStyle}
-                />
-                <CheckboxControl
-                  label={t('hideCode')}
-                  checked={hideCodeBlocks}
-                  onChange={setHideCodeBlocks}
-                  isCleanStyle={isCleanStyle}
-                />
-                <CheckboxControl
-                  label={t('hideDeselected')}
-                  checked={hideDeselected}
-                  onChange={setHideDeselected}
-                  isCleanStyle={isCleanStyle}
-                />
-                <CheckboxControl
-                  label={t('hideCitations')}
-                  checked={hideCitations}
-                  onChange={setHideCitations}
-                  isCleanStyle={isCleanStyle}
-                />
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
