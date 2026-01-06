@@ -8,6 +8,8 @@ import type { LetterSpacing, LineHeight, FontSize, FontFamily, MessageGap, Conte
 // Theme color constants
 const ACTIVE_COLOR = '#10a37f';
 const ACTIVE_BG_COLOR = 'rgba(16, 163, 127, 0.1)';
+const INACTIVE_TEXT_LIGHT = '#6b7280';
+const INACTIVE_TEXT_DARK = '#9ca3af';
 
 // Chevron icon component
 function ChevronIcon({ isOpen, className = '' }: { isOpen: boolean; className?: string }) {
@@ -42,7 +44,7 @@ function DropdownToggle({
       style={{
         borderColor: isOpen ? ACTIVE_COLOR : (isCleanStyle ? '#e5e7eb' : '#444444'),
         backgroundColor: isOpen ? ACTIVE_BG_COLOR : 'transparent',
-        color: isOpen ? ACTIVE_COLOR : (isCleanStyle ? '#6b7280' : '#9ca3af'),
+        color: isOpen ? ACTIVE_COLOR : (isCleanStyle ? INACTIVE_TEXT_LIGHT : INACTIVE_TEXT_DARK),
       }}
     >
       {label}
@@ -69,7 +71,7 @@ function SelectControl<T extends string>({
     <div className="flex items-center gap-2">
       <label
         className="text-sm whitespace-nowrap"
-        style={{ color: isCleanStyle ? '#6b7280' : '#9ca3af' }}
+        style={{ color: isCleanStyle ? INACTIVE_TEXT_LIGHT : INACTIVE_TEXT_DARK }}
       >
         {label}
       </label>
@@ -108,7 +110,7 @@ function CheckboxControl({
   return (
     <label
       className="flex items-center gap-2 cursor-pointer text-sm whitespace-nowrap"
-      style={{ color: isCleanStyle ? '#6b7280' : '#9ca3af' }}
+      style={{ color: isCleanStyle ? INACTIVE_TEXT_LIGHT : INACTIVE_TEXT_DARK }}
     >
       <input
         type="checkbox"
@@ -124,21 +126,18 @@ function CheckboxControl({
 
 // Style type button component
 function StyleTypeButton({
-  type,
-  currentStyle,
+  isActive,
+  isCleanStyle,
   onClick,
   panelBorder,
   children,
 }: {
-  type: ExportStyleType;
-  currentStyle: ExportStyleType;
+  isActive: boolean;
+  isCleanStyle: boolean;
   onClick: () => void;
   panelBorder: string;
   children: React.ReactNode;
 }) {
-  const isActive = type === currentStyle;
-  const isCleanStyle = currentStyle === 'clean';
-
   return (
     <button
       onClick={onClick}
@@ -146,7 +145,7 @@ function StyleTypeButton({
       style={{
         borderColor: isActive ? ACTIVE_COLOR : panelBorder,
         backgroundColor: isActive ? ACTIVE_BG_COLOR : 'transparent',
-        color: isActive ? ACTIVE_COLOR : (isCleanStyle ? '#6b7280' : '#9ca3af'),
+        color: isActive ? ACTIVE_COLOR : (isCleanStyle ? INACTIVE_TEXT_LIGHT : INACTIVE_TEXT_DARK),
       }}
     >
       {children}
@@ -214,8 +213,8 @@ export function StyleControls() {
               </span>
               <div className="flex gap-1">
                 <StyleTypeButton
-                  type="chatgpt"
-                  currentStyle={styleType}
+                  isActive={styleType === 'chatgpt'}
+                  isCleanStyle={isCleanStyle}
                   onClick={() => setStyleType('chatgpt')}
                   panelBorder={panelBorder}
                 >
@@ -223,8 +222,8 @@ export function StyleControls() {
                   {t('chatgpt')}
                 </StyleTypeButton>
                 <StyleTypeButton
-                  type="clean"
-                  currentStyle={styleType}
+                  isActive={styleType === 'clean'}
+                  isCleanStyle={isCleanStyle}
                   onClick={() => setStyleType('clean')}
                   panelBorder={panelBorder}
                 >
