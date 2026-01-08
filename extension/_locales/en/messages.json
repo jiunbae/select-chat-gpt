@@ -275,6 +275,24 @@
     "message": "Clear",
     "description": "Clear button"
   },
+  "usageRemaining": {
+    "message": "$remaining$ / $limit$ remaining",
+    "description": "Remaining share link usage for the current month",
+    "placeholders": {
+      "remaining": {
+        "content": "$1",
+        "example": "3"
+      },
+      "limit": {
+        "content": "$2",
+        "example": "10"
+      }
+    }
+  },
+  "usageLimitReached": {
+    "message": "Monthly share link limit reached. Please try again next month.",
+    "description": "Message shown when share link creation limit is reached"
+  },
   "createShareLink": {
     "message": "Create Share Link",
     "description": "Create share link button"

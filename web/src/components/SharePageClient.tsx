@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { Fragment, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import type { Message as MessageType } from '@/lib/api';
 import { Message } from './Message';
@@ -249,23 +249,29 @@ function SharePageContent({ share }: SharePageClientProps) {
             No messages to display with current filters.
           </div>
         ) : (
-          filteredMessages.map((message) => (
-            <Message
-              key={message.id}
-              message={message}
-              styleType={styleType}
-              fontSize={fontSize}
-              fontFamily={fontFamily}
-              lineHeight={lineHeight}
-              letterSpacing={letterSpacing}
-              messageGap={messageGap}
-              contentPadding={contentPadding}
-              hideCodeBlocks={hideCodeBlocks}
-              hideCitations={hideCitations}
-              showCheckbox={true}
-              isSelected={selectedIds.has(message.id)}
-              onToggleSelect={handleToggleSelect}
-            />
+          filteredMessages.map((message, index) => (
+            <Fragment key={message.id}>
+              <Message
+                message={message}
+                styleType={styleType}
+                fontSize={fontSize}
+                fontFamily={fontFamily}
+                lineHeight={lineHeight}
+                letterSpacing={letterSpacing}
+                messageGap={messageGap}
+                contentPadding={contentPadding}
+                hideCodeBlocks={hideCodeBlocks}
+                hideCitations={hideCitations}
+                showCheckbox={true}
+                isSelected={selectedIds.has(message.id)}
+                onToggleSelect={handleToggleSelect}
+              />
+              {(index + 1) % 5 === 0 && index < filteredMessages.length - 1 && (
+                <div className="max-w-3xl mx-auto px-4 py-4">
+                  <AdUnit slot="INLINE_AD_SLOT" format="horizontal" className="w-full" />
+                </div>
+              )}
+            </Fragment>
           ))
         )}
       </div>

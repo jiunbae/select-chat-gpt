@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react"
 import { t } from "~src/utils/i18n"
 import { SearchBar, type RoleFilter } from "./SearchBar"
+import { getUsageData, incrementUsage, resetIfNewMonth, MONTHLY_LIMIT } from "~src/utils/usage-limit"
 
 interface FloatingActionBarProps {
   selectedCount: number
@@ -35,7 +37,38 @@ export function FloatingActionBar({
   onSelectLastN,
   onClearFilters,
 }: FloatingActionBarProps) {
+  const [usage, setUsage] = useState(() => {
+    resetIfNewMonth()
+    return getUsageData()
+  })
+
+  useEffect(() => {
+    resetIfNewMonth()
+    setUsage(getUsageData())
+  }, [])
+
   const isAllSelected = selectedCount === totalCount && totalCount > 0
+  const remainingUsage = Math.max(MONTHLY_LIMIT - usage.count, 0)
+  const limitReached = remainingUsage <= 0
+  const isShareDisabled = selectedCount === 0 || limitReached
+
+  const handleCreateShare = async () => {
+    resetIfNewMonth()
+    const latestUsage = getUsageData()
+
+    if (latestUsage.count >= MONTHLY_LIMIT || selectedCount === 0) {
+      setUsage(latestUsage)
+      return
+    }
+
+    try {
+      await Promise.resolve(onCreateShare())
+      incrementUsage()
+      setUsage(getUsageData())
+    } catch (error) {
+      console.error('[SelectChatGPT] Failed to create share link', error)
+    }
+  }
 
   return (
     <div className="scgpt-fixed scgpt-bottom-6 scgpt-left-1/2 scgpt-transform scgpt--translate-x-1/2 scgpt-z-[10000]">
@@ -80,11 +113,25 @@ export function FloatingActionBar({
 
         <div className="scgpt-h-6 scgpt-w-px scgpt-bg-gray-200" />
 
+        {/* 사용량 표시 */}
+        <div className="scgpt-flex scgpt-flex-col scgpt-items-end scgpt-gap-1 scgpt-min-w-[150px]">
+          <span className="scgpt-text-xs scgpt-text-gray-500 scgpt-font-medium">
+            {t('usageRemaining', [String(remainingUsage), String(MONTHLY_LIMIT)])}
+          </span>
+          {limitReached && (
+            <span className="scgpt-text-xs scgpt-text-red-500 scgpt-font-medium">
+              {t('usageLimitReached')}
+            </span>
+          )}
+        </div>
+
         {/* 공유 버튼 */}
         <button
-          onClick={onCreateShare}
-          disabled={selectedCount === 0}
-          className="scgpt-px-4 scgpt-py-2 scgpt-bg-primary scgpt-text-white scgpt-rounded-full scgpt-text-sm scgpt-font-medium scgpt-hover:bg-primary-hover scgpt-transition-colors scgpt-flex scgpt-items-center scgpt-gap-2 scgpt-disabled:opacity-50 scgpt-disabled:cursor-not-allowed"
+          onClick={handleCreateShare}
+          disabled={isShareDisabled}
+          className={`scgpt-px-4 scgpt-py-2 scgpt-bg-primary scgpt-text-white scgpt-rounded-full scgpt-text-sm scgpt-font-medium scgpt-hover:bg-primary-hover scgpt-transition-colors scgpt-flex scgpt-items-center scgpt-gap-2 ${
+            isShareDisabled ? 'scgpt-opacity-50 scgpt-cursor-not-allowed' : ''
+          }`}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
