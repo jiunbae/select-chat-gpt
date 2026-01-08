@@ -15,7 +15,7 @@
     "@selectchatgpt/common": "workspace:*",
     "dompurify": "^3.2.4",
     "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.4",
+    "jspdf": "^4.0.0",
     "plasmo": "0.90.5",
     "react": "18.2.0",
     "react-dom": "18.2.0",
