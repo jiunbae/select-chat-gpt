@@ -65,7 +65,7 @@ export function ExportAdModal({ isOpen, onClose, onComplete }: ExportAdModalProp
           </div>
         </div>
 
-        <AdUnit slot="EXPORT_AD_SLOT" format="rectangle" className="w-full min-h-[180px]" />
+        <AdUnit slot="3498784859" format="rectangle" className="w-full min-h-[180px]" />
 
         <p className="text-xs text-center text-gray-500 dark:text-gray-400">
           Thanks for waiting. We will begin your export automatically when the countdown finishes.

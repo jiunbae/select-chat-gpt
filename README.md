@@ -281,3 +281,4 @@ kubectl --kubeconfig ~/.kube/jiun-k3s.yaml patch application selectchatgpt -n ar
 ## 라이선스
 
 MIT License
+
