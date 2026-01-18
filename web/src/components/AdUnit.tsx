@@ -13,6 +13,7 @@ interface AdUnitProps {
   format?: "auto" | "fluid" | "rectangle" | "horizontal" | "vertical";
   responsive?: boolean;
   className?: string;
+  maxHeight?: number;
 }
 
 export function AdUnit({
@@ -20,6 +21,7 @@ export function AdUnit({
   format = "auto",
   responsive = true,
   className = "",
+  maxHeight,
 }: AdUnitProps) {
   const adsenseId = process.env.NEXT_PUBLIC_ADSENSE_ID;
 
@@ -46,7 +48,10 @@ export function AdUnit({
   }
 
   return (
-    <div className={className}>
+    <div
+      className={className}
+      style={maxHeight ? { maxHeight, overflow: "hidden" } : undefined}
+    >
       <ins
         className="adsbygoogle"
         style={{ display: "block" }}

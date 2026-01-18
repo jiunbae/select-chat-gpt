@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { UrlInput } from "@/components/UrlInput";
 import { Header } from "@/components/Header";
+import { AdUnit } from "@/components/AdUnit";
 
 export default function Home() {
   const t = useTranslations('home');
@@ -33,6 +34,11 @@ export default function Home() {
         {/* URL Input Section */}
         <div className="mb-8">
           <UrlInput />
+        </div>
+
+        {/* Ad Unit */}
+        <div className="mb-8 w-full">
+          <AdUnit slot="2530136358" format="horizontal" className="w-full" maxHeight={100} />
         </div>
 
         {/* Divider */}
@@ -105,6 +111,11 @@ export default function Home() {
           </Link>
         </div>
       </div>
+
+        {/* Bottom Ad Unit */}
+        <div className="mt-8 w-full max-w-2xl">
+          <AdUnit slot="3498784859" format="horizontal" className="w-full" maxHeight={100} />
+        </div>
 
         <footer className="mt-16 text-center text-gray-500 dark:text-gray-400 text-sm">
           <p>{t('footerText')}</p>
