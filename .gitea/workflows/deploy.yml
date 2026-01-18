@@ -132,3 +132,5 @@ jobs:
           git add ${{ env.APP_PATH }}/kustomization.yaml
           git diff --staged --quiet || git commit -m "chore(selectchatgpt): update image tag to ${{ gitea.sha }}"
           git push
+
+# Trigger: 1768730254
