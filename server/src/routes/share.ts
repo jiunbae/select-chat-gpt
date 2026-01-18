@@ -27,7 +27,7 @@ router.post('/', async (req: Request, res: Response) => {
 
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params
+    const id = req.params.id as string
 
     if (!id || id.length !== 10) {
       res.status(400).json({ error: 'Invalid share ID' })
