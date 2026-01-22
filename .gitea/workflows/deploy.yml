@@ -14,7 +14,7 @@ on:
 env:
   REGISTRY: registry.jiun.dev
   IAC_REPO: jiunbae/IaC
-  APP_PATH: kubernetes/apps/selectchatgpt
+  APP_PATH: kubernetes/overlays/dev/selectchatgpt
 
 jobs:
   security-audit:

@@ -200,28 +200,11 @@ kubectl --kubeconfig ~/.kube/jiun-k3s.yaml patch application selectchatgpt -n ar
 매니페스트는 [jiunbae/IaC](https://github.com/jiunbae/IaC) 레포에서 관리됩니다:
 
 ```
-IaC/kubernetes/apps/selectchatgpt/
-├── application.yaml      # ArgoCD Application
-├── kustomization.yaml    # 이미지 태그 관리
-├── namespace.yaml
-├── ingress.yaml
-├── mongodb/
-│   ├── pvc.yaml
-│   ├── deployment.yaml
-│   └── service.yaml
-├── redis/
-│   ├── pvc.yaml
-│   ├── deployment.yaml
-│   └── service.yaml
-├── server/
-│   ├── configmap.yaml
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   └── service-metrics.yaml
-└── web/
-    ├── configmap.yaml
-    ├── deployment.yaml
-    └── service.yaml
+IaC/kubernetes/
+├── base/apps/selectchatgpt/     # 공통 설정 (Kustomize base)
+├── base/sealed-secrets/selectchatgpt/ # 운영 환경용 SealedSecrets
+├── overlays/dev/selectchatgpt/  # 개발 환경 (main branch)
+└── overlays/prod/selectchatgpt/ # 운영 환경 (release branch)
 ```
 
 ### CI 필수 Secrets (Gitea)
