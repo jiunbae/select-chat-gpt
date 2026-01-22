@@ -23,7 +23,10 @@ export const metadata: Metadata = {
     description: "Share selected messages from ChatGPT conversations",
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
     shortcut: "/favicon.ico",
     apple: "/icon.png",
   },
