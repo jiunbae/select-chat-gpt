@@ -233,7 +233,7 @@ function SharePageContent({ share }: SharePageClientProps) {
 
       {/* Top Ad */}
       <div className="max-w-3xl mx-auto px-4 pb-4">
-        <AdUnit slot="2530136358" format="horizontal" className="w-full" maxHeight={100} />
+        <AdUnit slot="1890041322" format="horizontal" className="w-full" maxHeight={100} />
       </div>
 
       {/* Messages */}
@@ -268,7 +268,7 @@ function SharePageContent({ share }: SharePageClientProps) {
               />
               {(index + 1) % 5 === 0 && index < filteredMessages.length - 1 && (
                 <div className="max-w-3xl mx-auto px-4 py-4">
-                  <AdUnit slot="3498784859" format="horizontal" className="w-full" maxHeight={100} />
+                  <AdUnit slot="1571327187" format="horizontal" className="w-full" maxHeight={100} />
                 </div>
               )}
             </Fragment>
@@ -278,7 +278,7 @@ function SharePageContent({ share }: SharePageClientProps) {
 
       {/* Bottom Ad */}
       <div className="max-w-3xl mx-auto px-4 py-6">
-        <AdUnit slot="3498784859" format="horizontal" className="w-full" maxHeight={100} />
+        <AdUnit slot="1571327187" format="horizontal" className="w-full" maxHeight={100} />
       </div>
 
       <footer
