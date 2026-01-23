@@ -73,7 +73,7 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY }}/selectchatgpt-server:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/selectchatgpt-server:buildcache,mode=max
 
-  build-web:
+  build-web-dev:
     needs: [security-audit]
     runs-on: ubuntu-latest
     steps:
@@ -93,7 +93,44 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Build and push web
+      - name: Build and push web (dev)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./web/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/selectchatgpt-web:dev-${{ gitea.sha }}
+            ${{ env.REGISTRY }}/selectchatgpt-web:dev-latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://selectchatgpt.internal.jiun.dev
+            NEXT_PUBLIC_GA_ID=
+            NEXT_PUBLIC_ADSENSE_ID=
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/selectchatgpt-web:dev-buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/selectchatgpt-web:dev-buildcache,mode=max
+
+  build-web-prod:
+    needs: [security-audit]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout app repo
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push web (prod)
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -111,17 +148,28 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY }}/selectchatgpt-web:buildcache,mode=max
 
   update-manifests:
-    needs: [build-server, build-web]
+    needs: [build-server, build-web-dev, build-web-prod]
     runs-on: ubuntu-latest
     steps:
       - name: Clone IaC repo from GitHub
         run: |
           git clone https://x-access-token:${{ secrets.IAC_GITHUB_TOKEN }}@github.com/${{ env.IAC_REPO }}.git iac
 
-      - name: Update image tag in IaC repo
+      - name: Update dev image tags in IaC repo
         run: |
-          cd iac/${{ env.APP_PATH }}
-          sed -i "s/newTag: .*/newTag: ${{ gitea.sha }}/" kustomization.yaml
+          cd iac/kubernetes/overlays/dev/selectchatgpt
+          # Update server tag
+          sed -i 's/\(name: registry.jiun.dev\/selectchatgpt-server\)/\1/' kustomization.yaml
+          sed -i '/selectchatgpt-server/!b;n;s/newTag: .*/newTag: ${{ gitea.sha }}/' kustomization.yaml
+          # Update web tag with dev- prefix
+          sed -i '/selectchatgpt-web/!b;n;s/newTag: .*/newTag: dev-${{ gitea.sha }}/' kustomization.yaml
+          cat kustomization.yaml
+
+      - name: Update prod image tags in IaC repo
+        run: |
+          cd iac/kubernetes/overlays/prod/selectchatgpt
+          # Update server and web tags (prod uses sha without prefix)
+          sed -i 's/newTag: .*/newTag: ${{ gitea.sha }}/' kustomization.yaml
           cat kustomization.yaml
 
       - name: Commit and push to IaC repo
@@ -129,8 +177,9 @@ jobs:
           cd iac
           git config user.name "Gitea Actions"
           git config user.email "actions@gitea.jiun.dev"
-          git add ${{ env.APP_PATH }}/kustomization.yaml
-          git diff --staged --quiet || git commit -m "chore(selectchatgpt): update image tag to ${{ gitea.sha }}"
+          git add kubernetes/overlays/dev/selectchatgpt/kustomization.yaml
+          git add kubernetes/overlays/prod/selectchatgpt/kustomization.yaml
+          git diff --staged --quiet || git commit -m "chore(selectchatgpt): update image tags to ${{ gitea.sha }}"
           git push
 
 # Trigger: 1768730254
