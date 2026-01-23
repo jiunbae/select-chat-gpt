@@ -26,9 +26,8 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_GA_ID=${NEXT_PUBLIC_GA_ID}
 ENV NEXT_PUBLIC_ADSENSE_ID=${NEXT_PUBLIC_ADSENSE_ID}
 
-# 빌드
-RUN pnpm --filter @selectchatgpt/common build && \
-    pnpm --filter select-chatgpt-web build
+# 빌드 (common 패키지는 TypeScript 소스를 직접 export하므로 빌드 불필요)
+RUN pnpm --filter select-chatgpt-web build
 
 # 프로덕션 이미지
 FROM nginx:alpine
