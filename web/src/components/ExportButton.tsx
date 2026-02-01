@@ -500,10 +500,10 @@ export function ExportButton({
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Style
                   </label>
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setStyleType('chatgpt')}
-                      className={`flex-1 py-2 px-3 rounded-lg text-sm border transition-colors ${
+                      className={`py-2 px-3 rounded-lg text-sm border transition-colors ${
                         styleType === 'chatgpt'
                           ? 'border-primary bg-primary/10 text-primary'
                           : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
@@ -516,7 +516,7 @@ export function ExportButton({
                     </button>
                     <button
                       onClick={() => setStyleType('clean')}
-                      className={`flex-1 py-2 px-3 rounded-lg text-sm border transition-colors ${
+                      className={`py-2 px-3 rounded-lg text-sm border transition-colors ${
                         styleType === 'clean'
                           ? 'border-primary bg-primary/10 text-primary'
                           : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
@@ -525,6 +525,32 @@ export function ExportButton({
                       <div className="flex items-center justify-center gap-2">
                         <div className="w-4 h-4 rounded bg-white border border-gray-300" />
                         <span>Clean</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setStyleType('kakaotalk')}
+                      className={`py-2 px-3 rounded-lg text-sm border transition-colors ${
+                        styleType === 'kakaotalk'
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 rounded bg-[#FEE500]" />
+                        <span>KakaoTalk</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setStyleType('instagram-dm')}
+                      className={`py-2 px-3 rounded-lg text-sm border transition-colors ${
+                        styleType === 'instagram-dm'
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 rounded bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737]" />
+                        <span>Instagram</span>
                       </div>
                     </button>
                   </div>

@@ -1,7 +1,8 @@
 import type { ExportMessage, ExportStyle, ExportStyleType, ExportOptions } from './types';
-import { getExportStyle } from './styles';
+import { getExportStyle, getLayoutMode } from './styles';
 import { markdownToHtml } from './markdown-utils';
 import { removeCitationsFromHtml } from './sanitize-content';
+import { createBubbleExportableElement } from './bubble-renderer';
 
 // Filter messages based on export options
 export function filterMessages(messages: ExportMessage[], options?: ExportOptions): ExportMessage[] {
@@ -131,6 +132,12 @@ export function createExportableElement(
   styleType: ExportStyleType,
   options?: ExportOptions
 ): HTMLDivElement {
+  // Route to bubble renderer for bubble layout themes
+  const layoutMode = getLayoutMode(styleType);
+  if (layoutMode === 'bubble') {
+    return createBubbleExportableElement(messages, title, styleType, options);
+  }
+
   const style = getExportStyle(styleType, options);
 
   // Filter messages based on options

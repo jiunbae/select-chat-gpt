@@ -1,4 +1,49 @@
-export type ExportStyleType = 'chatgpt' | 'clean';
+export type ExportStyleType = 'chatgpt' | 'clean' | 'kakaotalk' | 'instagram-dm';
+
+// Layout mode for rendering
+export type ExportLayoutMode = 'document' | 'bubble';
+
+// Bubble theme header configuration
+export interface BubbleHeaderConfig {
+  backgroundColor: string;
+  textColor: string;
+  title?: string;
+  showBackButton?: boolean;
+}
+
+// Bubble style configuration
+export interface BubbleStyleConfig {
+  backgroundColor: string;
+  textColor: string;
+  borderRadius: string;
+  alignment: 'left' | 'right';
+  gradient?: string;
+}
+
+// Avatar configuration
+export interface AvatarConfig {
+  show: boolean;
+  size: string;
+  backgroundColor?: string;
+  iconColor?: string;
+}
+
+// Theme-specific configuration for bubble layouts
+export interface BubbleThemeConfig {
+  layoutMode: 'bubble';
+  backgroundColor: string;
+  header?: BubbleHeaderConfig;
+  userBubble: BubbleStyleConfig;
+  assistantBubble: BubbleStyleConfig;
+  avatar?: AvatarConfig;
+  fontFamily: string;
+  fontSize: string;
+  lineHeight: string;
+  messageGap: string;
+  bubbleMaxWidth: string;
+  containerPadding: string;
+  containerWidth: string;
+}
 
 export interface ExportProgress {
   stage: 'preparing' | 'rendering' | 'generating' | 'downloading';
@@ -22,6 +67,8 @@ export interface ExportStyle {
   content: Partial<CSSStyleDeclaration>;
   codeBlock: Partial<CSSStyleDeclaration>;
   inlineCode?: Partial<CSSStyleDeclaration>;
+  layoutMode?: ExportLayoutMode;
+  bubbleConfig?: BubbleThemeConfig;
 }
 
 export class ExportError extends Error {

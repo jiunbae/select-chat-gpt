@@ -1,6 +1,7 @@
 // Types
 export type {
   ExportStyleType,
+  ExportLayoutMode,
   ExportProgress,
   ExportMessage,
   ExportStyle,
@@ -16,6 +17,10 @@ export type {
   MarginPreset,
   CustomMargin,
   PdfHeaderFooterOptions,
+  BubbleThemeConfig,
+  BubbleHeaderConfig,
+  BubbleStyleConfig,
+  AvatarConfig,
 } from './types';
 export { ExportError } from './types';
 
@@ -23,7 +28,10 @@ export { ExportError } from './types';
 export {
   getChatGPTStyle,
   getCleanDocumentStyle,
+  getKakaoTalkStyle,
+  getInstagramDMStyle,
   getExportStyle,
+  getLayoutMode,
   getLetterSpacingValue,
   getLineHeightValue,
   getFontSizeValue,
@@ -47,6 +55,11 @@ export {
   createExportableElement,
   filterMessages,
 } from './renderer';
+
+// Bubble Renderer
+export {
+  createBubbleExportableElement,
+} from './bubble-renderer';
 
 // Exporter
 export type { RenderOptions } from './exporter';

@@ -1,4 +1,4 @@
-import type { ExportStyle, ExportStyleType, ExportOptions, LetterSpacing, LineHeight, FontSize, FontFamily, MessageGap, ContentPadding, MarginPreset, CustomMargin } from './types';
+import type { ExportStyle, ExportStyleType, ExportOptions, ExportLayoutMode, LetterSpacing, LineHeight, FontSize, FontFamily, MessageGap, ContentPadding, MarginPreset, CustomMargin, BubbleThemeConfig } from './types';
 
 // Helper functions for style values
 export function getLetterSpacingValue(spacing: LetterSpacing): string {
@@ -245,8 +245,201 @@ export function getCleanDocumentStyle(): ExportStyle {
   };
 }
 
+// Helper to get layout mode from style type
+export function getLayoutMode(styleType: ExportStyleType): ExportLayoutMode {
+  switch (styleType) {
+    case 'kakaotalk':
+    case 'instagram-dm':
+      return 'bubble';
+    default:
+      return 'document';
+  }
+}
+
+// KakaoTalk theme style
+export function getKakaoTalkStyle(): ExportStyle {
+  const bubbleConfig: BubbleThemeConfig = {
+    layoutMode: 'bubble',
+    backgroundColor: '#B2C7D9',
+    header: {
+      backgroundColor: '#FEE500',
+      textColor: '#3C1E1E',
+      showBackButton: true,
+    },
+    userBubble: {
+      backgroundColor: '#FEE500',
+      textColor: '#3C1E1E',
+      borderRadius: '16px 16px 4px 16px',
+      alignment: 'right',
+    },
+    assistantBubble: {
+      backgroundColor: '#FFFFFF',
+      textColor: '#1E1E1E',
+      borderRadius: '16px 16px 16px 4px',
+      alignment: 'left',
+    },
+    avatar: {
+      show: true,
+      size: '36px',
+      backgroundColor: '#FEE500',
+      iconColor: '#3C1E1E',
+    },
+    fontFamily: '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif',
+    fontSize: '15px',
+    lineHeight: '1.4',
+    messageGap: '8px',
+    bubbleMaxWidth: '75%',
+    containerPadding: '12px',
+    containerWidth: '400px',
+  };
+
+  return {
+    layoutMode: 'bubble',
+    bubbleConfig,
+    container: {
+      backgroundColor: '#B2C7D9',
+      fontFamily: '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif',
+      padding: '0',
+      minWidth: '375px',
+      maxWidth: '428px',
+      boxSizing: 'border-box',
+    },
+    header: {
+      backgroundColor: '#FEE500',
+      color: '#3C1E1E',
+      padding: '12px 16px',
+      fontSize: '17px',
+      fontWeight: '600',
+    },
+    messageWrapper: {},
+    userMessage: {},
+    assistantMessage: {},
+    roleLabel: {},
+    content: {
+      fontSize: '15px',
+      lineHeight: '1.4',
+    },
+    codeBlock: {
+      backgroundColor: '#1e1e1e',
+      borderRadius: '8px',
+      padding: '12px',
+      fontFamily: 'monospace',
+      fontSize: '13px',
+      color: '#e5e5e5',
+      overflowX: 'auto',
+    },
+    inlineCode: {
+      backgroundColor: '#e8e8e8',
+      padding: '2px 4px',
+      borderRadius: '4px',
+      fontFamily: 'monospace',
+      fontSize: '13px',
+    },
+  };
+}
+
+// Instagram DM theme style
+export function getInstagramDMStyle(): ExportStyle {
+  const bubbleConfig: BubbleThemeConfig = {
+    layoutMode: 'bubble',
+    backgroundColor: '#000000',
+    header: {
+      backgroundColor: '#000000',
+      textColor: '#FFFFFF',
+      showBackButton: true,
+    },
+    userBubble: {
+      backgroundColor: '#3797F0',
+      textColor: '#FFFFFF',
+      borderRadius: '22px',
+      alignment: 'right',
+      gradient: 'linear-gradient(to right, #405DE6, #5851DB, #833AB4, #C13584, #E1306C)',
+    },
+    assistantBubble: {
+      backgroundColor: '#262626',
+      textColor: '#FFFFFF',
+      borderRadius: '22px',
+      alignment: 'left',
+    },
+    avatar: {
+      show: true,
+      size: '32px',
+      backgroundColor: '#262626',
+      iconColor: '#FFFFFF',
+    },
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontSize: '14px',
+    lineHeight: '1.4',
+    messageGap: '4px',
+    bubbleMaxWidth: '75%',
+    containerPadding: '8px 12px',
+    containerWidth: '400px',
+  };
+
+  return {
+    layoutMode: 'bubble',
+    bubbleConfig,
+    container: {
+      backgroundColor: '#000000',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      padding: '0',
+      minWidth: '375px',
+      maxWidth: '428px',
+      boxSizing: 'border-box',
+    },
+    header: {
+      backgroundColor: '#000000',
+      borderBottom: '1px solid #262626',
+      padding: '12px 16px',
+      color: '#FFFFFF',
+    },
+    messageWrapper: {},
+    userMessage: {},
+    assistantMessage: {},
+    roleLabel: {},
+    content: {
+      fontSize: '14px',
+      lineHeight: '1.4',
+    },
+    codeBlock: {
+      backgroundColor: '#1a1a1a',
+      borderRadius: '8px',
+      padding: '12px',
+      fontFamily: 'monospace',
+      fontSize: '13px',
+      color: '#e5e5e5',
+      overflowX: 'auto',
+    },
+    inlineCode: {
+      backgroundColor: '#3a3a3a',
+      padding: '2px 4px',
+      borderRadius: '4px',
+      fontFamily: 'monospace',
+      fontSize: '13px',
+      color: '#e5e5e5',
+    },
+  };
+}
+
 export function getExportStyle(styleType: ExportStyleType, options?: ExportOptions): ExportStyle {
-  const baseStyle = styleType === 'chatgpt' ? getChatGPTStyle() : getCleanDocumentStyle();
+  let baseStyle: ExportStyle;
+
+  switch (styleType) {
+    case 'chatgpt':
+      baseStyle = getChatGPTStyle();
+      break;
+    case 'clean':
+      baseStyle = getCleanDocumentStyle();
+      break;
+    case 'kakaotalk':
+      baseStyle = getKakaoTalkStyle();
+      break;
+    case 'instagram-dm':
+      baseStyle = getInstagramDMStyle();
+      break;
+    default:
+      baseStyle = getChatGPTStyle();
+  }
 
   if (!options) {
     return baseStyle;
