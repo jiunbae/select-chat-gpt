@@ -190,11 +190,11 @@ function styleContentElements(
 }
 
 // Helper to determine if a color is light or dark
-// Note: Currently only supports hex colors (#RGB or #RRGGBB).
-// For non-hex colors (rgb, rgba, color names), returns false as a safe default
-// which results in using dark-theme link colors. This is acceptable since
-// all current bubble themes use hex colors in their configuration.
+// Supports hex (#RGB, #RRGGBB), rgb(), and rgba() formats.
+// For unsupported formats (color names), returns false as a safe default.
 function isColorLight(color: string): boolean {
+  let r: number, g: number, b: number;
+
   if (color.startsWith('#')) {
     let hex = color.slice(1);
     // Support 3-digit hex codes (e.g., #fff -> #ffffff)
@@ -204,13 +204,24 @@ function isColorLight(color: string): boolean {
     if (hex.length !== 6) {
       return false;
     }
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.5;
+    r = parseInt(hex.slice(0, 2), 16);
+    g = parseInt(hex.slice(2, 4), 16);
+    b = parseInt(hex.slice(4, 6), 16);
+  } else if (color.startsWith('rgb')) {
+    // Match rgb(r, g, b) or rgba(r, g, b, a)
+    const match = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (!match) {
+      return false;
+    }
+    r = parseInt(match[1], 10);
+    g = parseInt(match[2], 10);
+    b = parseInt(match[3], 10);
+  } else {
+    return false;
   }
-  return false;
+
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5;
 }
 
 // Create a single bubble message
