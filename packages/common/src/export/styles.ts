@@ -39,6 +39,9 @@ export function getFontSizeValue(size: FontSize): string {
 const SANS_SERIF_FALLBACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const SERIF_FALLBACK = 'Georgia, "Times New Roman", Times, serif';
 
+// Instagram gradient for user bubbles
+const INSTAGRAM_GRADIENT = 'linear-gradient(to right, #405DE6, #5851DB, #833AB4, #C13584, #E1306C)';
+
 export function getFontFamilyValue(family: FontFamily, styleType: ExportStyleType = 'clean'): string {
   const values: Record<FontFamily, string> = {
     'system': styleType === 'chatgpt'
@@ -291,6 +294,11 @@ export function getKakaoTalkStyle(): ExportStyle {
     bubbleMaxWidth: '75%',
     containerPadding: '12px',
     containerWidth: '400px',
+    // Content styling colors
+    linkColor: '#0066cc',
+    linkColorLight: '#0066cc',
+    blockquoteBorderColor: '#666',
+    blockquoteBorderColorLight: '#666',
   };
 
   return {
@@ -347,13 +355,14 @@ export function getInstagramDMStyle(): ExportStyle {
       backgroundColor: '#000000',
       textColor: '#FFFFFF',
       showBackButton: true,
+      showAvatar: true,
     },
     userBubble: {
       backgroundColor: '#3797F0',
       textColor: '#FFFFFF',
       borderRadius: '22px',
       alignment: 'right',
-      gradient: 'linear-gradient(to right, #405DE6, #5851DB, #833AB4, #C13584, #E1306C)',
+      gradient: INSTAGRAM_GRADIENT,
     },
     assistantBubble: {
       backgroundColor: '#262626',
@@ -374,6 +383,11 @@ export function getInstagramDMStyle(): ExportStyle {
     bubbleMaxWidth: '75%',
     containerPadding: '8px 12px',
     containerWidth: '400px',
+    // Content styling colors (dark theme)
+    linkColor: '#58a6ff',
+    linkColorLight: '#0066cc',
+    blockquoteBorderColor: '#888',
+    blockquoteBorderColorLight: '#666',
   };
 
   return {

@@ -9,6 +9,7 @@ export interface BubbleHeaderConfig {
   textColor: string;
   title?: string;
   showBackButton?: boolean;
+  showAvatar?: boolean;
 }
 
 // Bubble style configuration
@@ -43,6 +44,11 @@ export interface BubbleThemeConfig {
   bubbleMaxWidth: string;
   containerPadding: string;
   containerWidth: string;
+  // Content styling
+  linkColor?: string;
+  linkColorLight?: string;
+  blockquoteBorderColor?: string;
+  blockquoteBorderColorLight?: string;
 }
 
 export interface ExportProgress {

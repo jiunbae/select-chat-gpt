@@ -65,6 +65,7 @@ function createAvatar(
 // Create header (app chrome)
 function createBubbleHeader(
   config: BubbleHeaderConfig | undefined,
+  avatarConfig: AvatarConfig | undefined,
   title: string,
   styleType: ExportStyleType
 ): HTMLDivElement | null {
@@ -88,19 +89,12 @@ function createBubbleHeader(
     header.appendChild(backBtn);
   }
 
-  // Avatar in header for Instagram style
-  if (styleType === 'instagram-dm') {
-    const headerAvatar = document.createElement('div');
-    headerAvatar.style.width = '32px';
-    headerAvatar.style.height = '32px';
-    headerAvatar.style.borderRadius = '50%';
-    headerAvatar.style.backgroundColor = '#262626';
-    headerAvatar.style.display = 'flex';
-    headerAvatar.style.alignItems = 'center';
-    headerAvatar.style.justifyContent = 'center';
-    headerAvatar.style.color = '#fff';
-    headerAvatar.innerHTML = AI_AVATAR_SVG;
-    header.appendChild(headerAvatar);
+  // Avatar in header (configurable via showAvatar)
+  if (config.showAvatar && avatarConfig) {
+    const headerAvatar = createAvatar(avatarConfig, styleType);
+    if (headerAvatar) {
+      header.appendChild(headerAvatar);
+    }
   }
 
   // Title
@@ -143,9 +137,12 @@ function styleContentElements(
     (li as HTMLElement).style.marginBottom = '4px';
   });
 
-  // Links
+  // Links - use theme colors from config
+  const linkColor = isLight
+    ? (config.linkColorLight || '#0066cc')
+    : (config.linkColor || '#58a6ff');
   container.querySelectorAll('a').forEach(a => {
-    (a as HTMLElement).style.color = isLight ? '#0066cc' : '#58a6ff';
+    (a as HTMLElement).style.color = linkColor;
     (a as HTMLElement).style.textDecoration = 'underline';
   });
 
@@ -179,9 +176,12 @@ function styleContentElements(
     }
   });
 
-  // Blockquotes
+  // Blockquotes - use theme colors from config
+  const blockquoteBorderColor = isLight
+    ? (config.blockquoteBorderColorLight || '#666')
+    : (config.blockquoteBorderColor || '#888');
   container.querySelectorAll('blockquote').forEach(bq => {
-    (bq as HTMLElement).style.borderLeft = `3px solid ${isLight ? '#666' : '#888'}`;
+    (bq as HTMLElement).style.borderLeft = `3px solid ${blockquoteBorderColor}`;
     (bq as HTMLElement).style.paddingLeft = '12px';
     (bq as HTMLElement).style.margin = '8px 0';
     (bq as HTMLElement).style.fontStyle = 'italic';
@@ -292,7 +292,13 @@ export function createBubbleExportableElement(
   options?: ExportOptions
 ): HTMLDivElement {
   const style = getExportStyle(styleType, options);
-  const config = style.bubbleConfig!;
+
+  // Runtime check for bubbleConfig - safer than non-null assertion
+  const config = style.bubbleConfig;
+  if (!config) {
+    console.error('Bubble config is missing for a bubble layout style.');
+    return document.createElement('div');
+  }
 
   // Filter messages
   let filteredMessages = messages;
@@ -312,7 +318,7 @@ export function createBubbleExportableElement(
   applyStyles(container, style.container);
 
   // Header (app chrome)
-  const header = createBubbleHeader(config.header, title, styleType);
+  const header = createBubbleHeader(config.header, config.avatar, title, styleType);
   if (header) container.appendChild(header);
 
   // Messages area
