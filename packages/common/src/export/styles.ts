@@ -305,20 +305,23 @@ export function getKakaoTalkStyle(): ExportStyle {
     assistantName: 'ChatGPT',
   };
 
+  // Note: For bubble layouts, bubbleConfig is the primary source of truth.
+  // The top-level ExportStyle fields below are required to satisfy the interface
+  // and are used as fallbacks. Values are intentionally kept in sync.
   return {
     layoutMode: 'bubble',
     bubbleConfig,
     container: {
-      backgroundColor: '#B2C7D9',
-      fontFamily: '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif',
+      backgroundColor: bubbleConfig.backgroundColor,
+      fontFamily: bubbleConfig.fontFamily,
       padding: '0',
       minWidth: '375px',
       maxWidth: '428px',
       boxSizing: 'border-box',
     },
     header: {
-      backgroundColor: '#FEE500',
-      color: '#3C1E1E',
+      backgroundColor: bubbleConfig.header?.backgroundColor || '',
+      color: bubbleConfig.header?.textColor || '',
       padding: '12px 16px',
       fontSize: '17px',
       fontWeight: '600',
@@ -328,8 +331,8 @@ export function getKakaoTalkStyle(): ExportStyle {
     assistantMessage: {},
     roleLabel: {},
     content: {
-      fontSize: '15px',
-      lineHeight: '1.4',
+      fontSize: bubbleConfig.fontSize,
+      lineHeight: bubbleConfig.lineHeight,
     },
     codeBlock: {
       backgroundColor: '#1e1e1e',
@@ -397,30 +400,33 @@ export function getInstagramDMStyle(): ExportStyle {
     showAssistantName: false,
   };
 
+  // Note: For bubble layouts, bubbleConfig is the primary source of truth.
+  // The top-level ExportStyle fields below are required to satisfy the interface
+  // and are used as fallbacks. Values are derived from bubbleConfig where possible.
   return {
     layoutMode: 'bubble',
     bubbleConfig,
     container: {
-      backgroundColor: '#000000',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      backgroundColor: bubbleConfig.backgroundColor,
+      fontFamily: bubbleConfig.fontFamily,
       padding: '0',
       minWidth: '375px',
       maxWidth: '428px',
       boxSizing: 'border-box',
     },
     header: {
-      backgroundColor: '#000000',
+      backgroundColor: bubbleConfig.header?.backgroundColor || '',
       borderBottom: '1px solid #262626',
       padding: '12px 16px',
-      color: '#FFFFFF',
+      color: bubbleConfig.header?.textColor || '',
     },
     messageWrapper: {},
     userMessage: {},
     assistantMessage: {},
     roleLabel: {},
     content: {
-      fontSize: '14px',
-      lineHeight: '1.4',
+      fontSize: bubbleConfig.fontSize,
+      lineHeight: bubbleConfig.lineHeight,
     },
     codeBlock: {
       backgroundColor: '#1a1a1a',

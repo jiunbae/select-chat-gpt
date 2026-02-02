@@ -2,6 +2,7 @@ import type { ExportMessage, ExportStyle, ExportStyleType, ExportOptions, Bubble
 import { getExportStyle } from './styles';
 import { markdownToHtml } from './markdown-utils';
 import { removeCitationsFromHtml } from './sanitize-content';
+import { filterMessages } from './renderer';
 
 // SVG icon for ChatGPT/AI assistant avatar
 const AI_AVATAR_SVG = `
@@ -304,11 +305,8 @@ export function createBubbleExportableElement(
     return document.createElement('div');
   }
 
-  // Filter messages
-  let filteredMessages = messages;
-  if (options?.hideUserMessages) {
-    filteredMessages = filteredMessages.filter(m => m.role !== 'user');
-  }
+  // Filter messages using shared utility
+  const filteredMessages = filterMessages(messages, options);
 
   // Container
   const container = document.createElement('div');
