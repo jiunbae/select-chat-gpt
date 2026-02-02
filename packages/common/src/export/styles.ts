@@ -259,6 +259,49 @@ export function getLayoutMode(styleType: ExportStyleType): ExportLayoutMode {
   }
 }
 
+// Code block style options for bubble themes
+interface BubbleCodeBlockStyles {
+  codeBlock: Partial<CSSStyleDeclaration>;
+  inlineCode: Partial<CSSStyleDeclaration>;
+}
+
+// Helper to create ExportStyle from BubbleThemeConfig
+// Reduces boilerplate in individual theme functions
+function createBubbleExportStyle(
+  bubbleConfig: BubbleThemeConfig,
+  codeStyles: BubbleCodeBlockStyles
+): ExportStyle {
+  return {
+    layoutMode: 'bubble',
+    bubbleConfig,
+    container: {
+      backgroundColor: bubbleConfig.backgroundColor,
+      fontFamily: bubbleConfig.fontFamily,
+      padding: '0',
+      minWidth: '375px',
+      maxWidth: '428px',
+      boxSizing: 'border-box',
+    },
+    header: {
+      backgroundColor: bubbleConfig.header?.backgroundColor || '',
+      color: bubbleConfig.header?.textColor || '',
+      padding: '12px 16px',
+      fontSize: '17px',
+      fontWeight: '600',
+    },
+    messageWrapper: {},
+    userMessage: {},
+    assistantMessage: {},
+    roleLabel: {},
+    content: {
+      fontSize: bubbleConfig.fontSize,
+      lineHeight: bubbleConfig.lineHeight,
+    },
+    codeBlock: codeStyles.codeBlock,
+    inlineCode: codeStyles.inlineCode,
+  };
+}
+
 // KakaoTalk theme style
 export function getKakaoTalkStyle(): ExportStyle {
   const bubbleConfig: BubbleThemeConfig = {
@@ -305,35 +348,7 @@ export function getKakaoTalkStyle(): ExportStyle {
     assistantName: 'ChatGPT',
   };
 
-  // Note: For bubble layouts, bubbleConfig is the primary source of truth.
-  // The top-level ExportStyle fields below are required to satisfy the interface
-  // and are used as fallbacks. Values are intentionally kept in sync.
-  return {
-    layoutMode: 'bubble',
-    bubbleConfig,
-    container: {
-      backgroundColor: bubbleConfig.backgroundColor,
-      fontFamily: bubbleConfig.fontFamily,
-      padding: '0',
-      minWidth: '375px',
-      maxWidth: '428px',
-      boxSizing: 'border-box',
-    },
-    header: {
-      backgroundColor: bubbleConfig.header?.backgroundColor || '',
-      color: bubbleConfig.header?.textColor || '',
-      padding: '12px 16px',
-      fontSize: '17px',
-      fontWeight: '600',
-    },
-    messageWrapper: {},
-    userMessage: {},
-    assistantMessage: {},
-    roleLabel: {},
-    content: {
-      fontSize: bubbleConfig.fontSize,
-      lineHeight: bubbleConfig.lineHeight,
-    },
+  return createBubbleExportStyle(bubbleConfig, {
     codeBlock: {
       backgroundColor: '#1e1e1e',
       borderRadius: '8px',
@@ -350,7 +365,7 @@ export function getKakaoTalkStyle(): ExportStyle {
       fontFamily: 'monospace',
       fontSize: '13px',
     },
-  };
+  });
 }
 
 // Instagram DM theme style
@@ -400,34 +415,7 @@ export function getInstagramDMStyle(): ExportStyle {
     showAssistantName: false,
   };
 
-  // Note: For bubble layouts, bubbleConfig is the primary source of truth.
-  // The top-level ExportStyle fields below are required to satisfy the interface
-  // and are used as fallbacks. Values are derived from bubbleConfig where possible.
-  return {
-    layoutMode: 'bubble',
-    bubbleConfig,
-    container: {
-      backgroundColor: bubbleConfig.backgroundColor,
-      fontFamily: bubbleConfig.fontFamily,
-      padding: '0',
-      minWidth: '375px',
-      maxWidth: '428px',
-      boxSizing: 'border-box',
-    },
-    header: {
-      backgroundColor: bubbleConfig.header?.backgroundColor || '',
-      borderBottom: '1px solid #262626',
-      padding: '12px 16px',
-      color: bubbleConfig.header?.textColor || '',
-    },
-    messageWrapper: {},
-    userMessage: {},
-    assistantMessage: {},
-    roleLabel: {},
-    content: {
-      fontSize: bubbleConfig.fontSize,
-      lineHeight: bubbleConfig.lineHeight,
-    },
+  const style = createBubbleExportStyle(bubbleConfig, {
     codeBlock: {
       backgroundColor: '#1a1a1a',
       borderRadius: '8px',
@@ -445,7 +433,12 @@ export function getInstagramDMStyle(): ExportStyle {
       fontSize: '13px',
       color: '#e5e5e5',
     },
-  };
+  });
+
+  // Instagram-specific header style with border
+  style.header.borderBottom = '1px solid #262626';
+
+  return style;
 }
 
 export function getExportStyle(styleType: ExportStyleType, options?: ExportOptions): ExportStyle {

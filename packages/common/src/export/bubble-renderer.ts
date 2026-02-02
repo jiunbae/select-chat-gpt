@@ -23,10 +23,11 @@ function applyStyles(element: HTMLElement, styles: Partial<CSSStyleDeclaration>)
 }
 
 // Sanitize HTML for bubble display
+// Uses DOMParser to safely parse HTML without executing scripts (XSS protection)
 function sanitizeForBubble(html: string, options?: ExportOptions): string {
   const cleanedHtml = removeCitationsFromHtml(html);
-  const temp = document.createElement('div');
-  temp.innerHTML = cleanedHtml;
+  const doc = new DOMParser().parseFromString(cleanedHtml, 'text/html');
+  const temp = doc.body;
 
   // Remove interactive elements
   temp.querySelectorAll('button, [role="button"], .copy-button, svg.icon').forEach(el => el.remove());
