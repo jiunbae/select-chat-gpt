@@ -286,6 +286,7 @@ export function getKakaoTalkStyle(): ExportStyle {
       size: '36px',
       backgroundColor: '#FEE500',
       iconColor: '#3C1E1E',
+      location: 'message',
     },
     fontFamily: '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif',
     fontSize: '15px',
@@ -299,6 +300,9 @@ export function getKakaoTalkStyle(): ExportStyle {
     linkColorLight: '#0066cc',
     blockquoteBorderColor: '#666',
     blockquoteBorderColorLight: '#666',
+    // Assistant display
+    showAssistantName: true,
+    assistantName: 'ChatGPT',
   };
 
   return {
@@ -375,6 +379,7 @@ export function getInstagramDMStyle(): ExportStyle {
       size: '32px',
       backgroundColor: '#262626',
       iconColor: '#FFFFFF',
+      location: 'header',
     },
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     fontSize: '14px',
@@ -388,6 +393,8 @@ export function getInstagramDMStyle(): ExportStyle {
     linkColorLight: '#0066cc',
     blockquoteBorderColor: '#888',
     blockquoteBorderColorLight: '#666',
+    // Assistant display
+    showAssistantName: false,
   };
 
   return {

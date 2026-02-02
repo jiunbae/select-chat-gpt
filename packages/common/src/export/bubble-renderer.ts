@@ -190,8 +190,11 @@ function styleContentElements(
 }
 
 // Helper to determine if a color is light or dark
+// Note: Currently only supports hex colors (#RGB or #RRGGBB).
+// For non-hex colors (rgb, rgba, color names), returns false as a safe default
+// which results in using dark-theme link colors. This is acceptable since
+// all current bubble themes use hex colors in their configuration.
 function isColorLight(color: string): boolean {
-  // Simple heuristic based on hex color
   if (color.startsWith('#')) {
     let hex = color.slice(1);
     // Support 3-digit hex codes (e.g., #fff -> #ffffff)
@@ -229,8 +232,9 @@ function createBubbleMessage(
   row.style.marginBottom = config.messageGap;
   row.style.justifyContent = bubbleStyle.alignment === 'right' ? 'flex-end' : 'flex-start';
 
-  // Avatar (only for assistant, not in header)
-  if (!isUser && config.avatar?.show && styleType === 'kakaotalk') {
+  // Avatar for assistant (configurable via avatar.location)
+  const showAvatarInMessage = !isUser && config.avatar?.show && config.avatar.location === 'message';
+  if (showAvatarInMessage) {
     const avatar = createAvatar(config.avatar, styleType);
     if (avatar) row.appendChild(avatar);
   }
@@ -242,10 +246,10 @@ function createBubbleMessage(
   bubbleWrapper.style.flexDirection = 'column';
   bubbleWrapper.style.alignItems = bubbleStyle.alignment === 'right' ? 'flex-end' : 'flex-start';
 
-  // Name label for KakaoTalk (only for assistant)
-  if (!isUser && styleType === 'kakaotalk') {
+  // Name label for assistant (configurable via showAssistantName)
+  if (!isUser && config.showAssistantName) {
     const nameLabel = document.createElement('div');
-    nameLabel.textContent = 'ChatGPT';
+    nameLabel.textContent = config.assistantName || 'ChatGPT';
     nameLabel.style.fontSize = '12px';
     nameLabel.style.color = '#555';
     nameLabel.style.marginBottom = '4px';

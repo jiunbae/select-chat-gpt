@@ -27,6 +27,7 @@ export interface AvatarConfig {
   size: string;
   backgroundColor?: string;
   iconColor?: string;
+  location?: 'message' | 'header';
 }
 
 // Theme-specific configuration for bubble layouts
@@ -49,6 +50,9 @@ export interface BubbleThemeConfig {
   linkColorLight?: string;
   blockquoteBorderColor?: string;
   blockquoteBorderColorLight?: string;
+  // Assistant display
+  showAssistantName?: boolean;
+  assistantName?: string;
 }
 
 export interface ExportProgress {
