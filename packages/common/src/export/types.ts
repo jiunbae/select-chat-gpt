@@ -52,6 +52,7 @@ export interface BubbleThemeConfig {
   // Assistant display
   showAssistantName?: boolean;
   assistantName?: string;
+  assistantNameColor?: string;
 }
 
 export interface ExportProgress {

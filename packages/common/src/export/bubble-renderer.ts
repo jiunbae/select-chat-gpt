@@ -111,9 +111,12 @@ function styleContentElements(
     (p as HTMLElement).style.margin = '0 0 8px 0';
     (p as HTMLElement).style.color = textColor;
   });
-  container.querySelectorAll('p:last-child').forEach(p => {
-    (p as HTMLElement).style.marginBottom = '0';
-  });
+
+  // Remove bottom margin from the last direct child element (any type)
+  const lastChild = container.lastElementChild as HTMLElement | null;
+  if (lastChild) {
+    lastChild.style.marginBottom = '0';
+  }
 
   // Lists
   container.querySelectorAll('ul, ol').forEach(list => {
@@ -249,7 +252,7 @@ function createBubbleMessage(
     const nameLabel = document.createElement('div');
     nameLabel.textContent = config.assistantName || DEFAULT_ASSISTANT_NAME;
     nameLabel.style.fontSize = '12px';
-    nameLabel.style.color = '#555';
+    nameLabel.style.color = config.assistantNameColor || '#555';
     nameLabel.style.marginBottom = '4px';
     nameLabel.style.marginLeft = '4px';
     bubbleWrapper.appendChild(nameLabel);

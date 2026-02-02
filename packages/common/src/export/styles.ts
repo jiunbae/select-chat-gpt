@@ -345,6 +345,7 @@ export function getKakaoTalkStyle(): ExportStyle {
     // Assistant display
     showAssistantName: true,
     assistantName: 'ChatGPT',
+    assistantNameColor: '#3C1E1E',  // Dark color for contrast on light background
   };
 
   return createBubbleExportStyle(bubbleConfig, {
