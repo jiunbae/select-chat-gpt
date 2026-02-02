@@ -41,3 +41,34 @@ export function removeCitations(text: string): string {
 export function removeCitationsFromHtml(html: string): string {
   return html.replace(CITATION_REGEX, '');
 }
+
+/**
+ * Options for HTML sanitization
+ */
+export interface SanitizeHtmlOptions {
+  hideCodeBlocks?: boolean;
+}
+
+/**
+ * Sanitizes HTML content by removing interactive elements and optionally code blocks.
+ * Uses DOMParser to safely parse HTML without executing scripts (XSS protection).
+ *
+ * @param html - The HTML content to sanitize
+ * @param options - Sanitization options
+ * @returns Sanitized HTML string
+ */
+export function sanitizeContentHtml(html: string, options?: SanitizeHtmlOptions): string {
+  const cleanedHtml = removeCitationsFromHtml(html);
+  const doc = new DOMParser().parseFromString(cleanedHtml, 'text/html');
+  const temp = doc.body;
+
+  // Remove interactive elements
+  temp.querySelectorAll('button, [role="button"], .copy-button, svg.icon').forEach(el => el.remove());
+
+  // Remove code blocks if requested
+  if (options?.hideCodeBlocks) {
+    temp.querySelectorAll('pre').forEach(el => el.remove());
+  }
+
+  return temp.innerHTML;
+}

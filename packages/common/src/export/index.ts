@@ -47,7 +47,9 @@ export {
 export {
   removeCitations,
   removeCitationsFromHtml,
+  sanitizeContentHtml,
 } from './sanitize-content';
+export type { SanitizeHtmlOptions } from './sanitize-content';
 
 // Renderer
 export {

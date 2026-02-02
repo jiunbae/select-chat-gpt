@@ -1,7 +1,7 @@
 import type { ExportMessage, ExportStyle, ExportStyleType, ExportOptions, BubbleThemeConfig, BubbleHeaderConfig, AvatarConfig } from './types';
 import { getExportStyle } from './styles';
 import { markdownToHtml } from './markdown-utils';
-import { removeCitationsFromHtml } from './sanitize-content';
+import { sanitizeContentHtml } from './sanitize-content';
 import { filterMessages } from './renderer';
 
 // SVG icon for ChatGPT/AI assistant avatar
@@ -23,24 +23,6 @@ const DEFAULT_ASSISTANT_NAME = 'ChatGPT';
 
 function applyStyles(element: HTMLElement, styles: Partial<CSSStyleDeclaration>): void {
   Object.assign(element.style, styles);
-}
-
-// Sanitize HTML for bubble display
-// Uses DOMParser to safely parse HTML without executing scripts (XSS protection)
-function sanitizeForBubble(html: string, options?: ExportOptions): string {
-  const cleanedHtml = removeCitationsFromHtml(html);
-  const doc = new DOMParser().parseFromString(cleanedHtml, 'text/html');
-  const temp = doc.body;
-
-  // Remove interactive elements
-  temp.querySelectorAll('button, [role="button"], .copy-button, svg.icon').forEach(el => el.remove());
-
-  // Remove code blocks if requested
-  if (options?.hideCodeBlocks) {
-    temp.querySelectorAll('pre').forEach(el => el.remove());
-  }
-
-  return temp.innerHTML;
 }
 
 // Create avatar element
@@ -119,8 +101,10 @@ function styleContentElements(
   style: ExportStyle,
   isUser: boolean
 ): void {
-  const textColor = isUser ? config.userBubble.textColor : config.assistantBubble.textColor;
-  const isLight = isColorLight(isUser ? config.userBubble.backgroundColor : config.assistantBubble.backgroundColor);
+  const bubbleStyle = isUser ? config.userBubble : config.assistantBubble;
+  const textColor = bubbleStyle.textColor;
+  // When a gradient is used (e.g., Instagram), assume dark background for better contrast
+  const isLight = bubbleStyle.gradient ? false : isColorLight(bubbleStyle.backgroundColor);
 
   // Paragraphs
   container.querySelectorAll('p').forEach(p => {
@@ -290,7 +274,7 @@ function createBubbleMessage(
 
   // Content
   const htmlContent = message.html || markdownToHtml(message.content);
-  const sanitized = sanitizeForBubble(htmlContent, options);
+  const sanitized = sanitizeContentHtml(htmlContent, options);
   bubble.innerHTML = sanitized;
 
   // Style content elements using theme styles

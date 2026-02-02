@@ -1,7 +1,7 @@
 import type { ExportMessage, ExportStyle, ExportStyleType, ExportOptions } from './types';
 import { getExportStyle, getLayoutMode } from './styles';
 import { markdownToHtml } from './markdown-utils';
-import { removeCitationsFromHtml } from './sanitize-content';
+import { sanitizeContentHtml } from './sanitize-content';
 import { createBubbleExportableElement } from './bubble-renderer';
 
 // Filter messages based on export options
@@ -20,25 +20,6 @@ export function filterMessages(messages: ExportMessage[], options?: ExportOption
 
 function applyStyles(element: HTMLElement, styles: Partial<CSSStyleDeclaration>): void {
   Object.assign(element.style, styles);
-}
-
-// Remove interactive elements that should not be in the exported output.
-// This is not a security sanitizer.
-function sanitizeHTML(html: string, options?: ExportOptions): string {
-  // Remove ChatGPT citation patterns first
-  const cleanedHtml = removeCitationsFromHtml(html);
-
-  const temp = document.createElement('div');
-  temp.innerHTML = cleanedHtml;
-  temp.querySelectorAll('button, [role="button"], .copy-button, svg.icon')
-    .forEach(el => el.remove());
-
-  // Remove code blocks if requested
-  if (options?.hideCodeBlocks) {
-    temp.querySelectorAll('pre').forEach(el => el.remove());
-  }
-
-  return temp.innerHTML;
 }
 
 function processCodeBlocks(container: HTMLElement, style: ExportStyle, options?: ExportOptions): void {
@@ -89,7 +70,7 @@ export function createMessageElement(
   const content = document.createElement('div');
   // Use html if available, otherwise convert markdown content to HTML
   const htmlContent = message.html || markdownToHtml(message.content);
-  content.innerHTML = sanitizeHTML(htmlContent, options);
+  content.innerHTML = sanitizeContentHtml(htmlContent, options);
   applyStyles(content, style.content);
 
   // Process code blocks inside content
