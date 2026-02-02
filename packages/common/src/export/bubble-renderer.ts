@@ -18,6 +18,9 @@ const BACK_ARROW_SVG = `
 </svg>
 `;
 
+// Default assistant name
+const DEFAULT_ASSISTANT_NAME = 'ChatGPT';
+
 function applyStyles(element: HTMLElement, styles: Partial<CSSStyleDeclaration>): void {
   Object.assign(element.style, styles);
 }
@@ -67,14 +70,15 @@ function createAvatar(
 function createBubbleHeader(
   config: BubbleHeaderConfig | undefined,
   avatarConfig: AvatarConfig | undefined,
-  title: string
+  title: string,
+  style: ExportStyle
 ): HTMLDivElement | null {
   if (!config) return null;
 
   const header = document.createElement('div');
-  header.style.backgroundColor = config.backgroundColor;
-  header.style.color = config.textColor;
-  header.style.padding = '12px 16px';
+  // Apply base header styles from ExportStyle
+  applyStyles(header, style.header);
+  // Layout styles for header
   header.style.display = 'flex';
   header.style.alignItems = 'center';
   header.style.gap = '12px';
@@ -99,7 +103,7 @@ function createBubbleHeader(
 
   // Title
   const titleEl = document.createElement('span');
-  titleEl.textContent = title || 'ChatGPT';
+  titleEl.textContent = title || DEFAULT_ASSISTANT_NAME;
   titleEl.style.fontWeight = '600';
   titleEl.style.fontSize = '17px';
   titleEl.style.flex = '1';
@@ -259,7 +263,7 @@ function createBubbleMessage(
   // Name label for assistant (configurable via showAssistantName)
   if (!isUser && config.showAssistantName) {
     const nameLabel = document.createElement('div');
-    nameLabel.textContent = config.assistantName || 'ChatGPT';
+    nameLabel.textContent = config.assistantName || DEFAULT_ASSISTANT_NAME;
     nameLabel.style.fontSize = '12px';
     nameLabel.style.color = '#555';
     nameLabel.style.marginBottom = '4px';
@@ -329,7 +333,7 @@ export function createBubbleExportableElement(
   applyStyles(container, style.container);
 
   // Header (app chrome)
-  const header = createBubbleHeader(config.header, config.avatar, title);
+  const header = createBubbleHeader(config.header, config.avatar, title, style);
   if (header) container.appendChild(header);
 
   // Messages area

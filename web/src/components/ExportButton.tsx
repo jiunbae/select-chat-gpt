@@ -549,7 +549,7 @@ export function ExportButton({
                       }`}
                     >
                       <div className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 rounded bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737]" />
+                        <div className="w-4 h-4 rounded bg-gradient-to-r from-[#405DE6] via-[#833AB4] to-[#E1306C]" />
                         <span>Instagram DM</span>
                       </div>
                     </button>
