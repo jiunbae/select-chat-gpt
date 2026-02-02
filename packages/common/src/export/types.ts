@@ -32,7 +32,6 @@ export interface AvatarConfig {
 
 // Theme-specific configuration for bubble layouts
 export interface BubbleThemeConfig {
-  layoutMode: 'bubble';
   backgroundColor: string;
   header?: BubbleHeaderConfig;
   userBubble: BubbleStyleConfig;

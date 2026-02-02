@@ -42,8 +42,7 @@ function sanitizeForBubble(html: string, options?: ExportOptions): string {
 
 // Create avatar element
 function createAvatar(
-  config: AvatarConfig | undefined,
-  styleType: ExportStyleType
+  config: AvatarConfig | undefined
 ): HTMLDivElement | null {
   if (!config?.show) return null;
 
@@ -68,8 +67,7 @@ function createAvatar(
 function createBubbleHeader(
   config: BubbleHeaderConfig | undefined,
   avatarConfig: AvatarConfig | undefined,
-  title: string,
-  styleType: ExportStyleType
+  title: string
 ): HTMLDivElement | null {
   if (!config) return null;
 
@@ -93,7 +91,7 @@ function createBubbleHeader(
 
   // Avatar in header (configurable via showAvatar)
   if (config.showAvatar && avatarConfig) {
-    const headerAvatar = createAvatar(avatarConfig, styleType);
+    const headerAvatar = createAvatar(avatarConfig);
     if (headerAvatar) {
       header.appendChild(headerAvatar);
     }
@@ -220,7 +218,6 @@ function createBubbleMessage(
   message: ExportMessage,
   config: BubbleThemeConfig,
   style: ExportStyle,
-  styleType: ExportStyleType,
   options?: ExportOptions
 ): HTMLDivElement {
   const isUser = message.role === 'user';
@@ -237,7 +234,7 @@ function createBubbleMessage(
   // Avatar for assistant (configurable via avatar.location)
   const showAvatarInMessage = !isUser && config.avatar?.show && config.avatar.location === 'message';
   if (showAvatarInMessage) {
-    const avatar = createAvatar(config.avatar, styleType);
+    const avatar = createAvatar(config.avatar);
     if (avatar) row.appendChild(avatar);
   }
 
@@ -321,7 +318,7 @@ export function createBubbleExportableElement(
   applyStyles(container, style.container);
 
   // Header (app chrome)
-  const header = createBubbleHeader(config.header, config.avatar, title, styleType);
+  const header = createBubbleHeader(config.header, config.avatar, title);
   if (header) container.appendChild(header);
 
   // Messages area
@@ -331,7 +328,7 @@ export function createBubbleExportableElement(
   messagesArea.style.minHeight = '200px';
 
   filteredMessages.forEach(message => {
-    const msgEl = createBubbleMessage(message, config, style, styleType, options);
+    const msgEl = createBubbleMessage(message, config, style, options);
     messagesArea.appendChild(msgEl);
   });
 

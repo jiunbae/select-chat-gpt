@@ -305,7 +305,6 @@ function createBubbleExportStyle(
 // KakaoTalk theme style
 export function getKakaoTalkStyle(): ExportStyle {
   const bubbleConfig: BubbleThemeConfig = {
-    layoutMode: 'bubble',
     backgroundColor: '#B2C7D9',
     header: {
       backgroundColor: '#FEE500',
@@ -371,7 +370,6 @@ export function getKakaoTalkStyle(): ExportStyle {
 // Instagram DM theme style
 export function getInstagramDMStyle(): ExportStyle {
   const bubbleConfig: BubbleThemeConfig = {
-    layoutMode: 'bubble',
     backgroundColor: '#000000',
     header: {
       backgroundColor: '#000000',
