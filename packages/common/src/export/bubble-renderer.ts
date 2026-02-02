@@ -1,4 +1,4 @@
-import type { ExportMessage, ExportStyleType, ExportOptions, BubbleThemeConfig, BubbleHeaderConfig, AvatarConfig } from './types';
+import type { ExportMessage, ExportStyle, ExportStyleType, ExportOptions, BubbleThemeConfig, BubbleHeaderConfig, AvatarConfig } from './types';
 import { getExportStyle } from './styles';
 import { markdownToHtml } from './markdown-utils';
 import { removeCitationsFromHtml } from './sanitize-content';
@@ -118,8 +118,8 @@ function createBubbleHeader(
 function styleContentElements(
   container: HTMLElement,
   config: BubbleThemeConfig,
-  isUser: boolean,
-  styleType: ExportStyleType
+  style: ExportStyle,
+  isUser: boolean
 ): void {
   const textColor = isUser ? config.userBubble.textColor : config.assistantBubble.textColor;
   const isLight = isColorLight(isUser ? config.userBubble.backgroundColor : config.assistantBubble.backgroundColor);
@@ -154,28 +154,28 @@ function styleContentElements(
     (el as HTMLElement).style.fontWeight = '600';
   });
 
-  // Code blocks
+  // Code blocks - use theme styles from ExportStyle
   container.querySelectorAll('pre').forEach(pre => {
-    (pre as HTMLElement).style.backgroundColor = '#1e1e1e';
-    (pre as HTMLElement).style.color = '#e5e5e5';
-    (pre as HTMLElement).style.padding = '12px';
-    (pre as HTMLElement).style.borderRadius = '8px';
+    applyStyles(pre as HTMLElement, style.codeBlock);
+    // Additional bubble-specific styles
     (pre as HTMLElement).style.margin = '8px 0';
-    (pre as HTMLElement).style.overflowX = 'auto';
-    (pre as HTMLElement).style.fontFamily = 'monospace';
-    (pre as HTMLElement).style.fontSize = '13px';
     (pre as HTMLElement).style.whiteSpace = 'pre-wrap';
     (pre as HTMLElement).style.wordBreak = 'break-word';
   });
 
-  // Inline code
+  // Inline code - use theme styles from ExportStyle
   container.querySelectorAll('code').forEach(code => {
     if (code.parentElement?.tagName !== 'PRE') {
-      (code as HTMLElement).style.backgroundColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
-      (code as HTMLElement).style.padding = '2px 4px';
-      (code as HTMLElement).style.borderRadius = '4px';
-      (code as HTMLElement).style.fontFamily = 'monospace';
-      (code as HTMLElement).style.fontSize = '13px';
+      if (style.inlineCode) {
+        applyStyles(code as HTMLElement, style.inlineCode);
+      } else {
+        // Fallback if inlineCode not defined
+        (code as HTMLElement).style.backgroundColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+        (code as HTMLElement).style.padding = '2px 4px';
+        (code as HTMLElement).style.borderRadius = '4px';
+        (code as HTMLElement).style.fontFamily = 'monospace';
+        (code as HTMLElement).style.fontSize = '13px';
+      }
     }
   });
 
@@ -193,10 +193,17 @@ function styleContentElements(
 function isColorLight(color: string): boolean {
   // Simple heuristic based on hex color
   if (color.startsWith('#')) {
-    const hex = color.slice(1);
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
+    let hex = color.slice(1);
+    // Support 3-digit hex codes (e.g., #fff -> #ffffff)
+    if (hex.length === 3) {
+      hex = hex.split('').map(c => c + c).join('');
+    }
+    if (hex.length !== 6) {
+      return false;
+    }
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     return luminance > 0.5;
   }
@@ -207,6 +214,7 @@ function isColorLight(color: string): boolean {
 function createBubbleMessage(
   message: ExportMessage,
   config: BubbleThemeConfig,
+  style: ExportStyle,
   styleType: ExportStyleType,
   options?: ExportOptions
 ): HTMLDivElement {
@@ -267,8 +275,8 @@ function createBubbleMessage(
   const sanitized = sanitizeForBubble(htmlContent, options);
   bubble.innerHTML = sanitized;
 
-  // Style content elements
-  styleContentElements(bubble, config, isUser, styleType);
+  // Style content elements using theme styles
+  styleContentElements(bubble, config, style, isUser);
 
   bubbleWrapper.appendChild(bubble);
   row.appendChild(bubbleWrapper);
@@ -314,7 +322,7 @@ export function createBubbleExportableElement(
   messagesArea.style.minHeight = '200px';
 
   filteredMessages.forEach(message => {
-    const msgEl = createBubbleMessage(message, config, styleType, options);
+    const msgEl = createBubbleMessage(message, config, style, styleType, options);
     messagesArea.appendChild(msgEl);
   });
 
