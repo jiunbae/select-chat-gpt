@@ -16,6 +16,7 @@ export {
   type MarginPreset,
   type CustomMargin,
   type PdfHeaderFooterOptions,
+  type BubbleThemeConfig,
   ExportError,
   exportToImage,
   exportToPDF,
@@ -30,4 +31,7 @@ export {
   getContentPaddingValue,
   getMarginCssValue,
   MARGIN_PRESETS,
+  // Bubble theme styles
+  getKakaoTalkStyle,
+  getInstagramDMStyle,
 } from '@selectchatgpt/common/export';

@@ -9,7 +9,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import 'katex/dist/katex.min.css';
 import type { Message as MessageType } from '@/lib/api';
-import type { ExportStyleType } from '@/lib/export';
+import { getKakaoTalkStyle, getInstagramDMStyle, type BubbleThemeConfig } from '@/lib/export';
 
 // Extended sanitize schema
 const sanitizeSchema = {
@@ -27,52 +27,12 @@ const sanitizeSchema = {
   }
 };
 
-// Theme configurations
-const THEMES = {
-  kakaotalk: {
-    userBubble: {
-      backgroundColor: '#FEE500',
-      textColor: '#3C1E1E',
-      borderRadius: '16px 16px 4px 16px',
-    },
-    assistantBubble: {
-      backgroundColor: '#FFFFFF',
-      textColor: '#1E1E1E',
-      borderRadius: '16px 16px 16px 4px',
-    },
-    avatar: {
-      show: true,
-      backgroundColor: '#FEE500',
-      iconColor: '#3C1E1E',
-    },
-    showAssistantName: true,
-    assistantName: 'ChatGPT',
-    assistantNameColor: '#3C1E1E',
-    fontFamily: '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif',
-  },
-  'instagram-dm': {
-    userBubble: {
-      backgroundColor: '#3797F0',
-      textColor: '#FFFFFF',
-      borderRadius: '22px',
-      gradient: 'linear-gradient(to right, #405DE6, #5851DB, #833AB4, #C13584, #E1306C)',
-    },
-    assistantBubble: {
-      backgroundColor: '#262626',
-      textColor: '#FFFFFF',
-      borderRadius: '22px',
-    },
-    avatar: {
-      show: true,
-      backgroundColor: '#262626',
-      iconColor: '#FFFFFF',
-    },
-    showAssistantName: false,
-    assistantName: '',
-    assistantNameColor: '#FFFFFF',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  },
-};
+// Get theme configurations from centralized common package (single source of truth)
+function getThemeConfig(styleType: 'kakaotalk' | 'instagram-dm'): BubbleThemeConfig {
+  const style = styleType === 'kakaotalk' ? getKakaoTalkStyle() : getInstagramDMStyle();
+  // bubbleConfig is guaranteed to exist for bubble-style themes
+  return style.bubbleConfig!;
+}
 
 // ChatGPT avatar SVG
 const AI_AVATAR_SVG = (
@@ -97,7 +57,7 @@ export const BubbleMessage = memo(function BubbleMessage({
   showCheckbox = false,
 }: BubbleMessageProps) {
   const isUser = message.role === 'user';
-  const theme = THEMES[styleType];
+  const theme = getThemeConfig(styleType);
   const bubbleStyle = isUser ? theme.userBubble : theme.assistantBubble;
 
   const processedContent = useMemo(() => {
@@ -136,12 +96,12 @@ export const BubbleMessage = memo(function BubbleMessage({
       )}
 
       {/* Avatar for assistant */}
-      {!isUser && theme.avatar.show && (
+      {!isUser && theme.avatar?.show && (
         <div
           className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
           style={{
-            backgroundColor: theme.avatar.backgroundColor,
-            color: theme.avatar.iconColor,
+            backgroundColor: theme.avatar?.backgroundColor,
+            color: theme.avatar?.iconColor,
           }}
         >
           {AI_AVATAR_SVG}
@@ -156,10 +116,10 @@ export const BubbleMessage = memo(function BubbleMessage({
         }}
       >
         {/* Assistant name */}
-        {!isUser && theme.showAssistantName && (
+        {!isUser && theme.showAssistantName && theme.assistantName && (
           <span
             className="text-xs mb-1 ml-1"
-            style={{ color: theme.assistantNameColor }}
+            style={{ color: theme.assistantNameColor || '#555' }}
           >
             {theme.assistantName}
           </span>
@@ -172,8 +132,8 @@ export const BubbleMessage = memo(function BubbleMessage({
             backgroundColor: bubbleStyle.backgroundColor,
             color: bubbleStyle.textColor,
             borderRadius: bubbleStyle.borderRadius,
-            ...(isUser && styleType === 'instagram-dm' && {
-              background: 'linear-gradient(to right, #405DE6, #5851DB, #833AB4, #C13584, #E1306C)',
+            ...(isUser && bubbleStyle.gradient && {
+              background: bubbleStyle.gradient,
             }),
           }}
         >
