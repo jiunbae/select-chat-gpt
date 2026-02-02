@@ -217,7 +217,7 @@ export function StyleControls() {
               >
                 {t('style')}:
               </span>
-              <div className="flex gap-1">
+              <div className="flex gap-1 flex-wrap">
                 <StyleTypeButton
                   isActive={styleType === 'chatgpt'}
                   isCleanStyle={isCleanStyle}
@@ -235,6 +235,24 @@ export function StyleControls() {
                 >
                   <div className="w-2.5 h-2.5 rounded bg-white border border-gray-300" />
                   {t('clean')}
+                </StyleTypeButton>
+                <StyleTypeButton
+                  isActive={styleType === 'kakaotalk'}
+                  isCleanStyle={isCleanStyle}
+                  onClick={() => setStyleType('kakaotalk')}
+                  panelBorder={panelBorder}
+                >
+                  <div className="w-2.5 h-2.5 rounded bg-[#FEE500]" />
+                  KakaoTalk
+                </StyleTypeButton>
+                <StyleTypeButton
+                  isActive={styleType === 'instagram-dm'}
+                  isCleanStyle={isCleanStyle}
+                  onClick={() => setStyleType('instagram-dm')}
+                  panelBorder={panelBorder}
+                >
+                  <div className="w-2.5 h-2.5 rounded bg-gradient-to-r from-[#405DE6] via-[#833AB4] to-[#E1306C]" />
+                  Instagram
                 </StyleTypeButton>
               </div>
             </div>

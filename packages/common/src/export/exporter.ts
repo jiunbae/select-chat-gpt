@@ -37,7 +37,18 @@ async function getTurndownService(): Promise<typeof TurndownServiceType> {
 
 // Get background color based on style type
 function getBackgroundColor(styleType: ExportStyleType): string {
-  return styleType === 'chatgpt' ? '#212121' : '#ffffff';
+  switch (styleType) {
+    case 'chatgpt':
+      return '#212121';
+    case 'clean':
+      return '#ffffff';
+    case 'kakaotalk':
+      return '#B2C7D9';
+    case 'instagram-dm':
+      return '#000000';
+    default:
+      return '#212121';
+  }
 }
 
 // Create a configured turndown instance for HTML to Markdown conversion
