@@ -4,6 +4,7 @@ import { Fragment, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import type { Message as MessageType } from '@/lib/api';
 import { Message } from './Message';
+import { BubbleMessage } from './BubbleMessage';
 import { StyleControls } from './StyleControls';
 import { ExportButton } from './ExportButton';
 import { AdUnit } from './AdUnit';
@@ -108,20 +109,60 @@ function SharePageContent({ share }: SharePageClientProps) {
   const allSelected = filteredMessages.length > 0 && filteredSelectedCount === filteredMessages.length;
 
   const isCleanStyle = styleType === 'clean';
+  const isBubbleStyle = styleType === 'kakaotalk' || styleType === 'instagram-dm';
+
+  // Get background color based on style
+  const getBackgroundColor = () => {
+    switch (styleType) {
+      case 'clean': return '#ffffff';
+      case 'kakaotalk': return '#B2C7D9';
+      case 'instagram-dm': return '#000000';
+      default: return '#212121'; // chatgpt
+    }
+  };
+
+  const getTextColor = () => {
+    switch (styleType) {
+      case 'clean': return '#1f2937';
+      case 'kakaotalk': return '#1E1E1E';
+      case 'instagram-dm': return '#ffffff';
+      default: return '#ececec'; // chatgpt
+    }
+  };
+
+  const getHeaderBackground = () => {
+    switch (styleType) {
+      case 'clean': return 'rgba(255,255,255,0.8)';
+      case 'kakaotalk': return 'rgba(254,229,0,0.9)'; // KakaoTalk yellow
+      case 'instagram-dm': return 'rgba(0,0,0,0.9)';
+      default: return 'rgba(33,33,33,0.8)'; // chatgpt
+    }
+  };
+
+  const getBorderColor = () => {
+    switch (styleType) {
+      case 'clean': return '#e5e7eb';
+      case 'kakaotalk': return '#E5D100';
+      case 'instagram-dm': return '#262626';
+      default: return '#444444'; // chatgpt
+    }
+  };
+
+  const isDarkHeader = styleType === 'chatgpt' || styleType === 'instagram-dm';
 
   return (
     <main
       className="min-h-screen transition-colors duration-200"
       style={{
-        backgroundColor: isCleanStyle ? '#ffffff' : '#212121',
-        color: isCleanStyle ? '#1f2937' : '#ececec',
+        backgroundColor: getBackgroundColor(),
+        color: getTextColor(),
       }}
     >
       <header
         className="sticky top-0 z-50 backdrop-blur-sm border-b transition-colors duration-200"
         style={{
-          backgroundColor: isCleanStyle ? 'rgba(255,255,255,0.8)' : 'rgba(33,33,33,0.8)',
-          borderColor: isCleanStyle ? '#e5e7eb' : '#444444',
+          backgroundColor: getHeaderBackground(),
+          borderColor: getBorderColor(),
         }}
       >
         <div className="max-w-3xl mx-auto px-4 py-3">
@@ -130,7 +171,7 @@ function SharePageContent({ share }: SharePageClientProps) {
             <Link
               href="/"
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-              style={{ color: isCleanStyle ? '#1f2937' : '#ffffff' }}
+              style={{ color: isDarkHeader ? '#ffffff' : '#1f2937' }}
             >
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <svg
@@ -238,8 +279,8 @@ function SharePageContent({ share }: SharePageClientProps) {
 
       {/* Messages */}
       <div
-        className="border-t"
-        style={{ borderColor: isCleanStyle ? '#e5e7eb' : '#444444' }}
+        className={isBubbleStyle ? 'py-4' : 'border-t'}
+        style={{ borderColor: !isBubbleStyle ? (isCleanStyle ? '#e5e7eb' : '#444444') : undefined }}
       >
         {filteredMessages.length === 0 ? (
           <div
@@ -248,7 +289,28 @@ function SharePageContent({ share }: SharePageClientProps) {
           >
             No messages to display with current filters.
           </div>
+        ) : isBubbleStyle ? (
+          // Bubble layout for KakaoTalk and Instagram DM
+          <div className="max-w-md mx-auto">
+            {filteredMessages.map((message, index) => (
+              <Fragment key={message.id}>
+                <BubbleMessage
+                  message={message}
+                  styleType={styleType as 'kakaotalk' | 'instagram-dm'}
+                  showCheckbox={true}
+                  isSelected={selectedIds.has(message.id)}
+                  onToggleSelect={handleToggleSelect}
+                />
+                {(index + 1) % 5 === 0 && index < filteredMessages.length - 1 && (
+                  <div className="px-4 py-4">
+                    <AdUnit slot="1571327187" format="horizontal" className="w-full" maxHeight={100} />
+                  </div>
+                )}
+              </Fragment>
+            ))}
+          </div>
         ) : (
+          // Document layout for ChatGPT and Clean
           filteredMessages.map((message, index) => (
             <Fragment key={message.id}>
               <Message
