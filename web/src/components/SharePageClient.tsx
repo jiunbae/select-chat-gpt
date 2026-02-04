@@ -302,8 +302,8 @@ function SharePageContent({ share }: SharePageClientProps) {
                   onToggleSelect={handleToggleSelect}
                 />
                 {(index + 1) % 5 === 0 && index < filteredMessages.length - 1 && (
-                  <div className="px-4 py-4">
-                    <AdUnit slot="1571327187" format="horizontal" className="w-full" maxHeight={100} />
+                  <div className="w-full px-4 py-4 flex justify-center">
+                    <AdUnit slot="1571327187" format="horizontal" className="w-full max-w-md" maxHeight={100} />
                   </div>
                 )}
               </Fragment>
