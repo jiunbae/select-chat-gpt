@@ -39,7 +39,7 @@ export function ExportAdModal({ isOpen, onClose, onComplete }: ExportAdModalProp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center min-h-screen px-4 bg-black/60 backdrop-blur-sm">
       <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 shadow-2xl p-6 space-y-5">
         <button
           onClick={onClose}

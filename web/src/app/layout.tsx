@@ -71,7 +71,9 @@ export default function RootLayout({
             </Script>
           </>
         )}
-        {/* Google AdSense */}
+      </head>
+      <body className="antialiased">
+        {/* Google AdSense - must be outside <head> to avoid data-nscript attribute issue */}
         {ADSENSE_ID && (
           <Script
             async
@@ -80,8 +82,6 @@ export default function RootLayout({
             strategy="afterInteractive"
           />
         )}
-      </head>
-      <body className="antialiased">
         <LocaleProvider>
           {children}
         </LocaleProvider>
