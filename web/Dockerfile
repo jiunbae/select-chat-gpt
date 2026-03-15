@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM registry.jiun.dev/library/node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -30,7 +30,7 @@ ENV NEXT_PUBLIC_ADSENSE_ID=${NEXT_PUBLIC_ADSENSE_ID}
 RUN pnpm --filter select-chatgpt-web build
 
 # 프로덕션 이미지
-FROM nginx:alpine
+FROM registry.jiun.dev/library/nginx:alpine
 
 # nginx 설정 복사
 COPY web/nginx.conf /etc/nginx/conf.d/default.conf
