@@ -1,4 +1,4 @@
-FROM registry.jiun.dev/library/node:20-alpine AS builder
+FROM registry.jiun.dev/library/node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY . .
 RUN npx tsc
 
 # 프로덕션 이미지
-FROM registry.jiun.dev/library/node:20-alpine AS runner
+FROM registry.jiun.dev/library/node:22-alpine AS runner
 
 WORKDIR /app
 

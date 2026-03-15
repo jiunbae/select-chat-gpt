@@ -1,4 +1,4 @@
-FROM registry.jiun.dev/library/node:20-alpine AS builder
+FROM registry.jiun.dev/library/node:22-alpine AS builder
 
 WORKDIR /app
 
