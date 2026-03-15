@@ -14,6 +14,8 @@ on:
 env:
   REGISTRY: registry.jiun.dev
   IAC_REPO: jiunbae/IaC
+  OVERLAY_DEV: kubernetes/overlays/dev/selectchatgpt
+  OVERLAY_PROD: kubernetes/overlays/prod/selectchatgpt
 
 jobs:
   build:
@@ -84,22 +86,19 @@ jobs:
       - name: Update IaC repo
         run: |
           git clone https://x-access-token:${{ secrets.IAC_GITHUB_TOKEN }}@github.com/${{ env.IAC_REPO }}.git iac
+          cd iac
 
-          # Update dev overlay
-          cd iac/kubernetes/overlays/dev/selectchatgpt
-          sed -i '/selectchatgpt-server/!b;n;s/newTag: .*/newTag: ${{ gitea.sha }}/' kustomization.yaml
-          sed -i '/selectchatgpt-web/!b;n;s/newTag: .*/newTag: dev-${{ gitea.sha }}/' kustomization.yaml
-          cat kustomization.yaml
+          # Update dev overlay (web uses dev- prefix tag)
+          sed -i '/selectchatgpt-server/!b;n;s/newTag: .*/newTag: ${{ gitea.sha }}/' ${{ env.OVERLAY_DEV }}/kustomization.yaml
+          sed -i '/selectchatgpt-web/!b;n;s/newTag: .*/newTag: dev-${{ gitea.sha }}/' ${{ env.OVERLAY_DEV }}/kustomization.yaml
+          echo "=== dev overlay ===" && cat ${{ env.OVERLAY_DEV }}/kustomization.yaml
 
           # Update prod overlay
-          cd ../../../overlays/prod/selectchatgpt
-          sed -i 's/newTag: .*/newTag: ${{ gitea.sha }}/' kustomization.yaml
-          cat kustomization.yaml
+          sed -i 's/newTag: .*/newTag: ${{ gitea.sha }}/' ${{ env.OVERLAY_PROD }}/kustomization.yaml
+          echo "=== prod overlay ===" && cat ${{ env.OVERLAY_PROD }}/kustomization.yaml
 
-          cd ../../../../
           git config user.name "Gitea Actions"
           git config user.email "actions@gitea.jiun.dev"
-          git add kubernetes/overlays/dev/selectchatgpt/kustomization.yaml
-          git add kubernetes/overlays/prod/selectchatgpt/kustomization.yaml
+          git add ${{ env.OVERLAY_DEV }}/kustomization.yaml ${{ env.OVERLAY_PROD }}/kustomization.yaml
           git diff --staged --quiet || git commit -m "chore(selectchatgpt): update image tags to ${{ gitea.sha }}"
           git push
